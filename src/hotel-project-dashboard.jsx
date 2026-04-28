@@ -67,14 +67,14 @@ const uiToDb = (proj) => ({
 });
 
 // ─── Constants ────────────────────────────────────────────────
-const PRODUCTS = ["AVA", "AVT", "ACA", "TMSP", "GW"];
-const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU"];
+const PRODUCTS = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS"];
+const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS"];
 const COUNTRIES = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 
 const BASIC_SETUP_ITEMS = [
   "房型及機台擺放位置圖片", "需申請後台權限的 email 帳號", "樓層房號表及 WiFi 資訊",
   "機台重啟（Check out）方式", "是否需開啟打掃 & 勿擾功能", "通話快捷鍵設定 & 分機提供",
-  "歡迎畫面背景", "歡迎詞填寫", "後台服務功能設定 & 送物 / 修繕項目清單",
+  "歡迎畫面背景", "歡迎詞填寫", "後台服務功能設定 & 送物 / 修繕項目清單", "TMS Pro 設定",
 ];
 const FAQ_ITEMS = [
   "飯店基本資訊", "飯店內設施", "飯店提供之服務", "入住規則", "備品清單",
@@ -83,7 +83,7 @@ const FAQ_ITEMS = [
 const BATCH2_ITEMS = ["機台 Showcase 設定", "廣告設定", "Pop-up QR code 內容設定"];
 const BATCH2_LINK_KEYS = ["showcase", "ad", "popupQR"];
 const TOTAL_ITEMS = BASIC_SETUP_ITEMS.length + FAQ_ITEMS.length + BATCH2_ITEMS.length;
-const PRODUCT_COLORS = { AVA: "#1e6fb5", AVT: "#0891b2", ACA: "#0e7a5a", TMSP: "#7c3aed", GW: "#b45309" };
+const PRODUCT_COLORS = { AVA: "#1e6fb5", AVT: "#0891b2", ACA: "#0e7a5a", TMSP: "#7c3aed", GW: "#b45309", KMS: "#be185d" };
 
 // ─── Theme ────────────────────────────────────────────────────
 const L = {
