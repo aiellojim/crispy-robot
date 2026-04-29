@@ -69,7 +69,7 @@ const uiToDb = (proj) => ({
 
 // ─── Constants ────────────────────────────────────────────────
 const PRODUCTS = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS"];
-const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS"];
+const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV"];
 const COUNTRIES = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 
 const BASIC_SETUP_ITEMS = [
@@ -77,13 +77,17 @@ const BASIC_SETUP_ITEMS = [
   "機台重啟（Check out）方式", "是否需開啟打掃 & 勿擾功能", "通話快捷鍵設定 & 分機提供",
   "歡迎畫面背景", "歡迎詞填寫", "後台服務功能設定 & 送物 / 修繕項目清單", "TMS Pro 設定",
 ];
+const FAQ_TV_ITEM = "電視頻道設定（若串接項目不含 IPTV 則不用填寫）";
 const FAQ_ITEMS = [
   "飯店基本資訊", "飯店內設施", "飯店提供之服務", "入住規則", "備品清單",
-  "電視頻道設定（若串接項目不含 IPTV 則不用填寫）", "特別推薦美食景點",
+  FAQ_TV_ITEM, "特別推薦美食景點",
 ];
 const BATCH2_ITEMS = ["機台 Showcase 設定", "廣告設定", "Pop-up QR code 內容設定"];
 const BATCH2_LINK_KEYS = ["showcase", "ad", "popupQR"];
-const TOTAL_ITEMS = BASIC_SETUP_ITEMS.length + FAQ_ITEMS.length + BATCH2_ITEMS.length;
+const calcTotalItems = (integrations) => {
+  const faqCount = integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1;
+  return BASIC_SETUP_ITEMS.length + faqCount + BATCH2_ITEMS.length;
+};
 const PRODUCT_COLORS = { AVA: "#1e6fb5", AVT: "#0891b2", ACA: "#0e7a5a", TMSP: "#7c3aed", GW: "#b45309", KMS: "#be185d" };
 
 // ─── Theme ────────────────────────────────────────────────────
@@ -105,10 +109,13 @@ const inputStyle = {
 
 // ─── Helpers ──────────────────────────────────────────────────
 const calcPct = (proj) => {
+  const hasIptv = proj.info.integrations.includes("IPTV");
+  const faqCheckedCount = Object.entries(proj.faqChecked)
+    .filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
   const done = Object.values(proj.basicChecked).filter(Boolean).length
-    + Object.values(proj.faqChecked).filter(Boolean).length
+    + faqCheckedCount
     + Object.values(proj.batch2Checked).filter(Boolean).length;
-  return Math.round((done / TOTAL_ITEMS) * 100);
+  return Math.round((done / calcTotalItems(proj.info.integrations)) * 100);
 };
 
 const daysUntil = (dateStr) => {
@@ -556,10 +563,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
     setInfo(p => ({ ...p, [key]: p[key].includes(val) ? p[key].filter(x => x !== val) : [...p[key], val] })), [setInfo]);
   const toggleCheck = useCallback((setter, key) => setter(p => ({ ...p, [key]: !p[key] })), []);
 
+  const hasIptv = info.integrations.includes("IPTV");
+  const activeFaqItems = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
   const basicCount = Object.values(basicChecked).filter(Boolean).length;
-  const faqCount = Object.values(faqChecked).filter(Boolean).length;
+  const faqCount = Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
   const batch2Count = Object.values(batch2Checked).filter(Boolean).length;
-  const totalPct = Math.round(((basicCount + faqCount + batch2Count) / TOTAL_ITEMS) * 100);
+  const totalPct = Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations)) * 100);
   const infoComplete = info.name && info.address && info.region && info.products.length > 0 && info.launchDate;
 
   const STEPS = ["專案資訊", "第一批資料", "第二批資料", "總覽"];
@@ -749,8 +758,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
             </Card>
 
             <Card>
-              <SectionHeader title="FAQ 資料表" count={faqCount} total={FAQ_ITEMS.length} color={L.amber} />
-              {FAQ_ITEMS.map(item => (
+              <SectionHeader title="FAQ 資料表" count={faqCount} total={activeFaqItems.length} color={L.amber} />
+              {activeFaqItems.map(item => (
                 <div key={item} style={{ marginBottom: 8 }}>
                   <CheckRow label={item} checked={!!faqChecked[item]} onChange={() => toggleCheck(setFaqChecked, item)} color={L.amber} />
                   <textarea
@@ -764,6 +773,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
                   />
                 </div>
               ))}
+              {!hasIptv && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, marginBottom: 6, opacity: 0.6 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, color: L.textLight }}>{FAQ_TV_ITEM}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 IPTV，不需填寫</span>
+                </div>
+              )}
               <SheetLink value={sheetLinks.faq} onChange={v => setSheetLinks(p => ({ ...p, faq: v }))} accent={L.amber} />
             </Card>
 
@@ -895,8 +911,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               {[
                 { label: "基礎設定資料表", items: BASIC_SETUP_ITEMS, checked: basicChecked, notes: basicNotes, color: L.green, linkKey: "basic" },
-                { label: "FAQ 資料表", items: FAQ_ITEMS, checked: faqChecked, notes: faqNotes, color: L.amber, linkKey: "faq" },
-              ].map(({ label, items, checked, notes, color, linkKey }) => (
+                { label: "FAQ 資料表", items: activeFaqItems, checked: faqChecked, notes: faqNotes, color: L.amber, linkKey: "faq", showTvNotice: !hasIptv },
+              ].map(({ label, items, checked, notes, color, linkKey, showTvNotice }) => (
                 <div key={label} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
                   <div style={{ fontSize: 11, letterSpacing: 1.5, color, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>{label}</div>
                   {items.map(item => {
@@ -917,6 +933,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
                       </div>
                     );
                   })}
+                  {showTvNotice && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: `1px solid ${L.bg}`, opacity: 0.5 }}>
+                      <span style={{ fontSize: 13, color: L.border, flexShrink: 0 }}>—</span>
+                      <span style={{ fontSize: 12, color: L.textLight }}>{FAQ_TV_ITEM}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 10, color: L.textLight, background: L.bg, borderRadius: 5, padding: "2px 7px", whiteSpace: "nowrap" }}>未選 IPTV</span>
+                    </div>
+                  )}
                   {sheetLinks[linkKey] && (
                     <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
                       style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color, textDecoration: "none", fontWeight: 600, background: `${color}11`, border: `1px solid ${color}33`, borderRadius: 7, padding: "5px 12px" }}>
