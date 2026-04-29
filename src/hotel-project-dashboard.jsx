@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const SUPABASE_URL = "https://yqoingcpcryrcpnhkjzu.supabase.co";
@@ -26,6 +26,7 @@ const dbToUi = (row, prog) => ({
     batch2Deadline: row.batch2_deadline ?? "",
     notes: row.notes ?? "",
   },
+  updatedAt: prog?.updated_at ?? row.updated_at ?? null,
   basicChecked: prog?.basic_checked ?? {},
   basicNotes: prog?.basic_notes ?? {},
   faqChecked: prog?.faq_checked ?? {},
@@ -268,28 +269,34 @@ const CheckRow = ({ label, checked, onChange, color = L.green }) => (
 );
 
 // Sheet link input block
-const SheetLink = ({ value, onChange, accent = L.accent }) => (
-  <div style={{ marginTop: 14, padding: "12px 14px", background: L.accentLight, border: `1px solid ${L.accentBorder}`, borderRadius: 12 }}>
-    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, letterSpacing: 1.5, color: accent, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-      🔗 資料表連結
-    </label>
-    <input
-      type="url"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder="貼上 Google Sheets 或其他資料表連結"
-      style={{ ...inputStyle, borderColor: `${accent}33` }}
-      onFocus={e => (e.target.style.borderColor = accent)}
-      onBlur={e => (e.target.style.borderColor = `${accent}33`)}
-    />
-    {value && (
-      <a href={value} target="_blank" rel="noreferrer"
-        style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 8, fontSize: 12, color: accent, textDecoration: "none", fontWeight: 600 }}>
-        ↗ 開啟連結
-      </a>
-    )}
-  </div>
-);
+const SheetLink = ({ value, onChange, accent = L.accent }) => {
+  const isInvalid = value.length > 0 && !value.startsWith("http");
+  return (
+    <div style={{ marginTop: 14, padding: "12px 14px", background: L.accentLight, border: `1px solid ${isInvalid ? L.red + "55" : L.accentBorder}`, borderRadius: 12 }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, letterSpacing: 1.5, color: accent, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
+        🔗 資料表連結
+      </label>
+      <input
+        type="url"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="貼上 Google Sheets 或其他資料表連結"
+        style={{ ...inputStyle, borderColor: isInvalid ? L.red : `${accent}33` }}
+        onFocus={e => (e.target.style.borderColor = isInvalid ? L.red : accent)}
+        onBlur={e => (e.target.style.borderColor = isInvalid ? L.red : `${accent}33`)}
+      />
+      {isInvalid && (
+        <div style={{ marginTop: 6, fontSize: 12, color: L.red }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>
+      )}
+      {!isInvalid && value && (
+        <a href={value} target="_blank" rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 8, fontSize: 12, color: accent, textDecoration: "none", fontWeight: 600 }}>
+          ↗ 開啟連結
+        </a>
+      )}
+    </div>
+  );
+};
 
 // Nav buttons row
 const NavRow = ({ onBack, onNext, nextLabel, nextColor = L.accent }) => (
@@ -407,6 +414,14 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
               const d = daysUntil(proj.info.launchDate);
               const isComplete = pct === 100;
               const isSoon = d !== null && d >= 0 && d <= 30;
+              // Nearest upcoming data deadline
+              const deadlines = [
+                { label: "第一批期限", date: proj.info.batch1Deadline },
+                { label: "第二批期限", date: proj.info.batch2Deadline },
+              ].filter(x => x.date).map(x => ({ ...x, days: daysUntil(x.date) }))
+               .filter(x => x.days !== null && x.days >= 0)
+               .sort((a, b) => a.days - b.days);
+              const nearestDeadline = deadlines[0] ?? null;
               return (
                 <div key={proj.id} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 24, cursor: "pointer", transition: "all 0.18s", boxShadow: "0 1px 4px #0000000a", animation: `fadeUp 0.3s ease ${i * 0.05}s both`, position: "relative" }}
                   onClick={() => onOpen(proj.id)}
@@ -452,7 +467,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                   )}
 
                   {proj.info.launchDate && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: L.bg, borderRadius: 10, padding: "9px 14px", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: L.bg, borderRadius: 10, padding: "9px 14px", marginBottom: nearestDeadline ? 8 : 16 }}>
                       <span>📅</span>
                       <span style={{ fontSize: 13, color: L.textMid, fontWeight: 500 }}>上線日：</span>
                       <span style={{ fontSize: 13, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{proj.info.launchDate}</span>
@@ -461,6 +476,16 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                           {d === 0 ? "今天" : `${d} 天後`}
                         </span>
                       )}
+                    </div>
+                  )}
+                  {nearestDeadline && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: nearestDeadline.days <= 7 ? "#fef2f2" : L.greenLight, border: `1px solid ${nearestDeadline.days <= 7 ? L.red + "44" : L.green + "44"}`, borderRadius: 10, padding: "9px 14px", marginBottom: 16 }}>
+                      <span>🗓️</span>
+                      <span style={{ fontSize: 13, color: nearestDeadline.days <= 7 ? L.red : L.green, fontWeight: 500 }}>{nearestDeadline.label}：</span>
+                      <span style={{ fontSize: 13, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{nearestDeadline.date}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 12, color: nearestDeadline.days <= 7 ? L.red : L.green, fontWeight: 600 }}>
+                        {nearestDeadline.days === 0 ? "今天到期" : `${nearestDeadline.days} 天後`}
+                      </span>
                     </div>
                   )}
 
@@ -500,8 +525,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
 // ─── ProjectDetail ────────────────────────────────────────────
 // Uses LOCAL state for the form; syncs to parent only on blur / toggle,
 // so typing a character never causes a full remount of input elements.
-const ProjectDetail = ({ project, onUpdate, onBack }) => {
-  const [step, setStep] = useState(0);
+const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
+  const [step, setStep] = useState(isNew ? 0 : 3);
 
   // Local copies – avoids propagating every keystroke up to App
   const [info, setInfoLocal] = useState(project.info);
@@ -512,10 +537,18 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
   const [faqNotes, setFaqNotes] = useState(project.faqNotes || {});
   const [batch2Notes, setBatch2Notes] = useState(project.batch2Notes || {});
   const [sheetLinks, setSheetLinks] = useState(project.sheetLinks);
+  const [saveStatus, setSaveStatus] = useState("idle"); // idle | saving | saved
+  const saveStatusTimer = useRef(null);
 
   // Sync local → parent whenever any piece changes
   useEffect(() => {
+    setSaveStatus("saving");
+    if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
     onUpdate({ ...project, info, basicChecked, faqChecked, batch2Checked, basicNotes, faqNotes, batch2Notes, sheetLinks });
+    saveStatusTimer.current = setTimeout(() => {
+      setSaveStatus("saved");
+      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
+    }, 900);
   }, [info, basicChecked, faqChecked, batch2Checked, basicNotes, faqNotes, batch2Notes, sheetLinks]); // eslint-disable-line
 
   const setInfo = useCallback((fn) => setInfoLocal(p => fn(p)), []);
@@ -546,7 +579,9 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
         </div>
         <div style={{ fontSize: 13, color: L.textMid, background: L.bg, border: `1px solid ${L.border}`, borderRadius: 8, padding: "5px 14px", fontFamily: "'DM Mono',monospace", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: totalPct === 100 ? L.green : L.accent }}>{totalPct}%</span> 完成
-          <span style={{ fontSize: 11, color: L.textLight, fontWeight: 400 }}>· 自動儲存</span>
+          <span style={{ fontSize: 11, fontWeight: 400, color: saveStatus === "saving" ? L.amber : saveStatus === "saved" ? L.green : L.textLight, transition: "color 0.3s", minWidth: 60 }}>
+            {saveStatus === "saving" ? "· 儲存中…" : saveStatus === "saved" ? "· 已儲存 ✓" : "· 自動儲存"}
+          </span>
         </div>
       </div>
 
@@ -635,29 +670,28 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
               )}
 
               <div style={{ marginTop: 24 }}>
-                <SectionLabel title="上線日期" icon="📅" />
-                <input type="date" value={info.launchDate}
-                  onChange={e => setInfo(p => ({ ...p, launchDate: e.target.value }))}
-                  style={{ background: "#fff", border: `1.5px solid ${L.border}`, borderRadius: 10, color: L.text, padding: "10px 14px", fontSize: 14, outline: "none", fontFamily: "inherit", cursor: "pointer" }}
-                  onFocus={e => (e.target.style.borderColor = L.accent)}
-                  onBlur={e => (e.target.style.borderColor = L.border)} />
-              </div>
-
-              <div style={{ marginTop: 24 }}>
-                <SectionLabel title="資料收集期限" icon="🗓️" accent={L.green} />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <SectionLabel title="日期設定" icon="📅" />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.green, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>第一批期限</label>
-                    <div style={{ fontSize: 11, color: L.textLight, marginBottom: 8 }}>基礎設定資料 ＋ FAQ 資料</div>
-                    <input type="date" value={info.batch1Deadline}
-                      onChange={e => setInfo(p => ({ ...p, batch1Deadline: e.target.value }))}
-                      style={{ ...inputStyle, borderColor: `${L.green}44`, background: L.greenLight }}
-                      onFocus={e => (e.target.style.borderColor = L.green)}
-                      onBlur={e => (e.target.style.borderColor = `${L.green}44`)} />
+                    <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.textMid, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>上線日期</label>
+                    <input type="date" value={info.launchDate}
+                      onChange={e => setInfo(p => ({ ...p, launchDate: e.target.value }))}
+                      style={{ ...inputStyle, borderColor: L.border }}
+                      onFocus={e => (e.target.style.borderColor = L.accent)}
+                      onBlur={e => (e.target.style.borderColor = L.border)} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.purple, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>第二批期限</label>
-                    <div style={{ fontSize: 11, color: L.textLight, marginBottom: 8 }}>Showcase ＋ 廣告 ＋ Pop-up QR</div>
+                    <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.green, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>第一批資料期限</label>
+                    <div style={{ fontSize: 10, color: L.textLight, marginBottom: 6 }}>基礎設定 ＋ FAQ</div>
+                    <input type="date" value={info.batch1Deadline}
+                      onChange={e => setInfo(p => ({ ...p, batch1Deadline: e.target.value }))}
+                      style={{ ...inputStyle, borderColor: info.launchDate && info.batch1Deadline && info.batch1Deadline > info.launchDate ? L.red : `${L.green}44`, background: L.greenLight }}
+                      onFocus={e => (e.target.style.borderColor = L.green)}
+                      onBlur={e => (e.target.style.borderColor = info.launchDate && info.batch1Deadline && info.batch1Deadline > info.launchDate ? L.red : `${L.green}44`)} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.purple, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>第二批資料期限</label>
+                    <div style={{ fontSize: 10, color: L.textLight, marginBottom: 6 }}>Showcase ＋ 廣告 ＋ QR</div>
                     <input type="date" value={info.batch2Deadline}
                       onChange={e => setInfo(p => ({ ...p, batch2Deadline: e.target.value }))}
                       style={{ ...inputStyle, borderColor: `${L.purple}44`, background: L.purpleLight }}
@@ -665,6 +699,11 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
                       onBlur={e => (e.target.style.borderColor = `${L.purple}44`)} />
                   </div>
                 </div>
+                {info.launchDate && info.batch1Deadline && info.batch1Deadline > info.launchDate && (
+                  <div style={{ marginTop: 10, padding: "9px 14px", background: "#fef2f2", border: `1px solid ${L.red}44`, borderRadius: 10, fontSize: 12, color: L.red, display: "flex", alignItems: "center", gap: 7 }}>
+                    ⚠️ 第一批資料期限（{info.batch1Deadline}）晚於上線日期（{info.launchDate}），請確認是否正確。
+                  </div>
+                )}
               </div>
 
               <div style={{ marginTop: 24 }}>
@@ -768,7 +807,14 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
           <div style={{ animation: "fadeIn 0.25s ease" }}>
             <div style={{ marginBottom: 24 }}>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 5px" }}>專案總覽</h2>
-              <p style={{ fontSize: 13, color: L.textMid, margin: 0 }}>所有資料的完成度一覽</p>
+              <p style={{ fontSize: 13, color: L.textMid, margin: 0 }}>
+                所有資料的完成度一覽
+                {project.updatedAt && (
+                  <span style={{ marginLeft: 12, color: L.textLight }}>
+                    · 最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </p>
             </div>
 
             <Card>
@@ -836,9 +882,9 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
                   <div style={{ marginTop: 14, padding: 14, background: L.purpleLight, borderRadius: 10, border: `1px solid ${L.purple}33` }}>
                     <div style={{ fontSize: 11, color: L.purple, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, fontWeight: 700 }}>串接功能備註</div>
                     {info.integrations.filter(k => info.integrationNotes[k]).map(k => (
-                      <div key={k} style={{ marginBottom: 7, fontSize: 13 }}>
-                        <span style={{ fontWeight: 700, color: L.purple }}>{k}：</span>
-                        <span style={{ color: L.textMid }}>{info.integrationNotes[k]}</span>
+                      <div key={k} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${L.purple}22` }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: L.purple, marginBottom: 4, letterSpacing: 0.5 }}>{k}</div>
+                        <div style={{ fontSize: 13, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{info.integrationNotes[k]}</div>
                       </div>
                     ))}
                   </div>
@@ -848,20 +894,32 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               {[
-                { label: "基礎設定資料表", items: BASIC_SETUP_ITEMS, checked: basicChecked, color: L.green, linkKey: "basic" },
-                { label: "FAQ 資料表", items: FAQ_ITEMS, checked: faqChecked, color: L.amber, linkKey: "faq" },
-              ].map(({ label, items, checked, color, linkKey }) => (
+                { label: "基礎設定資料表", items: BASIC_SETUP_ITEMS, checked: basicChecked, notes: basicNotes, color: L.green, linkKey: "basic" },
+                { label: "FAQ 資料表", items: FAQ_ITEMS, checked: faqChecked, notes: faqNotes, color: L.amber, linkKey: "faq" },
+              ].map(({ label, items, checked, notes, color, linkKey }) => (
                 <div key={label} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
                   <div style={{ fontSize: 11, letterSpacing: 1.5, color, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>{label}</div>
-                  {items.map(item => (
-                    <div key={item} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 0", borderBottom: `1px solid ${L.bg}` }}>
-                      <span style={{ fontSize: 13, color: checked[item] ? color : L.border, flexShrink: 0, marginTop: 1 }}>{checked[item] ? "✓" : "○"}</span>
-                      <span style={{ fontSize: 12, color: checked[item] ? L.text : L.textLight, lineHeight: 1.5 }}>{item}</span>
-                    </div>
-                  ))}
+                  {items.map(item => {
+                    const hasNote = notes[item] && notes[item].trim();
+                    return (
+                      <div key={item} style={{ borderBottom: `1px solid ${L.bg}` }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0" }}>
+                          <span style={{ fontSize: 13, color: checked[item] ? color : L.border, flexShrink: 0, marginTop: 1 }}>{checked[item] ? "✓" : "○"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 12, color: checked[item] ? L.text : L.textLight, lineHeight: 1.5 }}>{item}</span>
+                            {hasNote && (
+                              <div style={{ marginTop: 5, padding: "6px 10px", background: `${color}08`, border: `1px solid ${color}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                                {notes[item]}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                   {sheetLinks[linkKey] && (
                     <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 12, fontSize: 12, color, textDecoration: "none", fontWeight: 600, background: `${color}11`, border: `1px solid ${color}33`, borderRadius: 7, padding: "5px 12px" }}>
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color, textDecoration: "none", fontWeight: 600, background: `${color}11`, border: `1px solid ${color}33`, borderRadius: 7, padding: "5px 12px" }}>
                       🔗 開啟資料表
                     </a>
                   )}
@@ -871,21 +929,29 @@ const ProjectDetail = ({ project, onUpdate, onBack }) => {
 
             <div style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, marginBottom: 24, boxShadow: "0 1px 4px #0000000a" }}>
               <div style={{ fontSize: 11, letterSpacing: 1.5, color: L.purple, textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>第二批資料</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {BATCH2_ITEMS.map((item, idx) => {
                   const lk = BATCH2_LINK_KEYS[idx];
                   const done = !!batch2Checked[item];
+                  const hasNote = batch2Notes[item] && batch2Notes[item].trim();
                   return (
                     <div key={item} style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: sheetLinks[lk] ? 8 : 0 }}>
-                        <span style={{ fontSize: 13, color: done ? L.purple : L.border }}>{done ? "✓" : "○"}</span>
-                        <span style={{ fontSize: 12, color: done ? L.text : L.textLight, lineHeight: 1.5 }}>{item}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[lk]) ? 8 : 0 }}>
+                        <span style={{ fontSize: 13, color: done ? L.purple : L.border, flexShrink: 0 }}>{done ? "✓" : "○"}</span>
+                        <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{item}</span>
                       </div>
+                      {hasNote && (
+                        <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                          {batch2Notes[item]}
+                        </div>
+                      )}
                       {sheetLinks[lk] && (
-                        <a href={sheetLinks[lk]} target="_blank" rel="noreferrer"
-                          style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>
-                          🔗 連結
-                        </a>
+                        <div style={{ marginLeft: 22 }}>
+                          <a href={sheetLinks[lk]} target="_blank" rel="noreferrer"
+                            style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>
+                            🔗 連結
+                          </a>
+                        </div>
                       )}
                     </div>
                   );
@@ -906,6 +972,7 @@ export default function App() {
   const [view, setView] = useState("home");
   const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Debounce timer ref for auto-save
@@ -938,6 +1005,7 @@ export default function App() {
     // Optimistic update
     setProjects(prev => [proj, ...prev]);
     setActiveId(proj.id);
+    setIsNew(true);
     setView("detail");
     try {
       const { project, progress } = uiToDb(proj);
@@ -979,7 +1047,7 @@ export default function App() {
     }
   }, []);
 
-  const handleOpen = (id) => { setActiveId(id); setView("detail"); };
+  const handleOpen = (id) => { setActiveId(id); setIsNew(false); setView("detail"); };
   const activeProject = projects.find(p => p.id === activeId);
 
   // ── Loading screen ──
@@ -1002,7 +1070,7 @@ export default function App() {
         </div>
       )}
       {view === "detail" && activeProject
-        ? <ProjectDetail project={activeProject} onUpdate={handleUpdate} onBack={() => setView("home")} />
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={() => setView("home")} />
         : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} />
       }
     </>
