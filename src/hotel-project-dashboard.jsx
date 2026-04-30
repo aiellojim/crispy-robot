@@ -25,6 +25,7 @@ const dbToUi = (row, prog) => ({
     batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "",
     notes: row.notes ?? "",
+    pic: row.pic ?? "",
   },
   updatedAt: prog?.updated_at ?? row.updated_at ?? null,
   basicChecked: prog?.basic_checked ?? {},
@@ -54,6 +55,7 @@ const uiToDb = (proj) => ({
     batch1_deadline: proj.info.batch1Deadline || null,
     batch2_deadline: proj.info.batch2Deadline || null,
     notes: proj.info.notes,
+    pic: proj.info.pic,
   },
   progress: {
     project_id: proj.id,
@@ -129,7 +131,7 @@ const makeProject = () => ({
     name: "", hotelId: "", address: "", region: "", regionOther: "",
     products: [], avaUnits: "", avaSpare: "",
     integrations: [], integrationNotes: {},
-    launchDate: "", batch1Deadline: "", batch2Deadline: "", notes: "",
+    launchDate: "", batch1Deadline: "", batch2Deadline: "", notes: "", pic: "",
   },
   basicChecked: {}, faqChecked: {}, batch2Checked: {},
   basicNotes: {}, faqNotes: {}, batch2Notes: {},
@@ -329,7 +331,8 @@ const BatchBadge = ({ batch, color, bg, deadline }) => (
 const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("全部");
-  const [sortBy, setSortBy] = useState("created_desc"); // created_desc | created_asc | launch_asc | launch_desc
+  const [sortBy, setSortBy] = useState("created_desc");
+  const [picFilter, setPicFilter] = useState("全部");
 
   const regions = useMemo(() => {
     const set = new Set(projects.map(p => {
@@ -339,11 +342,17 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
     return ["全部", ...Array.from(set)];
   }, [projects]);
 
+  const picList = useMemo(() => {
+    const set = new Set(projects.map(p => p.info.pic).filter(Boolean));
+    return ["全部", ...Array.from(set).sort()];
+  }, [projects]);
+
   const filtered = useMemo(() => {
     const list = projects.filter(p => {
       const regionDisplay = p.info.region === "其他" ? (p.info.regionOther || "其他") : p.info.region;
       return p.info.name.toLowerCase().includes(search.toLowerCase())
-        && (regionFilter === "全部" || regionDisplay === regionFilter);
+        && (regionFilter === "全部" || regionDisplay === regionFilter)
+        && (picFilter === "全部" || p.info.pic === picFilter);
     });
     return [...list].sort((a, b) => {
       if (sortBy === "created_desc") return b.id > a.id ? 1 : -1;
@@ -431,6 +440,17 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
               </select>
             </div>
           </div>
+          {/* PIC filter row — only shown when there are PICs to filter */}
+          {picList.length > 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12, color: L.textLight, whiteSpace: "nowrap" }}>👤 PIC</span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {picList.map(p => (
+                  <button key={p} onClick={() => setPicFilter(p)} style={{ padding: "5px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1.5px solid ${picFilter === p ? L.green : L.border}`, background: picFilter === p ? L.green : "#fff", color: picFilter === p ? "#fff" : L.textMid, transition: "all 0.15s", fontFamily: "inherit" }}>{p}</button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Grid */}
@@ -472,6 +492,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                         {regionDisplay && <span style={{ fontSize: 11, background: L.accentLight, color: L.accent, border: `1px solid ${L.accentBorder}`, borderRadius: 6, padding: "2px 10px", fontWeight: 600 }}>{regionDisplay}</span>}
                       </div>
                       {proj.info.address && <div style={{ fontSize: 13, color: L.textLight }}>📍 {proj.info.address}</div>}
+                      {proj.info.pic && <div style={{ fontSize: 12, color: L.textMid, marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}><span style={{ background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 600 }}>👤 {proj.info.pic}</span></div>}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginLeft: 8 }}>
                       {isComplete && <span style={{ fontSize: 11, background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "3px 10px", fontWeight: 700 }}>✓ 完成</span>}
@@ -561,7 +582,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
 // ─── ProjectDetail ────────────────────────────────────────────
 // Uses LOCAL state for the form; syncs to parent only on blur / toggle,
 // so typing a character never causes a full remount of input elements.
-const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
+const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const [step, setStep] = useState(isNew ? 0 : 3);
 
   // Local copies – avoids propagating every keystroke up to App
@@ -648,6 +669,24 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
                 <FInput label="飯店名稱" value={info.name} onChange={v => setInfo(p => ({ ...p, name: v }))} placeholder="例：台北大飯店" />
                 <FInput label="Hotel ID" value={info.hotelId} onChange={v => setInfo(p => ({ ...p, hotelId: v }))} placeholder="例：TPE-001" />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.textMid, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>負責人（PIC）</label>
+                <datalist id="pic-list">
+                  {allPics.map(p => <option key={p} value={p} />)}
+                </datalist>
+                <input
+                  list="pic-list"
+                  value={info.pic}
+                  onChange={e => setInfo(p => ({ ...p, pic: e.target.value }))}
+                  placeholder="輸入負責人姓名，若不在清單內將自動新增"
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = L.green)}
+                  onBlur={e => (e.target.style.borderColor = L.border)}
+                />
+                {info.pic && !allPics.includes(info.pic) && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: L.green }}>✦ 將新增「{info.pic}」至 PIC 清單</div>
+                )}
               </div>
               <FInput label="地址" value={info.address} onChange={v => setInfo(p => ({ ...p, address: v }))} placeholder="例：台北市中山區南京東路一段" />
               <div style={{ marginBottom: 18 }}>
@@ -902,6 +941,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack }) => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 28px" }}>
                   {[
                     ["飯店名稱", info.name], ["Hotel ID", info.hotelId || "—"],
+                    ["負責人（PIC）", info.pic || "—"],
                     ["地址", info.address],
                     ["所在國家", info.region === "其他" ? (info.regionOther || "其他") : info.region],
                     ["上線日期", info.launchDate || "—"],
@@ -1101,6 +1141,7 @@ export default function App() {
 
   const handleOpen = (id) => { setActiveId(id); setIsNew(false); setView("detail"); };
   const activeProject = projects.find(p => p.id === activeId);
+  const allPics = useMemo(() => [...new Set(projects.map(p => p.info.pic).filter(Boolean))].sort(), [projects]);
 
   // ── Loading screen ──
   if (loading) return (
@@ -1122,7 +1163,7 @@ export default function App() {
         </div>
       )}
       {view === "detail" && activeProject
-        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={() => setView("home")} />
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={() => setView("home")} allPics={allPics} />
         : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} />
       }
     </>
