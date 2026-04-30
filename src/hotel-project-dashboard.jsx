@@ -329,6 +329,7 @@ const BatchBadge = ({ batch, color, bg, deadline }) => (
 const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState("全部");
+  const [sortBy, setSortBy] = useState("created_desc"); // created_desc | created_asc | launch_asc | launch_desc
 
   const regions = useMemo(() => {
     const set = new Set(projects.map(p => {
@@ -338,11 +339,28 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
     return ["全部", ...Array.from(set)];
   }, [projects]);
 
-  const filtered = useMemo(() => projects.filter(p => {
-    const regionDisplay = p.info.region === "其他" ? (p.info.regionOther || "其他") : p.info.region;
-    return p.info.name.toLowerCase().includes(search.toLowerCase())
-      && (regionFilter === "全部" || regionDisplay === regionFilter);
-  }), [projects, search, regionFilter]);
+  const filtered = useMemo(() => {
+    const list = projects.filter(p => {
+      const regionDisplay = p.info.region === "其他" ? (p.info.regionOther || "其他") : p.info.region;
+      return p.info.name.toLowerCase().includes(search.toLowerCase())
+        && (regionFilter === "全部" || regionDisplay === regionFilter);
+    });
+    return [...list].sort((a, b) => {
+      if (sortBy === "created_desc") return b.id > a.id ? 1 : -1;
+      if (sortBy === "created_asc")  return a.id > b.id ? 1 : -1;
+      if (sortBy === "launch_asc") {
+        if (!a.info.launchDate) return 1;
+        if (!b.info.launchDate) return -1;
+        return a.info.launchDate.localeCompare(b.info.launchDate);
+      }
+      if (sortBy === "launch_desc") {
+        if (!a.info.launchDate) return 1;
+        if (!b.info.launchDate) return -1;
+        return b.info.launchDate.localeCompare(a.info.launchDate);
+      }
+      return 0;
+    });
+  }, [projects, search, regionFilter, sortBy]);
 
   const avgPct = projects.length === 0 ? 0 : Math.round(projects.reduce((a, p) => a + calcPct(p), 0) / projects.length);
   const soonCount = projects.filter(p => { const d = daysUntil(p.info.launchDate); return d !== null && d >= 0 && d <= 30; }).length;
@@ -385,7 +403,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
           ))}
         </div>
 
-        {/* List header + search + filter */}
+        {/* List header + search + filter + sort */}
         <div style={{ marginBottom: 20 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: L.text, margin: "0 0 18px" }}>專案列表</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -400,6 +418,17 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
               {regions.map(r => (
                 <button key={r} onClick={() => setRegionFilter(r)} style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1.5px solid ${regionFilter === r ? L.accent : L.border}`, background: regionFilter === r ? L.accent : "#fff", color: regionFilter === r ? "#fff" : L.textMid, transition: "all 0.15s", fontFamily: "inherit" }}>{r}</button>
               ))}
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: L.textLight, whiteSpace: "nowrap" }}>排序方式</span>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ ...inputStyle, width: "auto", padding: "7px 32px 7px 12px", fontSize: 13, borderRadius: 8, cursor: "pointer", appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+                onFocus={e => (e.target.style.borderColor = L.accent)}
+                onBlur={e => (e.target.style.borderColor = L.border)}>
+                <option value="created_desc">新增時間（最新）</option>
+                <option value="created_asc">新增時間（最舊）</option>
+                <option value="launch_asc">上線日期（最近）</option>
+                <option value="launch_desc">上線日期（最遠）</option>
+              </select>
             </div>
           </div>
         </div>
