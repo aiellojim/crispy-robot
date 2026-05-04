@@ -84,11 +84,14 @@ const FAQ_ITEMS = [
   "飯店基本資訊", "飯店內設施", "飯店提供之服務", "入住規則", "備品清單",
   FAQ_TV_ITEM, "特別推薦美食景點",
 ];
+const BATCH2_GW_ITEM = "GuestWeb 內容建置";
 const BATCH2_ITEMS = ["機台 Showcase 設定", "廣告設定", "Pop-up QR code 內容設定"];
 const BATCH2_LINK_KEYS = ["showcase", "ad", "popupQR"];
-const calcTotalItems = (integrations) => {
+const BATCH2_GW_LINK_KEY = "guestWeb";
+const calcTotalItems = (integrations, products) => {
   const faqCount = integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1;
-  return BASIC_SETUP_ITEMS.length + faqCount + BATCH2_ITEMS.length;
+  const gwCount = products.includes("GW") ? 1 : 0;
+  return BASIC_SETUP_ITEMS.length + faqCount + BATCH2_ITEMS.length + gwCount;
 };
 const PRODUCT_COLORS = { AVA: "#1e6fb5", AVT: "#0891b2", ACA: "#0e7a5a", TMSP: "#7c3aed", GW: "#b45309", KMS: "#be185d" };
 
@@ -112,12 +115,14 @@ const inputStyle = {
 // ─── Helpers ──────────────────────────────────────────────────
 const calcPct = (proj) => {
   const hasIptv = proj.info.integrations.includes("IPTV");
+  const hasGw = proj.info.products.includes("GW");
   const faqCheckedCount = Object.entries(proj.faqChecked)
     .filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
+  const batch2CheckedCount = Object.values(proj.batch2Checked).filter(Boolean).length
+    + (hasGw && proj.batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
   const done = Object.values(proj.basicChecked).filter(Boolean).length
-    + faqCheckedCount
-    + Object.values(proj.batch2Checked).filter(Boolean).length;
-  return Math.round((done / calcTotalItems(proj.info.integrations)) * 100);
+    + faqCheckedCount + batch2CheckedCount;
+  return Math.round((done / calcTotalItems(proj.info.integrations, proj.info.products)) * 100);
 };
 
 const daysUntil = (dateStr) => {
@@ -135,7 +140,7 @@ const makeProject = () => ({
   },
   basicChecked: {}, faqChecked: {}, batch2Checked: {},
   basicNotes: {}, faqNotes: {}, batch2Notes: {},
-  sheetLinks: { basic: "", faq: "", showcase: "", ad: "", popupQR: "" },
+  sheetLinks: { basic: "", faq: "", showcase: "", ad: "", popupQR: "", guestWeb: "" },
 });
 
 // ─── Module-level UI components (never redefined on render) ───
@@ -614,11 +619,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const toggleCheck = useCallback((setter, key) => setter(p => ({ ...p, [key]: !p[key] })), []);
 
   const hasIptv = info.integrations.includes("IPTV");
+  const hasGw = info.products.includes("GW");
   const activeFaqItems = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
   const basicCount = Object.values(basicChecked).filter(Boolean).length;
   const faqCount = Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
   const batch2Count = Object.values(batch2Checked).filter(Boolean).length;
-  const totalPct = Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations)) * 100);
+  const totalPct = Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations, info.products)) * 100);
   const infoComplete = info.name && info.address && info.region && info.products.length > 0 && info.launchDate;
 
   const STEPS = ["專案資訊", "第一批資料", "第二批資料", "總覽"];
@@ -864,7 +870,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
             </div>
 
             <Card>
-              <SectionHeader title="第二批資料完成情況" count={batch2Count} total={BATCH2_ITEMS.length} color={L.purple} />
+              <SectionHeader title="第二批資料完成情況" count={batch2Count} total={BATCH2_ITEMS.length + (hasGw ? 1 : 0)} color={L.purple} />
               {BATCH2_ITEMS.map((item, idx) => (
                 <div key={item} style={{ marginBottom: 16 }}>
                   <CheckRow label={item} checked={!!batch2Checked[item]} onChange={() => toggleCheck(setBatch2Checked, item)} color={L.purple} />
@@ -880,6 +886,27 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                   <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_LINK_KEYS[idx]]: v }))} accent={L.purple} />
                 </div>
               ))}
+              {hasGw ? (
+                <div style={{ marginBottom: 16 }}>
+                  <CheckRow label={`${BATCH2_GW_ITEM}`} checked={!!batch2Checked[BATCH2_GW_ITEM]} onChange={() => toggleCheck(setBatch2Checked, BATCH2_GW_ITEM)} color={L.purple} />
+                  <textarea
+                    value={batch2Notes[BATCH2_GW_ITEM] || ""}
+                    onChange={e => setBatch2Notes(p => ({ ...p, [BATCH2_GW_ITEM]: e.target.value }))}
+                    placeholder="補充說明進行狀況或缺少項目…"
+                    rows={2}
+                    style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                    onFocus={e => (e.target.style.borderColor = L.purple)}
+                    onBlur={e => (e.target.style.borderColor = L.border)}
+                  />
+                  <SheetLink value={sheetLinks[BATCH2_GW_LINK_KEY]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_GW_LINK_KEY]: v }))} accent={L.purple} />
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.6 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 GW，不需填寫</span>
+                </div>
+              )}
             </Card>
 
             <NavRow onBack={() => setStep(1)} onNext={() => setStep(3)} nextLabel="查看總覽 →" nextColor={L.purple} />
@@ -960,7 +987,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                 {info.notes && (
                   <div style={{ marginTop: 14, padding: 14, background: L.bg, borderRadius: 10, border: `1px solid ${L.border}` }}>
                     <div style={{ fontSize: 11, color: L.textLight, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>其餘功能需求或備注</div>
-                    <div style={{ fontSize: 13, color: L.textMid, lineHeight: 1.7 }}>{info.notes}</div>
+                    <div style={{ fontSize: 13, color: L.textMid, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{info.notes}</div>
                   </div>
                 )}
                 {info.integrations.length > 0 && info.integrations.some(k => info.integrationNotes[k]) && (
@@ -1048,6 +1075,39 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                     </div>
                   );
                 })}
+                {/* GW item — only shown when GW is selected */}
+                {hasGw ? (() => {
+                  const done = !!batch2Checked[BATCH2_GW_ITEM];
+                  const hasNote = batch2Notes[BATCH2_GW_ITEM] && batch2Notes[BATCH2_GW_ITEM].trim();
+                  return (
+                    <div style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[BATCH2_GW_LINK_KEY]) ? 8 : 0 }}>
+                        <span style={{ fontSize: 13, color: done ? L.purple : L.border, flexShrink: 0 }}>{done ? "✓" : "○"}</span>
+                        <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{BATCH2_GW_ITEM}</span>
+                        <span style={{ marginLeft: "auto", fontSize: 10, color: "#b45309", background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 5, padding: "2px 7px" }}>GW</span>
+                      </div>
+                      {hasNote && (
+                        <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                          {batch2Notes[BATCH2_GW_ITEM]}
+                        </div>
+                      )}
+                      {sheetLinks[BATCH2_GW_LINK_KEY] && (
+                        <div style={{ marginLeft: 22 }}>
+                          <a href={sheetLinks[BATCH2_GW_LINK_KEY]} target="_blank" rel="noreferrer"
+                            style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>
+                            🔗 連結
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.5 }}>
+                    <span style={{ fontSize: 13, color: L.border }}>—</span>
+                    <span style={{ fontSize: 12, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 10, color: L.textLight, background: L.bg, borderRadius: 5, padding: "2px 7px", whiteSpace: "nowrap" }}>未選擇 GW</span>
+                  </div>
+                )}
               </div>
             </div>
 
