@@ -34,7 +34,14 @@ const dbToUi = (row, prog) => ({
   faqNotes: prog?.faq_notes ?? {},
   batch2Checked: prog?.batch2_checked ?? {},
   batch2Notes: prog?.batch2_notes ?? {},
-  sheetLinks: prog?.sheet_links ?? { basic: "", faq: "", showcase: "", ad: "", popupQR: "" },
+  sheetLinks: {
+    basic: prog?.sheet_links?.basic ?? "",
+    faq: prog?.sheet_links?.faq ?? "",
+    showcase: prog?.sheet_links?.showcase ?? "",
+    ad: prog?.sheet_links?.ad ?? "",
+    popupQR: prog?.sheet_links?.popupQR ?? "",
+    guestWeb: prog?.sheet_links?.guestWeb ?? "",
+  },
 });
 
 // Convert UI project → DB rows for upsert
@@ -118,7 +125,7 @@ const calcPct = (proj) => {
   const hasGw = proj.info.products.includes("GW");
   const faqCheckedCount = Object.entries(proj.faqChecked)
     .filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
-  const batch2CheckedCount = Object.values(proj.batch2Checked).filter(Boolean).length
+  const batch2CheckedCount = BATCH2_ITEMS.filter(item => proj.batch2Checked[item]).length
     + (hasGw && proj.batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
   const done = Object.values(proj.basicChecked).filter(Boolean).length
     + faqCheckedCount + batch2CheckedCount;
@@ -623,7 +630,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const activeFaqItems = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
   const basicCount = Object.values(basicChecked).filter(Boolean).length;
   const faqCount = Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
-  const batch2Count = Object.values(batch2Checked).filter(Boolean).length;
+  const batch2Count = BATCH2_ITEMS.filter(item => batch2Checked[item]).length
+    + (hasGw && batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
   const totalPct = Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations, info.products)) * 100);
   const infoComplete = info.name && info.address && info.region && info.products.length > 0 && info.launchDate;
 
