@@ -26,7 +26,6 @@ const dbToUi = (row, prog) => ({
     batch2Deadline: row.batch2_deadline ?? "",
     notes: row.notes ?? "",
     pic: row.pic ?? "",
-    jiraEpic: row.jira_epic ?? "",
   },
   updatedAt: prog?.updated_at ?? row.updated_at ?? null,
   basicChecked: prog?.basic_checked ?? {},
@@ -64,7 +63,6 @@ const uiToDb = (proj) => ({
     batch2_deadline: proj.info.batch2Deadline || null,
     notes: proj.info.notes,
     pic: proj.info.pic,
-    jira_epic: proj.info.jiraEpic,
   },
   progress: {
     project_id: proj.id,
@@ -145,7 +143,7 @@ const makeProject = () => ({
     name: "", hotelId: "", address: "", region: "", regionOther: "",
     products: [], avaUnits: "", avaSpare: "",
     integrations: [], integrationNotes: {},
-    launchDate: "", batch1Deadline: "", batch2Deadline: "", notes: "", pic: "", jiraEpic: "",
+    launchDate: "", batch1Deadline: "", batch2Deadline: "", notes: "", pic: "",
   },
   basicChecked: {}, faqChecked: {}, batch2Checked: {},
   basicNotes: {}, faqNotes: {}, batch2Notes: {},
@@ -236,38 +234,8 @@ const Card = ({ children, style = {} }) => (
   </div>
 );
 
-// Rich text renderer — supports [text](url) links and line breaks
-const RichText = ({ text, style = {} }) => {
-  if (!text) return null;
-  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-  while ((match = linkPattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: "text", value: text.slice(lastIndex, match.index) });
-    }
-    parts.push({ type: "link", label: match[1], href: match[2] });
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push({ type: "text", value: text.slice(lastIndex) });
-  }
-  return (
-    <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, ...style }}>
-      {parts.map((p, i) =>
-        p.type === "link" ? (
-          <a key={i} href={p.href} target="_blank" rel="noreferrer"
-            style={{ color: L.accent, textDecoration: "underline", fontWeight: 500 }}>
-            {p.label}
-          </a>
-        ) : (
-          <span key={i}>{p.value}</span>
-        )
-      )}
-    </div>
-  );
-};
+// Section label
+const SectionLabel = ({ title, icon, accent = L.accent }) => (
   <div style={{ fontSize: 11, letterSpacing: 2, color: accent, textTransform: "uppercase", marginBottom: 14, display: "flex", alignItems: "center", gap: 7, fontWeight: 700 }}>
     <span>{icon}</span>{title}
   </div>
@@ -523,99 +491,93 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                .sort((a, b) => a.days - b.days);
               const nearestDeadline = deadlines[0] ?? null;
               return (
-                <div key={proj.id} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 22, cursor: "pointer", transition: "all 0.18s", boxShadow: "0 1px 4px #0000000a", animation: `fadeUp 0.3s ease ${i * 0.05}s both` }}
+                <div key={proj.id} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 24, cursor: "pointer", transition: "all 0.18s", boxShadow: "0 1px 4px #0000000a", animation: `fadeUp 0.3s ease ${i * 0.05}s both`, position: "relative" }}
                   onClick={() => onOpen(proj.id)}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px #1d4ed820"; e.currentTarget.style.borderColor = L.accentBorder; e.currentTarget.style.transform = "translateY(-2px)"; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px #0000000a"; e.currentTarget.style.borderColor = L.border; e.currentTarget.style.transform = "none"; }}>
 
-                  {/* Row 1: Name + badges + delete */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: L.text }}>{proj.info.name || "（未命名）"}</span>
-                        {proj.info.hotelId && <span style={{ fontSize: 11, color: L.textLight, fontFamily: "'DM Mono',monospace", background: L.bg, padding: "2px 7px", borderRadius: 5 }}>#{proj.info.hotelId}</span>}
-                        {regionDisplay && <span style={{ fontSize: 11, background: L.accentLight, color: L.accent, border: `1px solid ${L.accentBorder}`, borderRadius: 6, padding: "2px 9px", fontWeight: 600 }}>{regionDisplay}</span>}
-                        {isComplete && <span style={{ fontSize: 11, background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 700 }}>✓ 完成</span>}
-                        {!isComplete && isSoon && <span style={{ fontSize: 11, background: L.amberLight, color: L.amber, border: `1px solid ${L.amber}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 700 }}>🚀 即將上線</span>}
+                        {proj.info.hotelId && <span style={{ fontSize: 11, color: L.textLight, fontFamily: "'DM Mono',monospace", background: L.bg, padding: "2px 8px", borderRadius: 5 }}>#{proj.info.hotelId}</span>}
+                        {regionDisplay && <span style={{ fontSize: 11, background: L.accentLight, color: L.accent, border: `1px solid ${L.accentBorder}`, borderRadius: 6, padding: "2px 10px", fontWeight: 600 }}>{regionDisplay}</span>}
                       </div>
-                      {proj.info.address && <div style={{ fontSize: 12, color: L.textLight, marginTop: 2 }}>📍 {proj.info.address}</div>}
+                      {proj.info.address && <div style={{ fontSize: 13, color: L.textLight }}>📍 {proj.info.address}</div>}
+                      {proj.info.pic && <div style={{ fontSize: 12, color: L.textMid, marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}><span style={{ background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 600 }}>👤 {proj.info.pic}</span></div>}
                     </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); if (window.confirm(`確定要移除「${proj.info.name || "此專案"}」嗎？`)) onDelete(proj.id); }}
-                      style={{ background: "none", border: `1px solid ${L.border}`, borderRadius: 7, padding: "4px 9px", cursor: "pointer", fontSize: 13, color: L.textLight, lineHeight: 1, transition: "all 0.15s", fontFamily: "inherit", flexShrink: 0, marginLeft: 8 }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = L.red; e.currentTarget.style.color = L.red; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = L.border; e.currentTarget.style.color = L.textLight; }}
-                      title="移除專案"
-                    >🗑</button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                      {isComplete && <span style={{ fontSize: 11, background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "3px 10px", fontWeight: 700 }}>✓ 完成</span>}
+                      {!isComplete && isSoon && <span style={{ fontSize: 11, background: L.amberLight, color: L.amber, border: `1px solid ${L.amber}33`, borderRadius: 6, padding: "3px 10px", fontWeight: 700 }}>🚀 即將上線</span>}
+                      <button
+                        onClick={e => { e.stopPropagation(); if (window.confirm(`確定要移除「${proj.info.name || "此專案"}」嗎？`)) onDelete(proj.id); }}
+                        style={{ background: "none", border: `1px solid ${L.border}`, borderRadius: 7, padding: "4px 9px", cursor: "pointer", fontSize: 13, color: L.textLight, lineHeight: 1, transition: "all 0.15s", fontFamily: "inherit" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.borderColor = L.red; e.currentTarget.style.color = L.red; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = L.border; e.currentTarget.style.color = L.textLight; }}
+                        title="移除專案"
+                      >🗑</button>
+                    </div>
                   </div>
 
-                  {/* Row 2: Products + integrations + PIC */}
-                  {(proj.info.products.length > 0 || proj.info.integrations.length > 0 || proj.info.pic) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                  {proj.info.products.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
                       {proj.info.products.map(p => (
-                        <span key={p} style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: PRODUCT_COLORS[p] || L.accent, borderRadius: 6, padding: "2px 9px" }}>{p}</span>
+                        <span key={p} style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: PRODUCT_COLORS[p] || L.accent, borderRadius: 6, padding: "3px 10px" }}>{p}</span>
                       ))}
-                      {proj.info.integrations.map(intg => (
-                        <span key={intg} style={{ fontSize: 11, fontWeight: 600, color: L.purple, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "2px 9px" }}>{intg}</span>
-                      ))}
-                      {proj.info.pic && (
-                        <span style={{ marginLeft: "auto", fontSize: 11, background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 600 }}>👤 {proj.info.pic}</span>
-                      )}
                     </div>
                   )}
 
-                  {/* Row 3: Dates + Jira link */}
-                  <div style={{ display: "grid", gridTemplateColumns: nearestDeadline ? "1fr 1fr" : "1fr", gap: 8, marginBottom: 14 }}>
-                    {proj.info.launchDate && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, background: L.bg, borderRadius: 9, padding: "7px 12px" }}>
-                        <span style={{ fontSize: 12 }}>📅</span>
-                        <span style={{ fontSize: 12, color: L.textMid }}>上線日</span>
-                        <span style={{ fontSize: 12, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{proj.info.launchDate}</span>
-                        {d !== null && d >= 0 && (
-                          <span style={{ marginLeft: "auto", fontSize: 11, color: d <= 7 ? L.red : d <= 30 ? L.amber : L.textLight, fontWeight: 600 }}>
-                            {d === 0 ? "今天" : `${d}天後`}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {nearestDeadline && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, background: nearestDeadline.days <= 7 ? "#fef2f2" : L.greenLight, border: `1px solid ${nearestDeadline.days <= 7 ? L.red + "33" : L.green + "33"}`, borderRadius: 9, padding: "7px 12px" }}>
-                        <span style={{ fontSize: 12 }}>🗓️</span>
-                        <span style={{ fontSize: 12, color: nearestDeadline.days <= 7 ? L.red : L.green }}>{nearestDeadline.label}</span>
-                        <span style={{ fontSize: 11, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace", marginLeft: 2 }}>{nearestDeadline.date}</span>
-                        <span style={{ marginLeft: "auto", fontSize: 11, color: nearestDeadline.days <= 7 ? L.red : L.green, fontWeight: 600 }}>
-                          {nearestDeadline.days === 0 ? "今天" : `${nearestDeadline.days}天`}
+                  {proj.info.integrations.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+                      {proj.info.integrations.map(intg => (
+                        <span key={intg} style={{ fontSize: 11, fontWeight: 600, color: L.purple, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "2px 9px" }}>{intg}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {proj.info.launchDate && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: L.bg, borderRadius: 10, padding: "9px 14px", marginBottom: nearestDeadline ? 8 : 16 }}>
+                      <span>📅</span>
+                      <span style={{ fontSize: 13, color: L.textMid, fontWeight: 500 }}>上線日：</span>
+                      <span style={{ fontSize: 13, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{proj.info.launchDate}</span>
+                      {d !== null && d >= 0 && (
+                        <span style={{ marginLeft: "auto", fontSize: 12, color: d <= 7 ? L.red : d <= 30 ? L.amber : L.textLight, fontWeight: 600 }}>
+                          {d === 0 ? "今天" : `${d} 天後`}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  )}
+                  {nearestDeadline && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: nearestDeadline.days <= 7 ? "#fef2f2" : L.greenLight, border: `1px solid ${nearestDeadline.days <= 7 ? L.red + "44" : L.green + "44"}`, borderRadius: 10, padding: "9px 14px", marginBottom: 16 }}>
+                      <span>🗓️</span>
+                      <span style={{ fontSize: 13, color: nearestDeadline.days <= 7 ? L.red : L.green, fontWeight: 500 }}>{nearestDeadline.label}：</span>
+                      <span style={{ fontSize: 13, color: L.text, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{nearestDeadline.date}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 12, color: nearestDeadline.days <= 7 ? L.red : L.green, fontWeight: 600 }}>
+                        {nearestDeadline.days === 0 ? "今天到期" : `${nearestDeadline.days} 天後`}
+                      </span>
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+                      <span style={{ fontSize: 12, color: L.textMid, fontWeight: 500 }}>整體完成度</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isComplete ? L.green : L.accent, fontFamily: "'DM Mono',monospace" }}>{pct}%</span>
+                    </div>
+                    <MiniBar pct={pct} color={isComplete ? L.green : L.accent} />
                   </div>
 
-                  {/* Row 4: Overall progress + counts + Jira */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: L.textMid, whiteSpace: "nowrap" }}>完成度</span>
-                    <div style={{ flex: 1 }}><MiniBar pct={pct} color={isComplete ? L.green : L.accent} /></div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: isComplete ? L.green : L.accent, fontFamily: "'DM Mono',monospace", whiteSpace: "nowrap" }}>{pct}%</span>
-                    {proj.info.jiraEpic && (
-                      <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0052cc", textDecoration: "none", fontWeight: 600, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 6, padding: "3px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
-                        Jira Epic
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Row 5: Sub-counts (text only, no bars) */}
-                  <div style={{ display: "flex", gap: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                     {[
                       { label: "基礎設定", done: basicDone, total: BASIC_SETUP_ITEMS.length, color: L.green },
-                      { label: "FAQ", done: faqDone, total: FAQ_ITEMS.length, color: L.amber },
-                      { label: "第二批", done: b2done, total: BATCH2_ITEMS.length + (proj.info.products.includes("GW") ? 1 : 0), color: L.purple },
+                      { label: "FAQ 資料表", done: faqDone, total: FAQ_ITEMS.length, color: L.amber },
+                      { label: "第二批資料", done: b2done, total: BATCH2_ITEMS.length, color: L.purple },
                     ].map(({ label, done, total, color }) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, color: L.textLight }}>{label}</span>
-                        <span style={{ fontSize: 11, color, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{done}/{total}</span>
+                      <div key={label}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                          <span style={{ fontSize: 11, color: L.textLight }}>{label}</span>
+                          <span style={{ fontSize: 11, color, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{done}/{total}</span>
+                        </div>
+                        <MiniBar pct={Math.round((done / total) * 100)} color={color} />
                       </div>
                     ))}
                   </div>
@@ -721,24 +683,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
                 <FInput label="飯店名稱" value={info.name} onChange={v => setInfo(p => ({ ...p, name: v }))} placeholder="例：台北大飯店" />
                 <FInput label="Hotel ID" value={info.hotelId} onChange={v => setInfo(p => ({ ...p, hotelId: v }))} placeholder="例：TPE-001" />
-              </div>
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.textMid, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>Jira Epic 連結</label>
-                <input
-                  type="url"
-                  value={info.jiraEpic}
-                  onChange={e => setInfo(p => ({ ...p, jiraEpic: e.target.value }))}
-                  placeholder="https://your-domain.atlassian.net/browse/EPIC-123"
-                  style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#0052cc")}
-                  onBlur={e => (e.target.style.borderColor = L.border)}
-                />
-                {info.jiraEpic && !info.jiraEpic.startsWith("http") && (
-                  <div style={{ marginTop: 6, fontSize: 12, color: L.red }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>
-                )}
-                {info.jiraEpic && info.jiraEpic.startsWith("http") && (
-                  <a href={info.jiraEpic} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 6, fontSize: 12, color: "#0052cc", textDecoration: "none", fontWeight: 600 }}>↗ 開啟 Jira Epic</a>
-                )}
               </div>
               <div style={{ marginBottom: 18 }}>
                 <label style={{ display: "block", fontSize: 11, letterSpacing: 1.5, color: L.textMid, textTransform: "uppercase", marginBottom: 7, fontWeight: 600 }}>負責人（PIC）</label>
@@ -861,9 +805,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                   style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
                   onFocus={e => (e.target.style.borderColor = L.accent)}
                   onBlur={e => (e.target.style.borderColor = L.border)} />
-                <div style={{ marginTop: 6, fontSize: 11, color: L.textLight }}>
-                  💡 輸入 <code style={{ background: L.bg, padding: "1px 5px", borderRadius: 4, fontSize: 11 }}>[顯示文字](https://網址)</code> 可在總覽頁顯示為超連結
-                </div>
               </div>
             </Card>
 
@@ -1050,22 +991,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                       <div style={{ fontSize: 14, color: L.text, fontWeight: 500 }}>{v || "—"}</div>
                     </div>
                   ))}
-                  {/* Jira Epic — rendered separately as a link */}
-                  {info.jiraEpic && (
-                    <div style={{ padding: "10px 0", borderBottom: `1px solid ${L.border}` }}>
-                      <div style={{ fontSize: 11, color: L.textLight, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4, fontWeight: 500 }}>Jira Epic</div>
-                      <a href={info.jiraEpic} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 13, color: "#0052cc", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 7, padding: "4px 11px" }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
-                        開啟 Jira Epic ↗
-                      </a>
-                    </div>
-                  )}
                 </div>
                 {info.notes && (
                   <div style={{ marginTop: 14, padding: 14, background: L.bg, borderRadius: 10, border: `1px solid ${L.border}` }}>
                     <div style={{ fontSize: 11, color: L.textLight, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>其餘功能需求或備注</div>
-                    <RichText text={info.notes} style={{ fontSize: 13, color: L.textMid }} />
+                    <div style={{ fontSize: 13, color: L.textMid, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{info.notes}</div>
                   </div>
                 )}
                 {info.integrations.length > 0 && info.integrations.some(k => info.integrationNotes[k]) && (
