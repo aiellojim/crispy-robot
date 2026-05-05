@@ -271,7 +271,6 @@ const RichText = ({ text, style = {} }) => {
   <div style={{ fontSize: 11, letterSpacing: 2, color: accent, textTransform: "uppercase", marginBottom: 14, display: "flex", alignItems: "center", gap: 7, fontWeight: 700 }}>
     <span>{icon}</span>{title}
   </div>
-);
 
 // Form input with label
 const FInput = ({ label, value, onChange, placeholder, type = "text", accent = L.accent }) => (
