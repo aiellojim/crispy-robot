@@ -122,6 +122,7 @@ const calcTotalItems = (integrations, products) => {
 };
 
 const calcPct = (proj) => {
+  if (!proj.info.products.includes("AVA")) return 0;
   const hasIptv = proj.info.integrations.includes("IPTV");
   const hasGw = proj.info.products.includes("GW");
   const faqCheckedCount = Object.entries(proj.faqChecked)
@@ -339,13 +340,18 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
     });
   }, [projects, search, regionFilter, picFilter, sortBy]);
 
-  const avgPct = projects.length === 0 ? 0 : Math.round(projects.reduce((a, p) => a + calcPct(p), 0) / projects.length);
+  const overdueCount = projects.filter(p => {
+    if (calcPct(p) === 100) return false;
+    const d1 = daysUntil(p.info.batch1Deadline);
+    const d2 = daysUntil(p.info.batch2Deadline);
+    return (d1 !== null && d1 < 0) || (d2 !== null && d2 < 0);
+  }).length;
   const soonCount = projects.filter(p => { const d = daysUntil(p.info.launchDate); return d !== null && d >= 0 && d <= 30; }).length;
   const doneCount = projects.filter(p => calcPct(p) === 100).length;
 
   const stats = [
     { label: "專案總數", value: projects.length, icon: "📋", color: L.accent, bg: L.accentLight },
-    { label: "平均完成度", value: `${avgPct}%`, icon: "📊", color: L.green, bg: L.greenLight },
+    { label: "逾期未完成", value: overdueCount, icon: "⚠️", color: overdueCount > 0 ? L.red : L.green, bg: overdueCount > 0 ? "#fef2f2" : L.greenLight },
     { label: "即將上線（30天內）", value: soonCount, icon: "🚀", color: L.amber, bg: L.amberLight },
     { label: "已完成資料", value: doneCount, icon: "✅", color: L.purple, bg: L.purpleLight },
   ];
@@ -461,18 +467,44 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                       title="移除專案">🗑</button>
                   </div>
 
-                  {/* Row 2: Products + integrations + PIC */}
-                  {(proj.info.products.length > 0 || proj.info.integrations.length > 0 || proj.info.pic) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                  {/* Row 2a: Products (solid colored) + PIC right-aligned */}
+                  {(proj.info.products.length > 0 || proj.info.pic) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: proj.info.integrations.length > 0 ? 6 : 10, flexWrap: "wrap" }}>
                       {proj.info.products.map(p => (
-                        <span key={p} style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: PRODUCT_COLORS[p] || L.accent, borderRadius: 6, padding: "2px 9px" }}>{p}</span>
-                      ))}
-                      {proj.info.integrations.map(intg => (
-                        <span key={intg} style={{ fontSize: 11, fontWeight: 600, color: L.purple, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "2px 9px" }}>{intg}</span>
+                        <span key={p} style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: PRODUCT_COLORS[p] || L.accent, borderRadius: 7, padding: "3px 11px" }}>{p}</span>
                       ))}
                       {proj.info.pic && (
                         <span style={{ marginLeft: "auto", fontSize: 11, background: L.greenLight, color: L.green, border: `1px solid ${L.green}33`, borderRadius: 6, padding: "2px 9px", fontWeight: 600 }}>👤 {proj.info.pic}</span>
                       )}
+                    </div>
+                  )}
+
+                  {/* Row 2b: Integrations (outline style) + Jira right-aligned */}
+                  {(proj.info.integrations.length > 0 || proj.info.jiraEpic) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+                      {proj.info.integrations.map(intg => (
+                        <span key={intg} style={{ fontSize: 11, fontWeight: 500, color: L.textMid, background: "#fff", border: `1.5px solid ${L.border}`, borderRadius: 7, padding: "2px 10px" }}>{intg}</span>
+                      ))}
+                      {proj.info.jiraEpic && (
+                        <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0052cc", textDecoration: "none", fontWeight: 600, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 6, padding: "3px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z" /></svg>
+                          Jira Epic
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {/* Jira only row — shown when no integrations */}
+                  {proj.info.integrations.length === 0 && !proj.info.jiraEpic && null}
+                  {proj.info.integrations.length === 0 && proj.info.jiraEpic && (
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                      <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0052cc", textDecoration: "none", fontWeight: 600, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 6, padding: "3px 9px" }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z" /></svg>
+                        Jira Epic
+                      </a>
                     </div>
                   )}
 
@@ -498,35 +530,31 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                     )}
                   </div>
 
-                  {/* Row 4: Progress + Jira */}
+                  {/* Row 4: Progress */}
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <span style={{ fontSize: 12, color: L.textMid, whiteSpace: "nowrap" }}>完成度</span>
                     <MiniBar pct={pct} color={isComplete ? L.green : L.accent} />
                     <span style={{ fontSize: 13, fontWeight: 700, color: isComplete ? L.green : L.accent, fontFamily: "'DM Mono',monospace", whiteSpace: "nowrap" }}>{pct}%</span>
-                    {proj.info.jiraEpic && (
-                      <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0052cc", textDecoration: "none", fontWeight: 600, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 6, padding: "3px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z" /></svg>
-                        Jira Epic
-                      </a>
-                    )}
                   </div>
 
                   {/* Row 5: Sub-counts */}
-                  <div style={{ display: "flex", gap: 14 }}>
-                    {[
-                      { label: "基礎設定", done: basicDone, total: BASIC_SETUP_ITEMS.length, color: L.green },
-                      { label: "FAQ", done: faqDone, total: proj.info.integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1, color: L.amber },
-                      { label: "第二批", done: b2done, total: BATCH2_ITEMS.length + (proj.info.products.includes("GW") ? 1 : 0), color: L.purple },
-                    ].map(({ label, done, total, color }) => (
-                      <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, color: L.textLight }}>{label}</span>
-                        <span style={{ fontSize: 11, color, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{done}/{total}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {proj.info.products.includes("AVA") ? (
+                    <div style={{ display: "flex", gap: 14 }}>
+                      {[
+                        { label: "基礎設定", done: basicDone, total: BASIC_SETUP_ITEMS.length, color: L.green },
+                        { label: "FAQ", done: faqDone, total: proj.info.integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1, color: L.amber },
+                        { label: "第二批", done: b2done, total: BATCH2_ITEMS.length + (proj.info.products.includes("GW") ? 1 : 0), color: L.purple },
+                      ].map(({ label, done, total, color }) => (
+                        <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: L.textLight }}>{label}</span>
+                          <span style={{ fontSize: 11, color, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{done}/{total}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: L.textLight, fontStyle: "italic" }}>未選購 AVA，無批次資料追蹤</div>
+                  )}
                 </div>
               );
             })}
@@ -568,11 +596,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
 
   const hasIptv = info.integrations.includes("IPTV");
   const hasGw = info.products.includes("GW");
+  const hasAva = info.products.includes("AVA");
   const activeFaqItems = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
   const basicCount = Object.values(basicChecked).filter(Boolean).length;
   const faqCount = Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
   const batch2Count = BATCH2_ITEMS.filter(item => batch2Checked[item]).length + (hasGw && batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
-  const totalPct = Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations, info.products)) * 100);
+  const totalPct = hasAva
+    ? Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations, info.products)) * 100)
+    : 0;
 
   const STEPS = ["專案資訊", "第一批資料", "第二批資料", "總覽"];
 
@@ -599,12 +630,18 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
 
       {/* Tab nav */}
       <div style={{ background: "#fff", borderBottom: `1px solid ${L.border}`, padding: "0 40px", display: "flex" }}>
-        {STEPS.map((s, i) => (
-          <button key={i} onClick={() => setStep(i)} style={{ padding: "14px 20px", background: "none", border: "none", borderBottom: `2.5px solid ${step === i ? L.accent : "transparent"}`, color: step === i ? L.accent : L.textLight, cursor: "pointer", fontSize: 13, fontWeight: step === i ? 700 : 500, transition: "all 0.15s", display: "flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}>
-            <span style={{ width: 20, height: 20, borderRadius: "50%", background: step === i ? L.accentLight : L.bg, border: `1.5px solid ${step === i ? L.accent : L.border}`, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: step === i ? L.accent : L.textLight }}>{i + 1}</span>
-            {s}
-          </button>
-        ))}
+        {STEPS.map((s, i) => {
+          const locked = (i === 1 || i === 2) && !hasAva;
+          return (
+            <button key={i}
+              onClick={() => !locked && setStep(i)}
+              title={locked ? "請先在專案資訊選購 AVA" : ""}
+              style={{ padding: "14px 20px", background: "none", border: "none", borderBottom: `2.5px solid ${step === i ? L.accent : "transparent"}`, color: locked ? L.border : step === i ? L.accent : L.textLight, cursor: locked ? "not-allowed" : "pointer", fontSize: 13, fontWeight: step === i ? 700 : 500, transition: "all 0.15s", display: "flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}>
+              <span style={{ width: 20, height: 20, borderRadius: "50%", background: locked ? L.bg : step === i ? L.accentLight : L.bg, border: `1.5px solid ${locked ? L.border : step === i ? L.accent : L.border}`, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: locked ? L.border : step === i ? L.accent : L.textLight }}>{locked ? "🔒" : i + 1}</span>
+              {s}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "32px 32px 80px" }}>
@@ -754,84 +791,106 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
         {/* ── Step 1 ── */}
         {step === 1 && (
           <div style={{ animation: "fadeIn 0.25s ease" }}>
-            <div style={{ marginBottom: 24 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 6px" }}>第一批資料</h2>
-              <BatchBadge batch="一" color={L.green} bg={L.greenLight} deadline={info.batch1Deadline} />
-            </div>
-            <Card>
-              <SectionHeader title="基礎設定資料表" count={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />
-              {BASIC_SETUP_ITEMS.map(item => (
-                <div key={item} style={{ marginBottom: 8 }}>
-                  <CheckRow label={item} checked={!!basicChecked[item]} onChange={() => toggleCheck(setBasicChecked, item)} color={L.green} />
-                  <textarea value={basicNotes[item] || ""} onChange={e => setBasicNotes(p => ({ ...p, [item]: e.target.value }))}
-                    placeholder="補充說明進行狀況或缺少項目…" rows={2}
-                    style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                    onFocus={e => (e.target.style.borderColor = L.green)} onBlur={e => (e.target.style.borderColor = L.border)} />
+            {!hasAva ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: L.textLight }}>
+                <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>需選購 AVA 才能填寫第一批資料</div>
+                <div style={{ fontSize: 13, color: L.textLight, marginBottom: 20 }}>請先至「專案資訊」頁面選擇 AVA 產品</div>
+                <button onClick={() => setStep(0)} style={{ background: L.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>前往專案資訊</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 6px" }}>第一批資料</h2>
+                  <BatchBadge batch="一" color={L.green} bg={L.greenLight} deadline={info.batch1Deadline} />
                 </div>
-              ))}
-              <SheetLink value={sheetLinks.basic} onChange={v => setSheetLinks(p => ({ ...p, basic: v }))} accent={L.green} />
-            </Card>
-            <Card>
-              <SectionHeader title="FAQ 資料表" count={faqCount} total={activeFaqItems.length} color={L.amber} />
-              {activeFaqItems.map(item => (
-                <div key={item} style={{ marginBottom: 8 }}>
-                  <CheckRow label={item} checked={!!faqChecked[item]} onChange={() => toggleCheck(setFaqChecked, item)} color={L.amber} />
-                  <textarea value={faqNotes[item] || ""} onChange={e => setFaqNotes(p => ({ ...p, [item]: e.target.value }))}
-                    placeholder="補充說明進行狀況或缺少項目…" rows={2}
-                    style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                    onFocus={e => (e.target.style.borderColor = L.amber)} onBlur={e => (e.target.style.borderColor = L.border)} />
-                </div>
-              ))}
-              {!hasIptv && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, marginBottom: 6, opacity: 0.6 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, color: L.textLight }}>{FAQ_TV_ITEM}</span>
-                  <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 IPTV，不需填寫</span>
-                </div>
-              )}
-              <SheetLink value={sheetLinks.faq} onChange={v => setSheetLinks(p => ({ ...p, faq: v }))} accent={L.amber} />
-            </Card>
-            <NavRow onBack={() => setStep(0)} onNext={() => setStep(2)} nextLabel="下一步：第二批資料 →" nextColor={L.green} />
+                <Card>
+                  <SectionHeader title="基礎設定資料表" count={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />
+                  {BASIC_SETUP_ITEMS.map(item => (
+                    <div key={item} style={{ marginBottom: 8 }}>
+                      <CheckRow label={item} checked={!!basicChecked[item]} onChange={() => toggleCheck(setBasicChecked, item)} color={L.green} />
+                      <textarea value={basicNotes[item] || ""} onChange={e => setBasicNotes(p => ({ ...p, [item]: e.target.value }))}
+                        placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                        style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                        onFocus={e => (e.target.style.borderColor = L.green)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                    </div>
+                  ))}
+                  <SheetLink value={sheetLinks.basic} onChange={v => setSheetLinks(p => ({ ...p, basic: v }))} accent={L.green} />
+                </Card>
+                <Card>
+                  <SectionHeader title="FAQ 資料表" count={faqCount} total={activeFaqItems.length} color={L.amber} />
+                  {activeFaqItems.map(item => (
+                    <div key={item} style={{ marginBottom: 8 }}>
+                      <CheckRow label={item} checked={!!faqChecked[item]} onChange={() => toggleCheck(setFaqChecked, item)} color={L.amber} />
+                      <textarea value={faqNotes[item] || ""} onChange={e => setFaqNotes(p => ({ ...p, [item]: e.target.value }))}
+                        placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                        style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                        onFocus={e => (e.target.style.borderColor = L.amber)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                    </div>
+                  ))}
+                  {!hasIptv && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, marginBottom: 6, opacity: 0.6 }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, color: L.textLight }}>{FAQ_TV_ITEM}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 IPTV，不需填寫</span>
+                    </div>
+                  )}
+                  <SheetLink value={sheetLinks.faq} onChange={v => setSheetLinks(p => ({ ...p, faq: v }))} accent={L.amber} />
+                </Card>
+                <NavRow onBack={() => setStep(0)} onNext={() => setStep(2)} nextLabel="下一步：第二批資料 →" nextColor={L.green} />
+              </>
+            )}
           </div>
         )}
 
         {/* ── Step 2 ── */}
         {step === 2 && (
           <div style={{ animation: "fadeIn 0.25s ease" }}>
-            <div style={{ marginBottom: 24 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 6px" }}>第二批資料</h2>
-              <BatchBadge batch="二" color={L.purple} bg={L.purpleLight} deadline={info.batch2Deadline} />
-            </div>
-            <Card>
-              <SectionHeader title="第二批資料完成情況" count={batch2Count} total={BATCH2_ITEMS.length + (hasGw ? 1 : 0)} color={L.purple} />
-              {BATCH2_ITEMS.map((item, idx) => (
-                <div key={item} style={{ marginBottom: 16 }}>
-                  <CheckRow label={item} checked={!!batch2Checked[item]} onChange={() => toggleCheck(setBatch2Checked, item)} color={L.purple} />
-                  <textarea value={batch2Notes[item] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [item]: e.target.value }))}
-                    placeholder="補充說明進行狀況或缺少項目…" rows={2}
-                    style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                    onFocus={e => (e.target.style.borderColor = L.purple)} onBlur={e => (e.target.style.borderColor = L.border)} />
-                  <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_LINK_KEYS[idx]]: v }))} accent={L.purple} />
+            {!hasAva ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: L.textLight }}>
+                <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>需選購 AVA 才能填寫第二批資料</div>
+                <div style={{ fontSize: 13, color: L.textLight, marginBottom: 20 }}>請先至「專案資訊」頁面選擇 AVA 產品</div>
+                <button onClick={() => setStep(0)} style={{ background: L.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>前往專案資訊</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 6px" }}>第二批資料</h2>
+                  <BatchBadge batch="二" color={L.purple} bg={L.purpleLight} deadline={info.batch2Deadline} />
                 </div>
-              ))}
-              {hasGw ? (
-                <div style={{ marginBottom: 16 }}>
-                  <CheckRow label={BATCH2_GW_ITEM} checked={!!batch2Checked[BATCH2_GW_ITEM]} onChange={() => toggleCheck(setBatch2Checked, BATCH2_GW_ITEM)} color={L.purple} />
-                  <textarea value={batch2Notes[BATCH2_GW_ITEM] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [BATCH2_GW_ITEM]: e.target.value }))}
-                    placeholder="補充說明進行狀況或缺少項目…" rows={2}
-                    style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                    onFocus={e => (e.target.style.borderColor = L.purple)} onBlur={e => (e.target.style.borderColor = L.border)} />
-                  <SheetLink value={sheetLinks[BATCH2_GW_LINK_KEY]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_GW_LINK_KEY]: v }))} accent={L.purple} />
-                </div>
-              ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.6 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
-                  <span style={{ fontSize: 14, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
-                  <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 GW，不需填寫</span>
-                </div>
-              )}
-            </Card>
-            <NavRow onBack={() => setStep(1)} onNext={() => setStep(3)} nextLabel="查看總覽 →" nextColor={L.purple} />
+                <Card>
+                  <SectionHeader title="第二批資料完成情況" count={batch2Count} total={BATCH2_ITEMS.length + (hasGw ? 1 : 0)} color={L.purple} />
+                  {BATCH2_ITEMS.map((item, idx) => (
+                    <div key={item} style={{ marginBottom: 16 }}>
+                      <CheckRow label={item} checked={!!batch2Checked[item]} onChange={() => toggleCheck(setBatch2Checked, item)} color={L.purple} />
+                      <textarea value={batch2Notes[item] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [item]: e.target.value }))}
+                        placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                        style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                        onFocus={e => (e.target.style.borderColor = L.purple)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                      <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_LINK_KEYS[idx]]: v }))} accent={L.purple} />
+                    </div>
+                  ))}
+                  {hasGw ? (
+                    <div style={{ marginBottom: 16 }}>
+                      <CheckRow label={BATCH2_GW_ITEM} checked={!!batch2Checked[BATCH2_GW_ITEM]} onChange={() => toggleCheck(setBatch2Checked, BATCH2_GW_ITEM)} color={L.purple} />
+                      <textarea value={batch2Notes[BATCH2_GW_ITEM] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [BATCH2_GW_ITEM]: e.target.value }))}
+                        placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                        style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                        onFocus={e => (e.target.style.borderColor = L.purple)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                      <SheetLink value={sheetLinks[BATCH2_GW_LINK_KEY]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_GW_LINK_KEY]: v }))} accent={L.purple} />
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.6 }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
+                      <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 GW，不需填寫</span>
+                    </div>
+                  )}
+                </Card>
+                <NavRow onBack={() => setStep(1)} onNext={() => setStep(3)} nextLabel="查看總覽 →" nextColor={L.purple} />
+              </>
+            )}
           </div>
         )}
 
