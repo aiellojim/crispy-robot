@@ -467,9 +467,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                       title="移除專案">🗑</button>
                   </div>
 
-                  {/* Row 2a: Products (solid colored) + PIC right-aligned */}
+                  {/* Row 2a: Products + PIC */}
                   {(proj.info.products.length > 0 || proj.info.pic) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: proj.info.integrations.length > 0 ? 6 : 10, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
                       {proj.info.products.map(p => (
                         <span key={p} style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: PRODUCT_COLORS[p] || L.accent, borderRadius: 7, padding: "3px 11px" }}>{p}</span>
                       ))}
@@ -479,7 +479,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                     </div>
                   )}
 
-                  {/* Row 2b: Integrations (outline style) + Jira right-aligned */}
+                  {/* Row 2b: Integrations + Jira (shown when either exists) */}
                   {(proj.info.integrations.length > 0 || proj.info.jiraEpic) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
                       {proj.info.integrations.map(intg => (
@@ -495,17 +495,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                       )}
                     </div>
                   )}
-                  {/* Jira only row — shown when no integrations */}
-                  {proj.info.integrations.length === 0 && !proj.info.jiraEpic && null}
-                  {proj.info.integrations.length === 0 && proj.info.jiraEpic && (
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-                      <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#0052cc", textDecoration: "none", fontWeight: 600, background: "#e9f0ff", border: "1px solid #b3c7f7", borderRadius: 6, padding: "3px 9px" }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z" /></svg>
-                        Jira Epic
-                      </a>
-                    </div>
+                  {/* Spacer: when neither row 2a nor 2b is shown, keep spacing before dates */}
+                  {proj.info.products.length === 0 && !proj.info.pic && proj.info.integrations.length === 0 && !proj.info.jiraEpic && (
+                    <div style={{ marginBottom: 12 }} />
                   )}
 
                   {/* Row 3: Dates */}
