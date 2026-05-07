@@ -41,6 +41,7 @@ const dbToUi = (row, prog) => ({
     ad: prog?.sheet_links?.ad ?? "",
     popupQR: prog?.sheet_links?.popupQR ?? "",
     guestWeb: prog?.sheet_links?.guestWeb ?? "",
+    acaScenario: prog?.sheet_links?.acaScenario ?? "",
   },
 });
 
@@ -96,6 +97,8 @@ const BATCH2_GW_ITEM = "GuestWeb 內容建置";
 const BATCH2_ITEMS = ["機台 Showcase 設定", "廣告設定", "Pop-up QR code 內容設定"];
 const BATCH2_LINK_KEYS = ["showcase", "ad", "popupQR"];
 const BATCH2_GW_LINK_KEY = "guestWeb";
+const ACA_ITEM = "轉接情境與歡迎詞設定";
+const ACA_LINK_KEY = "acaScenario";
 
 // ─── Theme ────────────────────────────────────────────────────
 const L = {
@@ -116,22 +119,37 @@ const inputStyle = {
 
 // ─── Helpers ──────────────────────────────────────────────────
 const calcTotalItems = (integrations, products) => {
-  const faqCount = integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1;
-  const gwCount = products.includes("GW") ? 1 : 0;
-  return BASIC_SETUP_ITEMS.length + faqCount + BATCH2_ITEMS.length + gwCount;
+  const hasAva = products.includes("AVA");
+  const hasAca = products.includes("ACA");
+  const hasGw = products.includes("GW");
+  const hasIptv = integrations.includes("IPTV");
+  // Batch 1: AVA items + ACA item (if selected)
+  const basicItems = hasAva ? BASIC_SETUP_ITEMS.length : 0;
+  const acaItems = hasAca ? 1 : 0;
+  const faqItems = hasAva ? (hasIptv ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1) : 0;
+  // Batch 2: AVA items + GW item (independent of AVA)
+  const batch2Items = hasAva ? BATCH2_ITEMS.length : 0;
+  const gwItems = hasGw ? 1 : 0;
+  return basicItems + acaItems + faqItems + batch2Items + gwItems;
 };
 
 const calcPct = (proj) => {
-  if (!proj.info.products.includes("AVA")) return 0;
-  const hasIptv = proj.info.integrations.includes("IPTV");
-  const hasGw = proj.info.products.includes("GW");
-  const faqCheckedCount = Object.entries(proj.faqChecked)
-    .filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
-  const batch2CheckedCount = BATCH2_ITEMS.filter(item => proj.batch2Checked[item]).length
-    + (hasGw && proj.batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
-  const done = Object.values(proj.basicChecked).filter(Boolean).length
-    + faqCheckedCount + batch2CheckedCount;
-  return Math.round((done / calcTotalItems(proj.info.integrations, proj.info.products)) * 100);
+  const { products, integrations } = proj.info;
+  const hasAva = products.includes("AVA");
+  const hasAca = products.includes("ACA");
+  const hasGw = products.includes("GW");
+  const hasIptv = integrations.includes("IPTV");
+  if (!hasAva && !hasAca && !hasGw) return 0;
+  const total = calcTotalItems(integrations, products);
+  if (total === 0) return 0;
+  const basicDone = hasAva ? Object.values(proj.basicChecked).filter(Boolean).length : 0;
+  const acaDone = hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0;
+  const faqDone = hasAva
+    ? Object.entries(proj.faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length
+    : 0;
+  const batch2Done = hasAva ? BATCH2_ITEMS.filter(item => proj.batch2Checked[item]).length : 0;
+  const gwDone = hasGw && proj.batch2Checked[BATCH2_GW_ITEM] ? 1 : 0;
+  return Math.round(((basicDone + acaDone + faqDone + batch2Done + gwDone) / total) * 100);
 };
 
 const daysUntil = (dateStr) => {
@@ -149,7 +167,7 @@ const makeProject = () => ({
   },
   basicChecked: {}, faqChecked: {}, batch2Checked: {},
   basicNotes: {}, faqNotes: {}, batch2Notes: {},
-  sheetLinks: { basic: "", faq: "", showcase: "", ad: "", popupQR: "", guestWeb: "" },
+  sheetLinks: { basic: "", faq: "", showcase: "", ad: "", popupQR: "", guestWeb: "", acaScenario: "" },
 });
 
 // ─── Global styles ────────────────────────────────────────────
@@ -530,12 +548,11 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                   </div>
 
                   {/* Row 5: Sub-counts */}
-                  {proj.info.products.includes("AVA") ? (
-                    <div style={{ display: "flex", gap: 14 }}>
-                      {[
+                  {(proj.info.products.includes("AVA") || proj.info.products.includes("ACA") || proj.info.products.includes("GW")) ? (
+                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                      {proj.info.products.includes("AVA") && [
                         { label: "基礎設定", done: basicDone, total: BASIC_SETUP_ITEMS.length, color: L.green },
                         { label: "FAQ", done: faqDone, total: proj.info.integrations.includes("IPTV") ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1, color: L.amber },
-                        { label: "第二批", done: b2done, total: BATCH2_ITEMS.length + (proj.info.products.includes("GW") ? 1 : 0), color: L.purple },
                       ].map(({ label, done, total, color }) => (
                         <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
@@ -543,9 +560,23 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
                           <span style={{ fontSize: 11, color, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{done}/{total}</span>
                         </div>
                       ))}
+                      {proj.info.products.includes("ACA") && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: PRODUCT_COLORS.ACA, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: L.textLight }}>ACA</span>
+                          <span style={{ fontSize: 11, color: PRODUCT_COLORS.ACA, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{proj.batch2Checked ? (proj.basicChecked[ACA_ITEM] ? 1 : 0) : 0}/1</span>
+                        </div>
+                      )}
+                      {(proj.info.products.includes("AVA") || proj.info.products.includes("GW")) && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: L.purple, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: L.textLight }}>第二批</span>
+                          <span style={{ fontSize: 11, color: L.purple, fontWeight: 600, fontFamily: "'DM Mono',monospace" }}>{b2done}/{(proj.info.products.includes("AVA") ? BATCH2_ITEMS.length : 0) + (proj.info.products.includes("GW") ? 1 : 0)}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 11, color: L.textLight, fontStyle: "italic" }}>未選購 AVA，無批次資料追蹤</div>
+                    <div style={{ fontSize: 11, color: L.textLight, fontStyle: "italic" }}>未選購 AVA、ACA 或 GW，無進度追蹤</div>
                   )}
                 </div>
               );
@@ -589,13 +620,24 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const hasIptv = info.integrations.includes("IPTV");
   const hasGw = info.products.includes("GW");
   const hasAva = info.products.includes("AVA");
+  const hasAca = info.products.includes("ACA");
+  const canAccessBatch1 = hasAva || hasAca;
+  const canAccessBatch2 = hasAva || hasGw;
   const activeFaqItems = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
-  const basicCount = Object.values(basicChecked).filter(Boolean).length;
-  const faqCount = Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length;
-  const batch2Count = BATCH2_ITEMS.filter(item => batch2Checked[item]).length + (hasGw && batch2Checked[BATCH2_GW_ITEM] ? 1 : 0);
-  const totalPct = hasAva
-    ? Math.round(((basicCount + faqCount + batch2Count) / calcTotalItems(info.integrations, info.products)) * 100)
+
+  // Counts for progress
+  const basicCount = hasAva ? Object.values(basicChecked).filter(Boolean).length : 0;
+  const acaCount = hasAca && basicChecked[ACA_ITEM] ? 1 : 0;
+  const faqCount = hasAva
+    ? Object.entries(faqChecked).filter(([k, v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length
     : 0;
+  const batch2Count = hasAva
+    ? BATCH2_ITEMS.filter(item => batch2Checked[item]).length
+    : 0;
+  const gwCount = hasGw && batch2Checked[BATCH2_GW_ITEM] ? 1 : 0;
+  const totalDone = basicCount + acaCount + faqCount + batch2Count + gwCount;
+  const totalItems = calcTotalItems(info.integrations, info.products);
+  const totalPct = totalItems === 0 ? 0 : Math.round((totalDone / totalItems) * 100);
 
   const STEPS = ["專案資訊", "第一批資料", "第二批資料", "總覽"];
 
@@ -623,11 +665,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
       {/* Tab nav */}
       <div style={{ background: "#fff", borderBottom: `1px solid ${L.border}`, padding: "0 40px", display: "flex" }}>
         {STEPS.map((s, i) => {
-          const locked = (i === 1 || i === 2) && !hasAva;
+          const locked = (i === 1 && !canAccessBatch1) || (i === 2 && !canAccessBatch2);
+          const lockTitle = i === 1 ? "請先選購 AVA 或 ACA" : "請先選購 AVA 或 GW";
           return (
             <button key={i}
               onClick={() => !locked && setStep(i)}
-              title={locked ? "請先在專案資訊選購 AVA" : ""}
+              title={locked ? lockTitle : ""}
               style={{ padding: "14px 20px", background: "none", border: "none", borderBottom: `2.5px solid ${step === i ? L.accent : "transparent"}`, color: locked ? L.border : step === i ? L.accent : L.textLight, cursor: locked ? "not-allowed" : "pointer", fontSize: 13, fontWeight: step === i ? 700 : 500, transition: "all 0.15s", display: "flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}>
               <span style={{ width: 20, height: 20, borderRadius: "50%", background: locked ? L.bg : step === i ? L.accentLight : L.bg, border: `1.5px solid ${locked ? L.border : step === i ? L.accent : L.border}`, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: locked ? L.border : step === i ? L.accent : L.textLight }}>{locked ? "🔒" : i + 1}</span>
               {s}
@@ -783,11 +826,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
         {/* ── Step 1 ── */}
         {step === 1 && (
           <div style={{ animation: "fadeIn 0.25s ease" }}>
-            {!hasAva ? (
+            {!canAccessBatch1 ? (
               <div style={{ textAlign: "center", padding: "60px 0", color: L.textLight }}>
                 <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>需選購 AVA 才能填寫第一批資料</div>
-                <div style={{ fontSize: 13, color: L.textLight, marginBottom: 20 }}>請先至「專案資訊」頁面選擇 AVA 產品</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>請先選購 AVA 或 ACA 以開啟第一批資料</div>
                 <button onClick={() => setStep(0)} style={{ background: L.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>前往專案資訊</button>
               </div>
             ) : (
@@ -796,39 +838,56 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: L.text, margin: "0 0 6px" }}>第一批資料</h2>
                   <BatchBadge batch="一" color={L.green} bg={L.greenLight} deadline={info.batch1Deadline} />
                 </div>
-                <Card>
-                  <SectionHeader title="基礎設定資料表" count={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />
-                  {BASIC_SETUP_ITEMS.map(item => (
-                    <div key={item} style={{ marginBottom: 8 }}>
-                      <CheckRow label={item} checked={!!basicChecked[item]} onChange={() => toggleCheck(setBasicChecked, item)} color={L.green} />
-                      <textarea value={basicNotes[item] || ""} onChange={e => setBasicNotes(p => ({ ...p, [item]: e.target.value }))}
+                {hasAva && (
+                  <Card>
+                    <SectionHeader title="基礎設定資料表" count={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />
+                    {BASIC_SETUP_ITEMS.map(item => (
+                      <div key={item} style={{ marginBottom: 8 }}>
+                        <CheckRow label={item} checked={!!basicChecked[item]} onChange={() => toggleCheck(setBasicChecked, item)} color={L.green} />
+                        <textarea value={basicNotes[item] || ""} onChange={e => setBasicNotes(p => ({ ...p, [item]: e.target.value }))}
+                          placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                          style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                          onFocus={e => (e.target.style.borderColor = L.green)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                      </div>
+                    ))}
+                    <SheetLink value={sheetLinks.basic} onChange={v => setSheetLinks(p => ({ ...p, basic: v }))} accent={L.green} />
+                  </Card>
+                )}
+                {hasAca && (
+                  <Card>
+                    <SectionHeader title="ACA 設定" count={acaCount} total={1} color={PRODUCT_COLORS.ACA} />
+                    <div style={{ marginBottom: 8 }}>
+                      <CheckRow label={ACA_ITEM} checked={!!basicChecked[ACA_ITEM]} onChange={() => toggleCheck(setBasicChecked, ACA_ITEM)} color={PRODUCT_COLORS.ACA} />
+                      <textarea value={basicNotes[ACA_ITEM] || ""} onChange={e => setBasicNotes(p => ({ ...p, [ACA_ITEM]: e.target.value }))}
                         placeholder="補充說明進行狀況或缺少項目…" rows={2}
                         style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                        onFocus={e => (e.target.style.borderColor = L.green)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                        onFocus={e => (e.target.style.borderColor = PRODUCT_COLORS.ACA)} onBlur={e => (e.target.style.borderColor = L.border)} />
                     </div>
-                  ))}
-                  <SheetLink value={sheetLinks.basic} onChange={v => setSheetLinks(p => ({ ...p, basic: v }))} accent={L.green} />
-                </Card>
-                <Card>
-                  <SectionHeader title="FAQ 資料表" count={faqCount} total={activeFaqItems.length} color={L.amber} />
-                  {activeFaqItems.map(item => (
-                    <div key={item} style={{ marginBottom: 8 }}>
-                      <CheckRow label={item} checked={!!faqChecked[item]} onChange={() => toggleCheck(setFaqChecked, item)} color={L.amber} />
-                      <textarea value={faqNotes[item] || ""} onChange={e => setFaqNotes(p => ({ ...p, [item]: e.target.value }))}
-                        placeholder="補充說明進行狀況或缺少項目…" rows={2}
-                        style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
-                        onFocus={e => (e.target.style.borderColor = L.amber)} onBlur={e => (e.target.style.borderColor = L.border)} />
-                    </div>
-                  ))}
-                  {!hasIptv && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, marginBottom: 6, opacity: 0.6 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
-                      <span style={{ fontSize: 14, color: L.textLight }}>{FAQ_TV_ITEM}</span>
-                      <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 IPTV，不需填寫</span>
-                    </div>
-                  )}
-                  <SheetLink value={sheetLinks.faq} onChange={v => setSheetLinks(p => ({ ...p, faq: v }))} accent={L.amber} />
-                </Card>
+                    <SheetLink value={sheetLinks[ACA_LINK_KEY] || ""} onChange={v => setSheetLinks(p => ({ ...p, [ACA_LINK_KEY]: v }))} accent={PRODUCT_COLORS.ACA} />
+                  </Card>
+                )}
+                {hasAva && (
+                  <Card>
+                    <SectionHeader title="FAQ 資料表" count={faqCount} total={activeFaqItems.length} color={L.amber} />
+                    {activeFaqItems.map(item => (
+                      <div key={item} style={{ marginBottom: 8 }}>
+                        <CheckRow label={item} checked={!!faqChecked[item]} onChange={() => toggleCheck(setFaqChecked, item)} color={L.amber} />
+                        <textarea value={faqNotes[item] || ""} onChange={e => setFaqNotes(p => ({ ...p, [item]: e.target.value }))}
+                          placeholder="補充說明進行狀況或缺少項目…" rows={2}
+                          style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
+                          onFocus={e => (e.target.style.borderColor = L.amber)} onBlur={e => (e.target.style.borderColor = L.border)} />
+                      </div>
+                    ))}
+                    {!hasIptv && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, marginBottom: 6, opacity: 0.6 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
+                        <span style={{ fontSize: 14, color: L.textLight }}>{FAQ_TV_ITEM}</span>
+                        <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 IPTV，不需填寫</span>
+                      </div>
+                    )}
+                    <SheetLink value={sheetLinks.faq} onChange={v => setSheetLinks(p => ({ ...p, faq: v }))} accent={L.amber} />
+                  </Card>
+                )}
                 <NavRow onBack={() => setStep(0)} onNext={() => setStep(2)} nextLabel="下一步：第二批資料 →" nextColor={L.green} />
               </>
             )}
@@ -838,11 +897,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
         {/* ── Step 2 ── */}
         {step === 2 && (
           <div style={{ animation: "fadeIn 0.25s ease" }}>
-            {!hasAva ? (
+            {!canAccessBatch2 ? (
               <div style={{ textAlign: "center", padding: "60px 0", color: L.textLight }}>
                 <div style={{ fontSize: 36, marginBottom: 14 }}>🔒</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>需選購 AVA 才能填寫第二批資料</div>
-                <div style={{ fontSize: 13, color: L.textLight, marginBottom: 20 }}>請先至「專案資訊」頁面選擇 AVA 產品</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: L.textMid, marginBottom: 8 }}>請先選購 AVA 或 GW 以開啟第二批資料</div>
                 <button onClick={() => setStep(0)} style={{ background: L.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>前往專案資訊</button>
               </div>
             ) : (
@@ -852,8 +910,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                   <BatchBadge batch="二" color={L.purple} bg={L.purpleLight} deadline={info.batch2Deadline} />
                 </div>
                 <Card>
-                  <SectionHeader title="第二批資料完成情況" count={batch2Count} total={BATCH2_ITEMS.length + (hasGw ? 1 : 0)} color={L.purple} />
-                  {BATCH2_ITEMS.map((item, idx) => (
+                  <SectionHeader title="第二批資料完成情況" count={batch2Count + gwCount} total={(hasAva ? BATCH2_ITEMS.length : 0) + (hasGw ? 1 : 0)} color={L.purple} />
+                  {/* AVA items — only when AVA selected */}
+                  {hasAva && BATCH2_ITEMS.map((item, idx) => (
                     <div key={item} style={{ marginBottom: 16 }}>
                       <CheckRow label={item} checked={!!batch2Checked[item]} onChange={() => toggleCheck(setBatch2Checked, item)} color={L.purple} />
                       <textarea value={batch2Notes[item] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [item]: e.target.value }))}
@@ -863,7 +922,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                       <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_LINK_KEYS[idx]]: v }))} accent={L.purple} />
                     </div>
                   ))}
-                  {hasGw ? (
+                  {/* GW item — always shown when GW selected */}
+                  {hasGw && (
                     <div style={{ marginBottom: 16 }}>
                       <CheckRow label={BATCH2_GW_ITEM} checked={!!batch2Checked[BATCH2_GW_ITEM]} onChange={() => toggleCheck(setBatch2Checked, BATCH2_GW_ITEM)} color={L.purple} />
                       <textarea value={batch2Notes[BATCH2_GW_ITEM] || ""} onChange={e => setBatch2Notes(p => ({ ...p, [BATCH2_GW_ITEM]: e.target.value }))}
@@ -871,12 +931,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                         style={{ ...inputStyle, marginTop: 4, fontSize: 12, color: L.textMid, resize: "vertical", minHeight: 56, background: "#fafbfc", borderColor: L.border }}
                         onFocus={e => (e.target.style.borderColor = L.purple)} onBlur={e => (e.target.style.borderColor = L.border)} />
                       <SheetLink value={sheetLinks[BATCH2_GW_LINK_KEY]} onChange={v => setSheetLinks(p => ({ ...p, [BATCH2_GW_LINK_KEY]: v }))} accent={L.purple} />
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.6 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${L.borderStrong}`, background: L.border, flexShrink: 0 }} />
-                      <span style={{ fontSize: 14, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
-                      <span style={{ marginLeft: "auto", fontSize: 11, color: L.textLight, background: L.borderStrong + "44", borderRadius: 5, padding: "2px 8px" }}>未選擇 GW，不需填寫</span>
                     </div>
                   )}
                 </Card>
@@ -931,11 +985,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
               </div>
             )}
 
-            {/* Progress rings */}
+            {/* Progress rings — only show relevant cards */}
             <div style={{ display: "flex", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
-              <ProgressCard label="基礎設定資料表" checked={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />
-              <ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaqItems.length} color={L.amber} />
-              <ProgressCard label="第二批資料" checked={batch2Count} total={BATCH2_ITEMS.length + (hasGw ? 1 : 0)} color={L.purple} />
+              {hasAva && <ProgressCard label="基礎設定資料表" checked={basicCount} total={BASIC_SETUP_ITEMS.length} color={L.green} />}
+              {hasAca && <ProgressCard label="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA} />}
+              {hasAva && <ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaqItems.length} color={L.amber} />}
+              {(hasAva || hasGw) && <ProgressCard label="第二批資料" checked={batch2Count + gwCount} total={(hasAva ? BATCH2_ITEMS.length : 0) + (hasGw ? 1 : 0)} color={L.purple} />}
             </div>
 
             {/* Project info */}
@@ -993,87 +1048,114 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
 
             {/* Batch 1 checklists */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              {[
-                { label: "基礎設定資料表", items: BASIC_SETUP_ITEMS, checked: basicChecked, notes: basicNotes, color: L.green, linkKey: "basic", showTvNotice: false },
-                { label: "FAQ 資料表", items: activeFaqItems, checked: faqChecked, notes: faqNotes, color: L.amber, linkKey: "faq", showTvNotice: !hasIptv },
-              ].map(({ label, items, checked, notes, color, linkKey, showTvNotice }) => (
-                <div key={label} style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
-                  <div style={{ fontSize: 11, letterSpacing: 1.5, color, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>{label}</div>
-                  {items.map(item => {
-                    const hasNote = notes[item] && notes[item].trim();
+              {hasAva && (
+                <div style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 1.5, color: L.green, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>基礎設定資料表</div>
+                  {BASIC_SETUP_ITEMS.map(item => {
+                    const hasNote = basicNotes[item] && basicNotes[item].trim();
                     return (
                       <div key={item} style={{ borderBottom: `1px solid ${L.bg}` }}>
                         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0" }}>
-                          <span style={{ fontSize: 13, color: checked[item] ? color : L.border, flexShrink: 0, marginTop: 1 }}>{checked[item] ? "✓" : "○"}</span>
+                          <span style={{ fontSize: 13, color: basicChecked[item] ? L.green : L.border, flexShrink: 0, marginTop: 1 }}>{basicChecked[item] ? "✓" : "○"}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 12, color: checked[item] ? L.text : L.textLight, lineHeight: 1.5 }}>{item}</span>
-                            {hasNote && (
-                              <div style={{ marginTop: 5, padding: "6px 10px", background: `${color}08`, border: `1px solid ${color}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{notes[item]}</div>
-                            )}
+                            <span style={{ fontSize: 12, color: basicChecked[item] ? L.text : L.textLight }}>{item}</span>
+                            {hasNote && <div style={{ marginTop: 5, padding: "6px 10px", background: `${L.green}08`, border: `1px solid ${L.green}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{basicNotes[item]}</div>}
                           </div>
                         </div>
                       </div>
                     );
                   })}
-                  {showTvNotice && (
+                  {sheetLinks.basic && <a href={sheetLinks.basic} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color: L.green, textDecoration: "none", fontWeight: 600, background: `${L.green}11`, border: `1px solid ${L.green}33`, borderRadius: 7, padding: "5px 12px" }}>🔗 開啟資料表</a>}
+                </div>
+              )}
+              {hasAva && (
+                <div style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 1.5, color: L.amber, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>FAQ 資料表</div>
+                  {activeFaqItems.map(item => {
+                    const hasNote = faqNotes[item] && faqNotes[item].trim();
+                    return (
+                      <div key={item} style={{ borderBottom: `1px solid ${L.bg}` }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0" }}>
+                          <span style={{ fontSize: 13, color: faqChecked[item] ? L.amber : L.border, flexShrink: 0, marginTop: 1 }}>{faqChecked[item] ? "✓" : "○"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 12, color: faqChecked[item] ? L.text : L.textLight }}>{item}</span>
+                            {hasNote && <div style={{ marginTop: 5, padding: "6px 10px", background: `${L.amber}08`, border: `1px solid ${L.amber}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{faqNotes[item]}</div>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!hasIptv && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", opacity: 0.5 }}>
                       <span style={{ fontSize: 13, color: L.border }}>—</span>
                       <span style={{ fontSize: 12, color: L.textLight }}>{FAQ_TV_ITEM}</span>
                       <span style={{ marginLeft: "auto", fontSize: 10, color: L.textLight, background: L.bg, borderRadius: 5, padding: "2px 7px", whiteSpace: "nowrap" }}>未選 IPTV</span>
                     </div>
                   )}
-                  {sheetLinks[linkKey] && (
-                    <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color, textDecoration: "none", fontWeight: 600, background: `${color}11`, border: `1px solid ${color}33`, borderRadius: 7, padding: "5px 12px" }}>
-                      🔗 開啟資料表
-                    </a>
-                  )}
+                  {sheetLinks.faq && <a href={sheetLinks.faq} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color: L.amber, textDecoration: "none", fontWeight: 600, background: `${L.amber}11`, border: `1px solid ${L.amber}33`, borderRadius: 7, padding: "5px 12px" }}>🔗 開啟資料表</a>}
                 </div>
-              ))}
+              )}
+              {hasAca && (
+                <div style={{ background: "#fff", border: `1px solid ${PRODUCT_COLORS.ACA}22`, borderRadius: 16, padding: 18, boxShadow: "0 1px 4px #0000000a" }}>
+                  <div style={{ fontSize: 11, letterSpacing: 1.5, color: PRODUCT_COLORS.ACA, textTransform: "uppercase", marginBottom: 12, fontWeight: 700 }}>ACA 設定</div>
+                  {(() => {
+                    const done = !!basicChecked[ACA_ITEM];
+                    const hasNote = basicNotes[ACA_ITEM] && basicNotes[ACA_ITEM].trim();
+                    return (
+                      <div style={{ borderBottom: `1px solid ${L.bg}` }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0" }}>
+                          <span style={{ fontSize: 13, color: done ? PRODUCT_COLORS.ACA : L.border, flexShrink: 0, marginTop: 1 }}>{done ? "✓" : "○"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 12, color: done ? L.text : L.textLight }}>{ACA_ITEM}</span>
+                            {hasNote && <div style={{ marginTop: 5, padding: "6px 10px", background: `${PRODUCT_COLORS.ACA}08`, border: `1px solid ${PRODUCT_COLORS.ACA}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{basicNotes[ACA_ITEM]}</div>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {sheetLinks[ACA_LINK_KEY] && <a href={sheetLinks[ACA_LINK_KEY]} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 14, fontSize: 12, color: PRODUCT_COLORS.ACA, textDecoration: "none", fontWeight: 600, background: `${PRODUCT_COLORS.ACA}11`, border: `1px solid ${PRODUCT_COLORS.ACA}33`, borderRadius: 7, padding: "5px 12px" }}>🔗 開啟資料表</a>}
+                </div>
+              )}
             </div>
 
             {/* Batch 2 overview */}
-            <div style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, marginBottom: 24, boxShadow: "0 1px 4px #0000000a" }}>
-              <div style={{ fontSize: 11, letterSpacing: 1.5, color: L.purple, textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>第二批資料</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {BATCH2_ITEMS.map((item, idx) => {
-                  const lk = BATCH2_LINK_KEYS[idx];
-                  const done = !!batch2Checked[item];
-                  const hasNote = batch2Notes[item] && batch2Notes[item].trim();
-                  return (
-                    <div key={item} style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[lk]) ? 8 : 0 }}>
-                        <span style={{ fontSize: 13, color: done ? L.purple : L.border }}>{done ? "✓" : "○"}</span>
-                        <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{item}</span>
+            {(hasAva || hasGw) && (
+              <div style={{ background: "#fff", border: `1px solid ${L.border}`, borderRadius: 16, padding: 18, marginBottom: 24, boxShadow: "0 1px 4px #0000000a" }}>
+                <div style={{ fontSize: 11, letterSpacing: 1.5, color: L.purple, textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>第二批資料</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {hasAva && BATCH2_ITEMS.map((item, idx) => {
+                    const lk = BATCH2_LINK_KEYS[idx];
+                    const done = !!batch2Checked[item];
+                    const hasNote = batch2Notes[item] && batch2Notes[item].trim();
+                    return (
+                      <div key={item} style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[lk]) ? 8 : 0 }}>
+                          <span style={{ fontSize: 13, color: done ? L.purple : L.border }}>{done ? "✓" : "○"}</span>
+                          <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{item}</span>
+                        </div>
+                        {hasNote && <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{batch2Notes[item]}</div>}
+                        {sheetLinks[lk] && <div style={{ marginLeft: 22 }}><a href={sheetLinks[lk]} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>🔗 連結</a></div>}
                       </div>
-                      {hasNote && <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{batch2Notes[item]}</div>}
-                      {sheetLinks[lk] && <div style={{ marginLeft: 22 }}><a href={sheetLinks[lk]} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>🔗 連結</a></div>}
-                    </div>
-                  );
-                })}
-                {hasGw ? (() => {
-                  const done = !!batch2Checked[BATCH2_GW_ITEM];
-                  const hasNote = batch2Notes[BATCH2_GW_ITEM] && batch2Notes[BATCH2_GW_ITEM].trim();
-                  return (
-                    <div style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[BATCH2_GW_LINK_KEY]) ? 8 : 0 }}>
-                        <span style={{ fontSize: 13, color: done ? L.purple : L.border }}>{done ? "✓" : "○"}</span>
-                        <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{BATCH2_GW_ITEM}</span>
-                        <span style={{ marginLeft: "auto", fontSize: 10, color: "#b45309", background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 5, padding: "2px 7px" }}>GW</span>
+                    );
+                  })}
+                  {hasGw && (() => {
+                    const done = !!batch2Checked[BATCH2_GW_ITEM];
+                    const hasNote = batch2Notes[BATCH2_GW_ITEM] && batch2Notes[BATCH2_GW_ITEM].trim();
+                    return (
+                      <div style={{ background: done ? L.purpleLight : "#fafbfc", border: `1px solid ${done ? L.purple + "44" : L.border}`, borderRadius: 12, padding: "12px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (hasNote || sheetLinks[BATCH2_GW_LINK_KEY]) ? 8 : 0 }}>
+                          <span style={{ fontSize: 13, color: done ? L.purple : L.border }}>{done ? "✓" : "○"}</span>
+                          <span style={{ fontSize: 13, color: done ? L.text : L.textLight, fontWeight: done ? 600 : 400 }}>{BATCH2_GW_ITEM}</span>
+                          <span style={{ marginLeft: "auto", fontSize: 10, color: "#b45309", background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 5, padding: "2px 7px" }}>GW</span>
+                        </div>
+                        {hasNote && <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{batch2Notes[BATCH2_GW_ITEM]}</div>}
+                        {sheetLinks[BATCH2_GW_LINK_KEY] && <div style={{ marginLeft: 22 }}><a href={sheetLinks[BATCH2_GW_LINK_KEY]} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>🔗 連結</a></div>}
                       </div>
-                      {hasNote && <div style={{ margin: "6px 0 8px 22px", padding: "6px 10px", background: `${L.purple}08`, border: `1px solid ${L.purple}22`, borderRadius: 7, fontSize: 11, color: L.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{batch2Notes[BATCH2_GW_ITEM]}</div>}
-                      {sheetLinks[BATCH2_GW_LINK_KEY] && <div style={{ marginLeft: 22 }}><a href={sheetLinks[BATCH2_GW_LINK_KEY]} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: L.purple, textDecoration: "none", fontWeight: 600, background: L.purpleLight, border: `1px solid ${L.purple}33`, borderRadius: 6, padding: "3px 10px", display: "inline-block" }}>🔗 連結</a></div>}
-                    </div>
-                  );
-                })() : (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: L.bg, border: `1px solid ${L.border}`, opacity: 0.5 }}>
-                    <span style={{ fontSize: 13, color: L.border }}>—</span>
-                    <span style={{ fontSize: 12, color: L.textLight }}>{BATCH2_GW_ITEM}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 10, color: L.textLight, background: L.bg, borderRadius: 5, padding: "2px 7px", whiteSpace: "nowrap" }}>未選擇 GW</span>
-                  </div>
-                )}
+                    );
+                  })()}
+                </div>
               </div>
-            </div>
+            )}
 
             <NavRow onBack={() => setStep(2)} />
           </div>
