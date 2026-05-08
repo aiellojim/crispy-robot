@@ -265,18 +265,18 @@ const Chip = ({ label, active, onClick, color=C.blue }) => (
 const CheckRow = ({ label, checked, onChange, color=C.green }) => (
   <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
     borderRadius:10, cursor:"pointer", marginBottom:6,
-    background: checked ? `${color}0d` : "#fff9f0",
-    border: `1.5px solid ${checked ? color+"55" : C.amber+"66"}`,
-    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid ${C.amber}`,
+    background: checked ? `${color}0d` : "#fff5f5",
+    border: `1.5px solid ${checked ? color+"55" : "#ef444466"}`,
+    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid #ef4444`,
     transition:"all 0.15s" }}>
     <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-      border:`2px solid ${checked ? color : C.amber}`,
+      border:`2px solid ${checked ? color : "#ef4444"}`,
       background: checked ? color : "#fff",
       display:"flex", alignItems:"center", justifyContent:"center" }}>
       {checked && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
     </div>
     <span style={{ fontSize:14, color: checked ? C.text : C.textMid, flex:1 }}>{label}</span>
-    {!checked && <span style={{ fontSize:10, color:C.amber, fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
+    {!checked && <span style={{ fontSize:10, color:"#ef4444", fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
   </div>
 );
 
