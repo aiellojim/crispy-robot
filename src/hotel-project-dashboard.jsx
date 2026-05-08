@@ -265,18 +265,18 @@ const Chip = ({ label, active, onClick, color=C.blue }) => (
 const CheckRow = ({ label, checked, onChange, color=C.green }) => (
   <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
     borderRadius:10, cursor:"pointer", marginBottom:6,
-    background: checked ? `${color}0d` : "#fff5f5",
-    border: `1.5px solid ${checked ? color+"55" : "#ef444466"}`,
-    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid #ef4444`,
+    background: checked ? `${color}0d` : "#fff9f0",
+    border: `1.5px solid ${checked ? color+"55" : C.amber+"66"}`,
+    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid ${C.amber}`,
     transition:"all 0.15s" }}>
     <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-      border:`2px solid ${checked ? color : "#ef4444"}`,
+      border:`2px solid ${checked ? color : C.amber}`,
       background: checked ? color : "#fff",
       display:"flex", alignItems:"center", justifyContent:"center" }}>
       {checked && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
     </div>
     <span style={{ fontSize:14, color: checked ? C.text : C.textMid, flex:1 }}>{label}</span>
-    {!checked && <span style={{ fontSize:10, color:"#ef4444", fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
+    {!checked && <span style={{ fontSize:10, color:C.amber, fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
   </div>
 );
 
@@ -462,10 +462,10 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
   const dayNames=["日","一","二","三","四","五","六"];
   const realTodayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
-  const ModalForm = () => (
+  const ModalContent = modal ? (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
-      <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease", maxHeight:"90vh", overflowY:"auto" }}>
+      <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <h3 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
@@ -538,11 +538,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   return (
     <div style={{ padding:"32px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
-      {modal && <ModalForm/>}
+      {ModalContent}
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
