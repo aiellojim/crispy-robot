@@ -617,14 +617,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
 
       {/* Calendar grid */}
       <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden", boxShadow:"0 1px 4px #0000000a" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
           {dayNames.map(d=>(
             <div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700,
               color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>
           ))}
         </div>
         {Array.from({ length:cells.length/7 }).map((_,wi)=>(
-          <div key={wi} style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", borderBottom:wi<cells.length/7-1?`1px solid ${C.border}`:"none" }}>
+          <div key={wi} style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:wi<cells.length/7-1?`1px solid ${C.border}`:"none" }}>
             {cells.slice(wi*7,wi*7+7).map((d,di)=>{
               const k = dayKey(d);
               const isToday = k===realTodayStr;
@@ -638,6 +638,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                     background:isToday?C.blueLight:d?C.white:"#fafbfc",
                     cursor:d&&projects.length>0?"pointer":"default",
                     display:"flex", flexDirection:"column",
+                    overflow:"hidden", minWidth:0,
                     transition:"background 0.15s" }}
                   onMouseEnter={e=>{ if(d&&projects.length>0) e.currentTarget.style.background=isToday?"#dbeafe":"#f8fafc"; }}
                   onMouseLeave={e=>{ e.currentTarget.style.background=isToday?C.blueLight:d?C.white:"#fafbfc"; }}>
