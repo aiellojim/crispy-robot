@@ -98,7 +98,7 @@ const calcPct = (proj) => {
 const newTask = () => ({
   id: crypto.randomUUID(), project_id: null,
   name:"", description:"", type:"deadline",
-  deadline:"", period_start:"", period_end:"",
+  deadline:"", period_start:"", period_end:"", url:"",
 });
 
 // ─── DB ↔ UI ──────────────────────────────────────────────────
@@ -265,13 +265,18 @@ const Chip = ({ label, active, onClick, color=C.blue }) => (
 const CheckRow = ({ label, checked, onChange, color=C.green }) => (
   <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
     borderRadius:10, cursor:"pointer", marginBottom:6,
-    background:checked?`${color}0d`:"#fafbfc",
-    border:`1.5px solid ${checked?color+"55":C.border}`, transition:"all 0.15s" }}>
-    <div style={{ width:20, height:20, borderRadius:6, border:`2px solid ${checked?color:C.borderMid}`,
-      background:checked?color:C.white, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+    background: checked ? `${color}0d` : "#fff9f0",
+    border: `1.5px solid ${checked ? color+"55" : C.amber+"66"}`,
+    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid ${C.amber}`,
+    transition:"all 0.15s" }}>
+    <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
+      border:`2px solid ${checked ? color : C.amber}`,
+      background: checked ? color : "#fff",
+      display:"flex", alignItems:"center", justifyContent:"center" }}>
       {checked && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
     </div>
-    <span style={{ fontSize:14, color:checked?C.text:C.textMid }}>{label}</span>
+    <span style={{ fontSize:14, color: checked ? C.text : C.textMid, flex:1 }}>{label}</span>
+    {!checked && <span style={{ fontSize:10, color:C.amber, fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
   </div>
 );
 
@@ -391,11 +396,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
 
   // Modal state
   const [modal, setModal] = useState(null); // null | { date: "YYYY-MM-DD" }
-  const [draft, setDraft] = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"" });
+  const [draft, setDraft] = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"", url:"" });
   const [saving, setSaving] = useState(false);
 
   const openModal = (dateStr) => {
-    setDraft({ projectId: projects[0]?.id || "", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"" });
+    setDraft({ projectId: projects[0]?.id || "", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"" });
     setModal({ date: dateStr });
   };
   const closeModal = () => { setModal(null); setSaving(false); };
@@ -412,6 +417,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
       deadline: draft.type==="deadline" ? (draft.deadline||null) : null,
       period_start: draft.type==="period" ? (draft.period_start||null) : null,
       period_end:   draft.type==="period" ? (draft.period_end||null)   : null,
+      url: draft.url || "",
     };
     const { error } = await sb.from("tasks").insert(task);
     if (!error) onTaskAdded(task);
@@ -517,6 +523,16 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                 placeholder="描述任務目標或相關說明…" rows={3}
                 style={{ ...baseInput, resize:"vertical", minHeight:72 }}
                 onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+            </div>
+
+            {/* URL */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
+                textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
+              <input type="url" value={draft.url} onChange={e=>setDraft(d=>({ ...d, url:e.target.value }))}
+                placeholder="https://…" style={baseInput}
+                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+              {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
             </div>
 
             {/* Type toggle */}
@@ -992,6 +1008,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       await sb.from("tasks").upsert({
         id:t.id, project_id:t.project_id, name:t.name, description:t.description,
         type:t.type, deadline:t.deadline||null, period_start:t.period_start||null, period_end:t.period_end||null,
+        url:t.url||"",
       });
     }, 800);
   };
@@ -1057,14 +1074,14 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
               {/* Date fields */}
               {task.type==="deadline" ? (
-                <div>
+                <div style={{ marginBottom:14 }}>
                   <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>截止日期</label>
                   <input type="date" value={task.deadline||""} onChange={e=>updateTask(task.id,"deadline",e.target.value)}
                     style={{ ...baseInput, width:"auto" }}
                     onFocus={e=>(e.target.style.borderColor=C.amber)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
               ) : (
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:14 }}>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
                     <input type="date" value={task.period_start||""} onChange={e=>updateTask(task.id,"period_start",e.target.value)}
@@ -1084,6 +1101,20 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   )}
                 </div>
               )}
+
+              {/* URL */}
+              <div>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
+                <input type="url" value={task.url||""} onChange={e=>updateTask(task.id,"url",e.target.value)}
+                  placeholder="https://…" style={baseInput}
+                  onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                {task.url && !task.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
+                {task.url && task.url.startsWith("http") && (
+                  <a href={task.url} target="_blank" rel="noreferrer"
+                    style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:8,
+                      fontSize:12, color:C.blue, textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>
+                )}
+              </div>
             </Card>
           ))}
         </div>
@@ -1618,7 +1649,7 @@ export default function App() {
         const tasksByProject = {};
         (taskRows??[]).forEach(t => {
           if (!tasksByProject[t.project_id]) tasksByProject[t.project_id]=[];
-          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"" });
+          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"" });
         });
         const projs = (rows??[]).map(r=>({ ...dbToUi(r,progMap[r.id]), tasks:tasksByProject[r.id]||[] }));
         setProjects(projs);
