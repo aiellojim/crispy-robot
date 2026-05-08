@@ -390,303 +390,233 @@ const FilterSelect = ({ label, value, onChange, options }) => (
 // ─── Calendar Page ─────────────────────────────────────────────
 const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
   const today = new Date();
-  const [year,    setYear]    = useState(today.getFullYear());
-  const [month,   setMonth]   = useState(today.getMonth());
-  const [filters, setFilters] = useState({ launch:true, batch:true, task:true });
+  const [year,        setYear]        = useState(today.getFullYear());
+  const [month,       setMonth]       = useState(today.getMonth());
+  const [filters,     setFilters]     = useState({ launch:true, batch:true, task:true });
+  const [expandedDay, setExpandedDay] = useState(null);
+  const [modal,       setModal]       = useState(null);
+  const [draft,       setDraft]       = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"", url:"" });
+  const [saving,      setSaving]      = useState(false);
 
-  // Modal state
-  const [modal, setModal] = useState(null); // null | { date: "YYYY-MM-DD" }
-  const [draft, setDraft] = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"", url:"" });
-  const [saving, setSaving] = useState(false);
-
-  const openModal = (dateStr) => {
-    setDraft({ projectId: projects[0]?.id || "", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"" });
-    setModal({ date: dateStr });
-  };
-  const closeModal = () => { setModal(null); setSaving(false); };
+  const openAddModal  = (dateStr) => { setDraft({ projectId:projects[0]?.id||"", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"" }); setModal({ mode:"add", date:dateStr }); };
+  const openEditModal = (task)    => { setDraft({ projectId:task.project_id, name:task.name, description:task.description||"", type:task.type, deadline:task.deadline||"", period_start:task.period_start||"", period_end:task.period_end||"", url:task.url||"", taskId:task.id }); setModal({ mode:"edit", date:task.deadline||task.period_start||task.period_end||"" }); };
+  const closeModal    = ()        => { setModal(null); setSaving(false); };
 
   const saveTask = async () => {
     if (!draft.projectId || !draft.name.trim()) return;
     setSaving(true);
-    const task = {
-      id: crypto.randomUUID(),
-      project_id: draft.projectId,
-      name: draft.name.trim(),
-      description: draft.description,
-      type: draft.type,
-      deadline: draft.type==="deadline" ? (draft.deadline||null) : null,
-      period_start: draft.type==="period" ? (draft.period_start||null) : null,
-      period_end:   draft.type==="period" ? (draft.period_end||null)   : null,
-      url: draft.url || "",
-    };
-    const { error } = await sb.from("tasks").insert(task);
-    if (!error) onTaskAdded(task);
+    if (modal.mode==="add") {
+      const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
+      const { error } = await sb.from("tasks").insert(task);
+      if (!error) onTaskAdded(task);
+    } else {
+      const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
+      await sb.from("tasks").update(updates).eq("id", draft.taskId);
+      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId });
+    }
     closeModal();
   };
 
-  const toggleFilter = (k) => setFilters(f => ({ ...f, [k]:!f[k] }));
+  const toggleFilter = (k) => setFilters(f=>({ ...f, [k]:!f[k] }));
 
   const events = useMemo(() => {
     const list = [];
     const inMonth = (d) => { if (!d) return false; const dt=new Date(d); return dt.getFullYear()===year && dt.getMonth()===month; };
     projects.forEach(proj => {
-      const name = proj.info.name || "（未命名）";
+      const name = proj.info.name||"（未命名）";
       if (filters.launch && proj.info.launchDate && inMonth(proj.info.launchDate))
-        list.push({ date:proj.info.launchDate, label:name, sub:"上線日", ...CAL_COLORS.launch });
+        list.push({ date:proj.info.launchDate, label:name, sub:"上線日", ...CAL_COLORS.launch, taskId:null });
       if (filters.batch) {
         if (proj.info.batch1Deadline && inMonth(proj.info.batch1Deadline))
-          list.push({ date:proj.info.batch1Deadline, label:name, sub:"第一批期限", ...CAL_COLORS.batch1 });
+          list.push({ date:proj.info.batch1Deadline, label:name, sub:"第一批期限", ...CAL_COLORS.batch1, taskId:null });
         if (proj.info.batch2Deadline && inMonth(proj.info.batch2Deadline))
-          list.push({ date:proj.info.batch2Deadline, label:name, sub:"第二批期限", ...CAL_COLORS.batch2 });
+          list.push({ date:proj.info.batch2Deadline, label:name, sub:"第二批期限", ...CAL_COLORS.batch2, taskId:null });
       }
     });
     if (filters.task) {
       allTasks.forEach(task => {
-        const proj = projects.find(p => p.id===task.project_id);
-        const name = proj?.info.name || "（未命名）";
+        const proj = projects.find(p=>p.id===task.project_id);
+        const name = proj?.info.name||"（未命名）";
         if (task.type==="deadline" && task.deadline && inMonth(task.deadline))
-          list.push({ date:task.deadline, label:name, sub:`任務：${task.name}`, ...CAL_COLORS.taskDL });
+          list.push({ date:task.deadline, label:name, sub:`任務：${task.name}`, ...CAL_COLORS.taskDL, taskId:task.id, taskObj:task });
         if (task.type==="period") {
           if (task.period_start && inMonth(task.period_start))
-            list.push({ date:task.period_start, label:name, sub:`任務開始：${task.name}`, ...CAL_COLORS.taskPeriod });
+            list.push({ date:task.period_start, label:name, sub:`任務開始：${task.name}`, ...CAL_COLORS.taskPeriod, taskId:task.id, taskObj:task });
           if (task.period_end && inMonth(task.period_end))
-            list.push({ date:task.period_end, label:name, sub:`任務結束：${task.name}`, ...CAL_COLORS.taskPeriod });
+            list.push({ date:task.period_end, label:name, sub:`任務結束：${task.name}`, ...CAL_COLORS.taskPeriod, taskId:task.id, taskObj:task });
         }
       });
     }
     return list;
   }, [projects, allTasks, year, month, filters]);
 
-  const firstDay    = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const cells = [];
-  for (let i=0; i<firstDay; i++) cells.push(null);
-  for (let d=1; d<=daysInMonth; d++) cells.push(d);
+  const firstDay=new Date(year,month,1).getDay(), daysInMonth=new Date(year,month+1,0).getDate();
+  const cells=[];
+  for (let i=0;i<firstDay;i++) cells.push(null);
+  for (let d=1;d<=daysInMonth;d++) cells.push(d);
   while (cells.length%7!==0) cells.push(null);
 
-  const dayKey = (d) => d ? `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
-  const getEventsForDay = (d) => { const k=dayKey(d); return k ? events.filter(e=>e.date===k) : []; };
+  const mkKey = (d) => d?`${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`:null;
+  const getEventsForDay = (d) => { const k=mkKey(d); return k?events.filter(e=>e.date===k):[]; };
+  const monthNames=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+  const dayNames=["日","一","二","三","四","五","六"];
+  const realTodayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
-  const monthNames = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-  const dayNames   = ["日","一","二","三","四","五","六"];
-  const todayStr   = dayKey(today.getDate()).replace(`${year}-${String(month+1).padStart(2,"0")}-`,`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-`);
-  const realTodayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const ModalForm = () => (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+      onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
+      <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease", maxHeight:"90vh", overflowY:"auto" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+          <div>
+            <h3 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
+            <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
+          </div>
+          <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit" }}>✕</button>
+        </div>
+        {modal.mode==="add" && (
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>歸屬專案</label>
+            <select value={draft.projectId} onChange={e=>setDraft(d=>({ ...d, projectId:e.target.value }))}
+              style={{ ...baseInput, padding:"10px 32px 10px 14px", appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", cursor:"pointer" }}
+              onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}>
+              {projects.map(p=><option key={p.id} value={p.id}>{p.info.name||"（未命名）"}{p.info.hotelId?` #${p.info.hotelId}`:""}</option>)}
+            </select>
+          </div>
+        )}
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>任務名稱 *</label>
+          <input value={draft.name} onChange={e=>setDraft(d=>({ ...d, name:e.target.value }))} placeholder="輸入任務名稱" style={baseInput}
+            onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+        </div>
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>內容概述</label>
+          <textarea value={draft.description} onChange={e=>setDraft(d=>({ ...d, description:e.target.value }))} placeholder="描述任務目標或相關說明…" rows={3}
+            style={{ ...baseInput, resize:"vertical", minHeight:72 }}
+            onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+        </div>
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
+          <input type="url" value={draft.url} onChange={e=>setDraft(d=>({ ...d, url:e.target.value }))} placeholder="https://…" style={baseInput}
+            onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+          {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
+        </div>
+        <div style={{ marginBottom:16 }}>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
+          <div style={{ display:"flex", gap:8 }}>
+            {[{ v:"deadline", label:"📌 期限" },{ v:"period", label:"📅 週期" }].map(({ v, label })=>(
+              <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.blue:C.border}`, background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid }}>{label}</button>
+            ))}
+          </div>
+        </div>
+        {draft.type==="deadline" ? (
+          <div style={{ marginBottom:20 }}>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>截止日期</label>
+            <input type="date" value={draft.deadline} onChange={e=>setDraft(d=>({ ...d, deadline:e.target.value }))} style={{ ...baseInput, width:"auto" }}
+              onFocus={e=>(e.target.style.borderColor=C.amber)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+          </div>
+        ) : (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+            <div>
+              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
+              <input type="date" value={draft.period_start} onChange={e=>setDraft(d=>({ ...d, period_start:e.target.value }))} style={{ ...baseInput, borderColor:`${C.green}44`, background:C.greenLight }}
+                onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=`${C.green}44`)}/>
+            </div>
+            <div>
+              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
+              <input type="date" value={draft.period_end} onChange={e=>setDraft(d=>({ ...d, period_end:e.target.value }))} style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
+                onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
+            </div>
+          </div>
+        )}
+        <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
+          <button onClick={closeModal} style={{ background:C.white, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
+          <button onClick={saveTask} disabled={!draft.name.trim()||saving}
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.blue, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:700, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.blue}40`:"none", transition:"all 0.15s" }}>
+            {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ padding:"32px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
-
-      {/* Modal overlay */}
-      {modal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:1000,
-          display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
-          onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
-          <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520,
-            boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
-              <div>
-                <h3 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 4px" }}>新增任務</h3>
-                <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
-              </div>
-              <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8,
-                padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit" }}>✕</button>
-            </div>
-
-            {/* Project selector */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>歸屬專案</label>
-              <select value={draft.projectId} onChange={e=>setDraft(d=>({ ...d, projectId:e.target.value }))}
-                style={{ ...baseInput, padding:"10px 32px 10px 14px", appearance:"none",
-                  backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", cursor:"pointer" }}
-                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}>
-                {projects.map(p=>(
-                  <option key={p.id} value={p.id}>{p.info.name||"（未命名）"}{p.info.hotelId?` #${p.info.hotelId}`:""}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Task name */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>任務名稱 *</label>
-              <input value={draft.name} onChange={e=>setDraft(d=>({ ...d, name:e.target.value }))}
-                placeholder="輸入任務名稱" style={baseInput}
-                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-            </div>
-
-            {/* Description */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>內容概述</label>
-              <textarea value={draft.description} onChange={e=>setDraft(d=>({ ...d, description:e.target.value }))}
-                placeholder="描述任務目標或相關說明…" rows={3}
-                style={{ ...baseInput, resize:"vertical", minHeight:72 }}
-                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-            </div>
-
-            {/* URL */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
-              <input type="url" value={draft.url} onChange={e=>setDraft(d=>({ ...d, url:e.target.value }))}
-                placeholder="https://…" style={baseInput}
-                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-              {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
-            </div>
-
-            {/* Type toggle */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
-              <div style={{ display:"flex", gap:8 }}>
-                {[{ v:"deadline", label:"📌 期限" },{ v:"period", label:"📅 週期" }].map(({ v, label })=>(
-                  <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                    style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600,
-                      cursor:"pointer", transition:"all 0.15s",
-                      border:`1.5px solid ${draft.type===v?C.blue:C.border}`,
-                      background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Date fields */}
-            {draft.type==="deadline" ? (
-              <div style={{ marginBottom:20 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-                  textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>截止日期</label>
-                <input type="date" value={draft.deadline}
-                  onChange={e=>setDraft(d=>({ ...d, deadline:e.target.value }))}
-                  style={{ ...baseInput, width:"auto" }}
-                  onFocus={e=>(e.target.style.borderColor=C.amber)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-              </div>
-            ) : (
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
-                <div>
-                  <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green,
-                    textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
-                  <input type="date" value={draft.period_start}
-                    onChange={e=>setDraft(d=>({ ...d, period_start:e.target.value }))}
-                    style={{ ...baseInput, borderColor:`${C.green}44`, background:C.greenLight }}
-                    onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=`${C.green}44`)}/>
-                </div>
-                <div>
-                  <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple,
-                    textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
-                  <input type="date" value={draft.period_end}
-                    onChange={e=>setDraft(d=>({ ...d, period_end:e.target.value }))}
-                    style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
-                    onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-              <button onClick={closeModal} style={{ background:C.white, color:C.textMid,
-                border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px",
-                fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
-              <button onClick={saveTask} disabled={!draft.name.trim()||saving}
-                style={{ background:!draft.name.trim()||saving?C.borderMid:C.blue, color:"#fff",
-                  border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:700,
-                  cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit",
-                  boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.blue}40`:"none", transition:"all 0.15s" }}>
-                {saving?"儲存中…":"新增任務"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {modal && <ModalForm/>}
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }}
-            style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
+          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
           <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
-          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }}
-            style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
-          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }}
-            style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:8, padding:"6px 14px",
-              cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.blue, fontWeight:600 }}>今天</button>
+          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
+          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.blue, fontWeight:600 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-          <span style={{ fontSize:12, color:C.textLight, marginRight:4 }}>點擊日期可新增任務</span>
-          {[
-            { k:"launch", label:"上線日",  ...CAL_COLORS.launch },
-            { k:"batch",  label:"資料期限", ...CAL_COLORS.batch1 },
-            { k:"task",   label:"任務",     ...CAL_COLORS.taskDL },
-          ].map(({ k, label, bg, text, border }) => (
+          {[{ k:"launch", label:"上線日", ...CAL_COLORS.launch },{ k:"batch", label:"資料期限", ...CAL_COLORS.batch1 },{ k:"task", label:"任務", ...CAL_COLORS.taskDL }].map(({ k, label, bg, text, border })=>(
             <button key={k} onClick={()=>toggleFilter(k)}
-              style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:8, cursor:"pointer",
-                fontFamily:"inherit", fontSize:12, fontWeight:600, transition:"all 0.15s",
-                background:filters[k]?bg:C.bg, border:`1.5px solid ${filters[k]?border:C.border}`,
-                color:filters[k]?text:C.textLight, opacity:filters[k]?1:0.6 }}>
-              <span style={{ width:8, height:8, borderRadius:"50%", background:filters[k]?text:C.borderMid, flexShrink:0 }}/>
-              {label}
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:600, transition:"all 0.15s", background:filters[k]?bg:C.bg, border:`1.5px solid ${filters[k]?border:C.border}`, color:filters[k]?text:C.textLight, opacity:filters[k]?1:0.6 }}>
+              <span style={{ width:8, height:8, borderRadius:"50%", background:filters[k]?text:C.borderMid, flexShrink:0 }}/>{label}
             </button>
           ))}
         </div>
       </div>
 
       {/* Calendar grid */}
-      <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden", boxShadow:"0 1px 4px #0000000a" }}>
+      <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden", boxShadow:"0 1px 4px #0000000a" }}
+        onClick={()=>setExpandedDay(null)}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
-          {dayNames.map(d=>(
-            <div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700,
-              color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>
-          ))}
+          {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700, color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>)}
         </div>
         {Array.from({ length:cells.length/7 }).map((_,wi)=>(
           <div key={wi} style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:wi<cells.length/7-1?`1px solid ${C.border}`:"none" }}>
             {cells.slice(wi*7,wi*7+7).map((d,di)=>{
-              const k = dayKey(d);
-              const isToday = k===realTodayStr;
-              const dayEvents = d ? getEventsForDay(d) : [];
-              const col = di===0?C.red:di===6?C.blue:C.text;
+              const k         = mkKey(d);
+              const isToday   = k===realTodayStr;
+              const isExpanded= expandedDay===k;
+              const dayEvents = d?getEventsForDay(d):[];
+              const col       = di===0?C.red:di===6?C.blue:C.text;
+              const visible   = isExpanded?dayEvents:dayEvents.slice(0,2);
+              const hasMore   = !isExpanded && dayEvents.length>2;
               return (
                 <div key={di}
-                  onClick={()=>{ if(d && projects.length>0) openModal(k); }}
-                  style={{ minHeight:110, padding:"6px 8px",
-                    borderRight:di<6?`1px solid ${C.border}`:"none",
+                  onClick={e=>{ e.stopPropagation(); if(d&&dayEvents.length>2) setExpandedDay(isExpanded?null:k); }}
+                  style={{ minHeight:110, padding:"6px 8px", borderRight:di<6?`1px solid ${C.border}`:"none",
                     background:isToday?C.blueLight:d?C.white:"#fafbfc",
-                    cursor:d&&projects.length>0?"pointer":"default",
-                    display:"flex", flexDirection:"column",
-                    overflow:"hidden", minWidth:0,
-                    transition:"background 0.15s" }}
-                  onMouseEnter={e=>{ if(d&&projects.length>0) e.currentTarget.style.background=isToday?"#dbeafe":"#f8fafc"; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background=isToday?C.blueLight:d?C.white:"#fafbfc"; }}>
+                    display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0,
+                    cursor:d&&dayEvents.length>2?"pointer":"default", transition:"background 0.15s",
+                    position:"relative", zIndex:isExpanded?10:1 }}>
                   {d && (
                     <>
-                      <div style={{ fontSize:13, fontWeight:isToday?700:400, color:isToday?C.blue:col,
-                        marginBottom:4, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+                      {/* Date + add button */}
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4, flexShrink:0 }}>
                         {isToday
-                          ? <span style={{ background:C.blue, color:"#fff", borderRadius:"50%", width:22, height:22,
-                              display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700 }}>{d}</span>
-                          : <span>{d}</span>}
-                        {projects.length>0 && <span style={{ fontSize:13, color:C.borderMid, lineHeight:1 }}>+</span>}
+                          ? <span style={{ background:C.blue, color:"#fff", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700 }}>{d}</span>
+                          : <span style={{ fontSize:13, color:col }}>{d}</span>}
+                        {projects.length>0 && (
+                          <button onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
+                            style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:5, width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12, color:C.textLight, padding:0, lineHeight:1, flexShrink:0, transition:"all 0.15s" }}
+                            onMouseEnter={e=>{ e.currentTarget.style.background=C.blue; e.currentTarget.style.borderColor=C.blue; e.currentTarget.style.color="#fff"; }}
+                            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}
+                            title="新增任務">+</button>
+                        )}
                       </div>
+                      {/* Event labels */}
                       <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1 }}>
-                        {dayEvents.slice(0,2).map((ev,ei)=>(
+                        {visible.map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                            style={{ borderRadius:5, padding:"3px 6px",
-                              background:ev.bg, border:`1px solid ${ev.border}` }}
-                            onClick={e=>e.stopPropagation()}>
-                            <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.3,
-                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                              {ev.sub}
+                            onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); }}
+                            style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", transition:"opacity 0.15s" }}
+                            onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                            onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                            <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                              {ev.sub}{ev.taskId?" ✎":""}
                             </div>
-                            <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3,
-                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                              {ev.label}
-                            </div>
+                            <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {dayEvents.length>2 && (
-                          <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px" }}>+{dayEvents.length-2} 更多</div>
-                        )}
+                        {hasMore && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>}
+                        {isExpanded && <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px" }}>▲ 收起</div>}
                       </div>
                     </>
                   )}
@@ -703,11 +633,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
           <h3 style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:14 }}>本月事件</h3>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i)=>(
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
-                background:ev.bg, border:`1px solid ${ev.border}`, borderRadius:10 }}>
+              <div key={i} onClick={()=>{ if(ev.taskId) openEditModal(ev.taskObj); }}
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:ev.bg, border:`1px solid ${ev.border}`, borderRadius:10, cursor:ev.taskId?"pointer":"default" }}
+                onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.8"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
                 <span style={{ fontSize:12, fontWeight:700, color:ev.text, fontFamily:"'DM Mono',monospace", flexShrink:0 }}>{fmtDate(ev.date)}</span>
                 <span style={{ fontSize:13, fontWeight:600, color:ev.text }}>{ev.label}</span>
                 <span style={{ fontSize:12, color:ev.text, opacity:0.8 }}>— {ev.sub}</span>
+                {ev.taskId && <span style={{ marginLeft:"auto", fontSize:11, color:ev.text, opacity:0.6 }}>點擊編輯 ✎</span>}
               </div>
             ))}
           </div>
@@ -716,6 +649,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
     </div>
   );
 };
+
 
 // ─── HomePage ─────────────────────────────────────────────────
 const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
