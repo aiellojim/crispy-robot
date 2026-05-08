@@ -633,35 +633,42 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
               return (
                 <div key={di}
                   onClick={()=>{ if(d && projects.length>0) openModal(k); }}
-                  style={{ minHeight:100, padding:"6px 8px",
+                  style={{ minHeight:110, padding:"6px 8px",
                     borderRight:di<6?`1px solid ${C.border}`:"none",
                     background:isToday?C.blueLight:d?C.white:"#fafbfc",
                     cursor:d&&projects.length>0?"pointer":"default",
+                    display:"flex", flexDirection:"column",
                     transition:"background 0.15s" }}
                   onMouseEnter={e=>{ if(d&&projects.length>0) e.currentTarget.style.background=isToday?"#dbeafe":"#f8fafc"; }}
                   onMouseLeave={e=>{ e.currentTarget.style.background=isToday?C.blueLight:d?C.white:"#fafbfc"; }}>
                   {d && (
                     <>
                       <div style={{ fontSize:13, fontWeight:isToday?700:400, color:isToday?C.blue:col,
-                        marginBottom:4, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                        marginBottom:4, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
                         {isToday
                           ? <span style={{ background:C.blue, color:"#fff", borderRadius:"50%", width:22, height:22,
                               display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700 }}>{d}</span>
                           : <span>{d}</span>}
-                        {projects.length>0 && <span style={{ fontSize:14, color:C.borderMid, lineHeight:1 }}>+</span>}
+                        {projects.length>0 && <span style={{ fontSize:13, color:C.borderMid, lineHeight:1 }}>+</span>}
                       </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                        {dayEvents.slice(0,3).map((ev,ei)=>(
+                      <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1 }}>
+                        {dayEvents.slice(0,2).map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                            style={{ fontSize:10, fontWeight:600, borderRadius:4, padding:"2px 5px",
-                              background:ev.bg, color:ev.text, border:`1px solid ${ev.border}`,
-                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
+                            style={{ borderRadius:5, padding:"3px 6px",
+                              background:ev.bg, border:`1px solid ${ev.border}` }}
                             onClick={e=>e.stopPropagation()}>
-                            {ev.label}・{ev.sub}
+                            <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.3,
+                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                              {ev.sub}
+                            </div>
+                            <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3,
+                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                              {ev.label}
+                            </div>
                           </div>
                         ))}
-                        {dayEvents.length>3 && (
-                          <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px" }}>+{dayEvents.length-3} 更多</div>
+                        {dayEvents.length>2 && (
+                          <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px" }}>+{dayEvents.length-2} 更多</div>
                         )}
                       </div>
                     </>
