@@ -617,11 +617,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
     if (modal.mode==="add") {
       const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       const { error } = await sb.from("tasks").insert(task);
-      if (!error) onTaskAdded(task, false);
+      if (!error) onTaskAdded(task);
     } else {
       const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       await sb.from("tasks").update(updates).eq("id", draft.taskId);
-      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId }, true);
+      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId });
     }
     closeModal();
   };
@@ -1135,6 +1135,222 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
   );
 };
 
+// ─── JiraTab ──────────────────────────────────────────────────
+const JIRA_PROXY = "https://yqoingcpcryrcpnhkjzu.supabase.co/functions/v1/jira-proxy";
+const JIRA_ANON  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxb2luZ2NwY3J5cmNwbmhranp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTg5NTMsImV4cCI6MjA5MjgzNDk1M30.mDbv7McB9urXXYoqm795dnNj2SHUDal_L0Y1_klFy4Y";
+
+const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VERIFICATION","INIT","INIT_DONE","LINK TO RD JIRA","PROCESSING","TEST","TEST_DONE","完成"];
+
+const STATUS_STYLE = {
+  "完成":          { bg:"#dcfce7", color:"#166534" },
+  "TEST_DONE":     { bg:"#dbeafe", color:"#1e40af" },
+  "DEV_DONE":      { bg:"#dbeafe", color:"#1e40af" },
+  "INIT_DONE":     { bg:"#dbeafe", color:"#1e40af" },
+  "IN MONITOR":    { bg:"#fef3c7", color:"#92400e" },
+  "IN VERIFICATION":{ bg:"#fef3c7", color:"#92400e" },
+  "PROCESSING":    { bg:"#fef3c7", color:"#92400e" },
+  "TEST":          { bg:"#ede9fe", color:"#5b21b6" },
+  "DEV":           { bg:"#ede9fe", color:"#5b21b6" },
+  "INIT":          { bg:"#f1f5f9", color:"#475569" },
+  "LINK TO RD JIRA":{ bg:"#f1f5f9", color:"#475569" },
+  "審核中":         { bg:"#fce7f3", color:"#9d174d" },
+  "交付":           { bg:"#ecfdf5", color:"#065f46" },
+};
+
+async function jiraFetch(action, params = {}, body = null) {
+  const url = new URL(JIRA_PROXY);
+  url.searchParams.set("action", action);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {
+    method: body ? "POST" : "GET",
+    headers: { Authorization: `Bearer ${JIRA_ANON}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
+}
+
+function parseEpicId(epicUrl) {
+  if (!epicUrl) return null;
+  const m = epicUrl.match(/browse\/(AHP-\d+)/i);
+  return m ? m[1].toUpperCase() : null;
+}
+
+const JiraTab = ({ epicUrl, onBack, onNext }) => {
+  const epicId = parseEpicId(epicUrl);
+  const [issues,      setIssues]      = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState("");
+  // transitions cache per issue key
+  const [transitions, setTransitions] = useState({});
+  // which issue's dropdown is open
+  const [activeKey,   setActiveKey]   = useState(null);
+  const [updating,    setUpdating]    = useState({});
+
+  const fetchIssues = async () => {
+    if (!epicId) return;
+    setLoading(true); setError("");
+    const data = await jiraFetch("issues", { epicId });
+    if (data.error) setError("無法讀取 Jira 資料，請確認 Epic 連結是否正確。");
+    else setIssues(data.issues ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (epicId) fetchIssues(); }, [epicId]); // eslint-disable-line
+
+  const openDropdown = async (issueKey) => {
+    if (activeKey === issueKey) { setActiveKey(null); return; }
+    setActiveKey(issueKey);
+    if (!transitions[issueKey]) {
+      const data = await jiraFetch("transitions", { issueKey });
+      setTransitions(prev => ({ ...prev, [issueKey]: data.transitions ?? [] }));
+    }
+  };
+
+  const doTransition = async (issueKey, transitionId, toName) => {
+    setUpdating(prev => ({ ...prev, [issueKey]: true }));
+    setActiveKey(null);
+    const data = await jiraFetch("transition", {}, { issueKey, transitionId });
+    if (data.success) {
+      setIssues(prev => prev.map(i => i.key===issueKey ? { ...i, status: toName } : i));
+    } else {
+      setError(`更新 ${issueKey} 狀態失敗`);
+    }
+    setUpdating(prev => ({ ...prev, [issueKey]: false }));
+  };
+
+  const st = (name) => STATUS_STYLE[name] ?? { bg:"#f1f5f9", color:"#475569" };
+
+  return (
+    <div style={{ animation:"fadeIn 0.25s ease" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+        <div>
+          <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 4px" }}>Jira 子任務</h2>
+          {epicId
+            ? <p style={{ fontSize:13, color:C.textMid, margin:0 }}>Epic：<span style={{ fontFamily:"'DM Mono',monospace", color:C.blue }}>{epicId}</span></p>
+            : <p style={{ fontSize:13, color:C.red, margin:0 }}>尚未填寫 Jira Epic 連結，請至「專案資訊」tab 填寫。</p>}
+        </div>
+        {epicId && (
+          <button onClick={fetchIssues} disabled={loading}
+            style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
+              border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
+              cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
+            {loading ? "同步中…" : "🔄 同步 Jira"}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div style={{ background:"#fef2f2", border:`1px solid ${C.red}44`, borderRadius:10,
+          padding:"10px 16px", fontSize:13, color:C.red, marginBottom:16 }}>{error}</div>
+      )}
+
+      {loading && (
+        <div style={{ textAlign:"center", padding:"40px 0", color:C.textMid }}>
+          <div style={{ width:28, height:28, border:`3px solid ${C.blueBorder}`, borderTopColor:C.blue,
+            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
+          載入 Jira 子任務中…
+        </div>
+      )}
+
+      {!loading && epicId && issues.length===0 && !error && (
+        <div style={{ textAlign:"center", padding:"48px 0", color:C.textLight }}>
+          <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
+          <div style={{ fontSize:14 }}>此 Epic 底下尚無子任務</div>
+        </div>
+      )}
+
+      {!loading && issues.length>0 && (
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:8 }}>
+          {/* Header */}
+          <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px",
+            gap:12, padding:"6px 16px", fontSize:11, fontWeight:700,
+            color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase" }}>
+            <span>Issue</span><span>名稱</span><span>負責人</span><span>狀態</span>
+          </div>
+          {issues.map(issue => {
+            const s = st(issue.status);
+            const trans = transitions[issue.key] ?? [];
+            const isOpen = activeKey===issue.key;
+            const isUpdating = !!updating[issue.key];
+            return (
+              <div key={issue.key} style={{ background:C.white, border:`1px solid ${C.border}`,
+                borderRadius:12, padding:"12px 16px", position:"relative" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px",
+                  gap:12, alignItems:"center" }}>
+                  {/* Key */}
+                  <a href={`https://aiello-eng.atlassian.net/browse/${issue.key}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ fontSize:12, fontWeight:700, color:"#0052cc", textDecoration:"none",
+                      fontFamily:"'DM Mono',monospace", background:"#e9f0ff",
+                      border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 8px",
+                      display:"inline-block", whiteSpace:"nowrap" }}>
+                    {issue.key}
+                  </a>
+                  {/* Summary */}
+                  <span style={{ fontSize:13, color:C.text, lineHeight:1.4 }}>{issue.summary}</span>
+                  {/* Assignee */}
+                  <span style={{ fontSize:12, color:C.textMid, overflow:"hidden",
+                    textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {issue.assignee ?? "—"}
+                  </span>
+                  {/* Status dropdown trigger */}
+                  <div style={{ position:"relative" }}>
+                    <button onClick={()=>openDropdown(issue.key)} disabled={isUpdating}
+                      style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 10px",
+                        borderRadius:8, border:`1px solid ${s.color}44`,
+                        background:s.bg, color:s.color, fontSize:12, fontWeight:700,
+                        cursor:isUpdating?"wait":"pointer", fontFamily:"inherit",
+                        width:"100%", justifyContent:"space-between" }}>
+                      <span>{isUpdating ? "更新中…" : issue.status}</span>
+                      {!isUpdating && <span style={{ fontSize:10 }}>▾</span>}
+                    </button>
+                    {/* Dropdown */}
+                    {isOpen && trans.length>0 && (
+                      <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0,
+                        background:C.white, border:`1px solid ${C.border}`, borderRadius:10,
+                        boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:100, overflow:"hidden" }}>
+                        {trans.map(t => {
+                          const ts = st(t.name);
+                          return (
+                            <button key={t.id} onClick={()=>doTransition(issue.key, t.id, t.name)}
+                              style={{ display:"flex", alignItems:"center", gap:8, width:"100%",
+                                padding:"8px 12px", background:"none", border:"none",
+                                cursor:"pointer", fontFamily:"inherit", textAlign:"left",
+                                borderBottom:`1px solid ${C.border}` }}
+                              onMouseEnter={e=>e.currentTarget.style.background=C.bg}
+                              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                              <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11,
+                                fontWeight:700, background:ts.bg, color:ts.color,
+                                whiteSpace:"nowrap" }}>{t.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ fontSize:12, color:C.textLight, textAlign:"right", marginTop:4 }}>
+            共 {issues.length} 筆子任務・點擊狀態標籤可切換
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop:24 }}>
+        <NavRow onBack={onBack} onNext={onNext} nextLabel="下一步：任務紀錄 →" nextColor={C.blue}/>
+      </div>
+
+      {/* Close dropdown on outside click */}
+      {activeKey && (
+        <div onClick={()=>setActiveKey(null)}
+          style={{ position:"fixed", inset:0, zIndex:99 }}/>
+      )}
+    </div>
+  );
+};
+
 // ─── TasksTab ─────────────────────────────────────────────────
 const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   const taskTimer = useRef({});
@@ -1282,7 +1498,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
 // ─── ProjectDetail ────────────────────────────────────────────
 const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
-  const [step, setStep] = useState(isNew ? 0 : 4);
+  const [step, setStep] = useState(isNew ? 0 : 5);
   const [info,          setInfoLocal]     = useState(project.info);
   const [basicChecked,  setBasicChecked]  = useState(project.basicChecked);
   const [basicNotes,    setBasicNotes]    = useState(project.basicNotes   || {});
@@ -1335,8 +1551,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const totalItems = calcTotal(info.products, info.integrations);
   const totalPct   = totalItems===0 ? 0 : Math.round(((basicCount+acaCount+faqCount+b2Count+gwCount)/totalItems)*100);
 
-  // Steps: 0=info, 1=batch1, 2=batch2, 3=tasks, 4=overview
-  const STEPS = ["專案資訊","第一批資料","第二批資料","任務紀錄","總覽"];
+  // Steps: 0=info, 1=batch1, 2=batch2, 3=jira, 4=tasks, 5=overview
+  const STEPS = ["專案資訊","第一批資料","第二批資料","Jira 子任務","任務紀錄","總覽"];
 
   const LockScreen = ({ msg }) => (
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
@@ -1607,29 +1823,29 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                     </div>
                   )}
                 </Card>
-                <NavRow onBack={()=>setStep(1)} onNext={()=>setStep(3)} nextLabel="下一步：任務紀錄 →" nextColor={C.purple}/>
+                <NavRow onBack={()=>setStep(1)} onNext={()=>setStep(3)} nextLabel="下一步：Jira 子任務 →" nextColor={C.purple}/>
               </>
             )}
           </div>
         )}
 
-        {/* Step 3: 任務紀錄 */}
+        {/* Step 3: Jira 子任務 */}
         {step===3&&(
+          <JiraTab epicUrl={info.jiraEpic} onBack={()=>setStep(2)} onNext={()=>setStep(4)}/>
+        )}
+
+        {/* Step 4: 任務紀錄 */}
+        {step===4&&(
           <TasksTab projectId={project.id} tasks={tasks} onTasksChange={setTasks}/>
         )}
-        {step===3&&tasks.length>0&&(
+        {step===4&&(
           <div style={{ marginTop:24 }}>
-            <NavRow onBack={()=>setStep(2)} onNext={()=>setStep(4)} nextLabel="查看總覽 →" nextColor={C.blue}/>
-          </div>
-        )}
-        {step===3&&tasks.length===0&&(
-          <div style={{ marginTop:24 }}>
-            <NavRow onBack={()=>setStep(2)} onNext={()=>setStep(4)} nextLabel="查看總覽 →" nextColor={C.blue}/>
+            <NavRow onBack={()=>setStep(3)} onNext={()=>setStep(5)} nextLabel="查看總覽 →" nextColor={C.blue}/>
           </div>
         )}
 
-        {/* Step 4: 總覽 */}
-        {step===4&&(
+        {/* Step 5: 總覽 */}
+        {step===5&&(
           <div style={{ animation:"fadeIn 0.25s ease" }}>
             <div style={{ marginBottom:24 }}>
               <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
@@ -1807,7 +2023,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
                 </div>
               </div>
             )}
-            <NavRow onBack={()=>setStep(3)}/>
+            <NavRow onBack={()=>setStep(4)}/>
           </div>
         )}
       </div>
@@ -1955,20 +2171,12 @@ export default function App() {
       {isDetailView
         ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} allPics={allPics}/>
         : page==="calendar"
-          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
-              setAllTasks(prev => isEdit
-                ? prev.map(t => t.id===task.id ? { ...t, ...task } : t)
-                : [...prev, task]
-              );
-              setProjects(prev => prev.map(p => {
-                if (p.id !== task.project_id) return p;
-                return {
-                  ...p,
-                  tasks: isEdit
-                    ? p.tasks.map(t => t.id===task.id ? { ...t, ...task } : t)
-                    : [...p.tasks, task],
-                };
-              }));
+          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={task => {
+              setAllTasks(prev => [...prev, task]);
+              setProjects(prev => prev.map(p => p.id===task.project_id
+                ? { ...p, tasks:[...p.tasks, task] }
+                : p
+              ));
             }}/>
           : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
       }
