@@ -31,19 +31,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // JQL: 找到屬於此 Epic 的所有 issue
-    const jql      = encodeURIComponent(`"Epic Link" = ${epicId} OR parent = ${epicId} ORDER BY created ASC`);
-    const fields   = "summary,status,assignee,issuetype,priority";
-    const apiUrl   = `${JIRA_BASE}/rest/api/3/search?jql=${jql}&fields=${fields}&maxResults=100`;
+    // JQL: 只用 parent 查詢，避免 "Epic Link" 在新版 Jira 觸發 410
+    const jql    = `parent = ${epicId} ORDER BY created ASC`;
+    const fields = ["summary","status","assignee","issuetype","priority"];
+    const apiUrl = `${JIRA_BASE}/rest/api/3/search/jql`;
 
     const res = await fetch(apiUrl, {
-      headers: { Authorization: authHeader, Accept: "application/json" },
+      method: "POST",
+      headers: { Authorization: authHeader, Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ jql, fields, maxResults: 100 }),
     });
     const data = await res.json();
 
     if (!res.ok) {
+      // 永遠回傳 200，把 Jira 錯誤包在 body 裡，避免前端因 4xx/5xx 無法讀取
       return new Response(JSON.stringify({ error: data }), {
-        status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -53,6 +56,7 @@ Deno.serve(async (req) => {
       key:      issue.key,
       summary:  issue.fields.summary,
       status:   issue.fields.status?.name ?? "",
+      statusCategory: issue.fields.status?.statusCategory?.key ?? "new",
       assignee: issue.fields.assignee?.displayName ?? null,
       type:     issue.fields.issuetype?.name ?? "",
     }));
@@ -78,8 +82,9 @@ Deno.serve(async (req) => {
     const data = await res.json();
 
     const transitions = (data.transitions ?? []).map((t: any) => ({
-      id:   t.id,
-      name: t.to?.name ?? t.name,
+      id:             t.id,
+      name:           t.to?.name ?? t.name,
+      statusCategory: t.to?.statusCategory?.key ?? "new",
     }));
 
     return new Response(JSON.stringify({ transitions }), {
@@ -116,7 +121,7 @@ Deno.serve(async (req) => {
 
     const err = await res.json().catch(() => ({}));
     return new Response(JSON.stringify({ error: err }), {
-      status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 

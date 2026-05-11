@@ -1141,21 +1141,13 @@ const JIRA_ANON  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 
 const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VERIFICATION","INIT","INIT_DONE","LINK TO RD JIRA","PROCESSING","TEST","TEST_DONE","完成"];
 
-const STATUS_STYLE = {
-  "完成":          { bg:"#dcfce7", color:"#166534" },
-  "TEST_DONE":     { bg:"#dbeafe", color:"#1e40af" },
-  "DEV_DONE":      { bg:"#dbeafe", color:"#1e40af" },
-  "INIT_DONE":     { bg:"#dbeafe", color:"#1e40af" },
-  "IN MONITOR":    { bg:"#fef3c7", color:"#92400e" },
-  "IN VERIFICATION":{ bg:"#fef3c7", color:"#92400e" },
-  "PROCESSING":    { bg:"#fef3c7", color:"#92400e" },
-  "TEST":          { bg:"#ede9fe", color:"#5b21b6" },
-  "DEV":           { bg:"#ede9fe", color:"#5b21b6" },
-  "INIT":          { bg:"#f1f5f9", color:"#475569" },
-  "LINK TO RD JIRA":{ bg:"#f1f5f9", color:"#475569" },
-  "審核中":         { bg:"#fce7f3", color:"#9d174d" },
-  "交付":           { bg:"#ecfdf5", color:"#065f46" },
-};
+// 顏色依 statusCategory 決定，不依賴狀態名稱字串
+// key: "new" = 待辦（灰）, "indeterminate" = 進行中（藍）, "done" = 完成（綠）
+function statusStyle(statusCategory) {
+  if (statusCategory === "done")         return { bg:"#4bce97", color:"#164b35" };
+  if (statusCategory === "indeterminate") return { bg:"#cce0ff", color:"#0055cc" };
+  return { bg:"#dfe1e6", color:"#44546f" }; // "new" 或未知
+}
 
 async function jiraFetch(action, params = {}, body = null) {
   const url = new URL(JIRA_PROXY);
@@ -1218,7 +1210,7 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
     setUpdating(prev => ({ ...prev, [issueKey]: false }));
   };
 
-  const st = (name) => STATUS_STYLE[name] ?? { bg:"#f1f5f9", color:"#475569" };
+  const st = (issue) => statusStyle(issue.statusCategory ?? "new");
 
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
@@ -1268,7 +1260,7 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
             <span>Issue</span><span>名稱</span><span>負責人</span><span>狀態</span>
           </div>
           {issues.map(issue => {
-            const s = st(issue.status);
+            const s = st(issue);
             const trans = transitions[issue.key] ?? [];
             const isOpen = activeKey===issue.key;
             const isUpdating = !!updating[issue.key];
@@ -1310,7 +1302,7 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
                         background:C.white, border:`1px solid ${C.border}`, borderRadius:10,
                         boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
-                          const ts = st(t.name);
+                          const ts = statusStyle(t.statusCategory ?? "new");
                           return (
                             <button key={t.id} onClick={()=>doTransition(issue.key, t.id, t.name)}
                               style={{ display:"flex", alignItems:"center", gap:8, width:"100%",
