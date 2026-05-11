@@ -387,6 +387,215 @@ const FilterSelect = ({ label, value, onChange, options }) => (
   </div>
 );
 
+// ─── Web Push helpers ─────────────────────────────────────────
+const VAPID_PUBLIC_KEY = "BMY1wgN85NCiaWDI5zAb-pccZzo3b5-zGdcusTRrYLQPkCwHzbF0xRCn1YSGJvENYrn-IdGQmrlhcvPkxP5uPxs";
+
+function urlBase64ToUint8Array(b64) {
+  const pad = "=".repeat((4 - b64.length % 4) % 4);
+  const b = (b64 + pad).replace(/-/g,"+").replace(/_/g,"/");
+  return Uint8Array.from([...atob(b)].map(c=>c.charCodeAt(0)));
+}
+function subToKeys(sub) {
+  const p256dh = btoa(String.fromCharCode(...new Uint8Array(sub.getKey("p256dh")))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  const auth   = btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth")))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return { endpoint:sub.endpoint, p256dh, auth };
+}
+async function getOrCreateSub(picName) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+  const reg = await navigator.serviceWorker.register("/sw.js");
+  let pushSub = await reg.pushManager.getSubscription();
+  if (!pushSub) {
+    if (Notification.permission !== "granted") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") return null;
+    }
+    pushSub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+  }
+  const keys = subToKeys(pushSub);
+  const { data:existing } = await sb.from("push_subscriptions").select("*").eq("endpoint",keys.endpoint).maybeSingle();
+  if (existing) return existing;
+  const { data:created } = await sb.from("push_subscriptions").insert({ pic_name:picName, ...keys, subscribed_projects:[], notify_days_before:0 }).select().single();
+  return created;
+}
+async function updateSub(id, patch) {
+  const { data } = await sb.from("push_subscriptions").update(patch).eq("id",id).select().single();
+  return data;
+}
+async function deleteSub(id) {
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (reg) { const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); }
+  await sb.from("push_subscriptions").delete().eq("id",id);
+}
+
+const NOTIFY_OPTIONS = [
+  { label:"當日提醒", value:0 },
+  { label:"提前 1 天", value:1 },
+  { label:"提前 3 天", value:3 },
+  { label:"提前 7 天", value:7 },
+];
+
+const NotificationPanel = ({ projects, allPics, onClose }) => {
+  const [picName,  setPicName]  = useState("");
+  const [sub,      setSub]      = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [status,   setStatus]   = useState(""); // "" | "unsupported" | "denied"
+
+  useEffect(() => {
+    if (!("Notification" in window)||!("serviceWorker" in navigator)) { setStatus("unsupported"); return; }
+    if (Notification.permission==="denied") { setStatus("denied"); return; }
+    // Check if already subscribed in this browser
+    (async()=>{
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (!reg) return;
+      const pushSub = await reg.pushManager.getSubscription();
+      if (!pushSub) return;
+      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
+      if (data) setSub(data);
+    })();
+  }, []);
+
+  const handleSubscribe = async () => {
+    if (!picName.trim()) return;
+    setLoading(true);
+    const result = await getOrCreateSub(picName.trim());
+    if (!result) setStatus("denied");
+    else setSub(result);
+    setLoading(false);
+  };
+
+  const handleToggleProject = async (projId) => {
+    if (!sub) return;
+    const curr = sub.subscribed_projects||[];
+    const next = curr.includes(projId) ? curr.filter(id=>id!==projId) : [...curr,projId];
+    const updated = await updateSub(sub.id,{ subscribed_projects:next });
+    setSub(updated);
+  };
+
+  const handleNotifyDays = async (days) => {
+    if (!sub) return;
+    const updated = await updateSub(sub.id,{ notify_days_before:days });
+    setSub(updated);
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!sub) return;
+    setLoading(true);
+    await deleteSub(sub.id);
+    setSub(null);
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:999 }}/>
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:C.white,
+        borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+        zIndex:1000, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+        {/* Header */}
+        <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:16, fontWeight:700, color:C.text }}>通知設定</div>
+            <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>瀏覽器推播提醒</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit" }}>✕</button>
+        </div>
+
+        <div style={{ flex:1, overflowY:"auto", padding:20 }}>
+          {status==="unsupported" && (
+            <div style={{ background:"#fef2f2", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+              此瀏覽器不支援推播通知，建議改用 Chrome、Edge 或 macOS 13+ 的 Safari。
+            </div>
+          )}
+          {status==="denied" && (
+            <div style={{ background:"#fef2f2", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+              通知權限已被封鎖，請至瀏覽器設定手動開啟後重試。
+            </div>
+          )}
+          {status===""&&!sub&&(
+            <div>
+              <div style={{ fontSize:13, color:C.textMid, marginBottom:14, lineHeight:1.6 }}>
+                選擇你的 PIC 名稱以啟用推播通知。首次使用時瀏覽器會詢問通知授權。
+              </div>
+              <datalist id="notif-pic-list">{allPics.map(p=><option key={p} value={p}/>)}</datalist>
+              <input list="notif-pic-list" value={picName} onChange={e=>setPicName(e.target.value)}
+                placeholder="輸入你的名稱" style={{ ...baseInput, marginBottom:12 }}
+                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+              <button onClick={handleSubscribe} disabled={loading||!picName.trim()}
+                style={{ width:"100%", padding:"10px 0", background:picName.trim()?C.blue:C.border,
+                  color:picName.trim()?"#fff":C.textMid, border:"none", borderRadius:10,
+                  fontSize:14, fontWeight:700, cursor:picName.trim()?"pointer":"default", fontFamily:"inherit" }}>
+                {loading?"啟用中…":"啟用推播通知"}
+              </button>
+            </div>
+          )}
+          {sub&&(
+            <div>
+              <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:10,
+                padding:"10px 14px", fontSize:13, color:C.green, marginBottom:20,
+                display:"flex", alignItems:"center", gap:8 }}>
+                ✓ 已啟用推播通知・{sub.pic_name}
+              </div>
+
+              {/* 提醒時機 */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>提醒時機</div>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {NOTIFY_OPTIONS.map(({ label, value })=>(
+                    <button key={value} onClick={()=>handleNotifyDays(value)}
+                      style={{ padding:"6px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontFamily:"inherit",
+                        background:sub.notify_days_before===value?C.blue:C.bg,
+                        color:sub.notify_days_before===value?"#fff":C.text,
+                        border:`1px solid ${sub.notify_days_before===value?C.blue:C.border}`,
+                        fontWeight:sub.notify_days_before===value?700:400 }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 訂閱專案 */}
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
+                  訂閱專案（{(sub.subscribed_projects||[]).length} / {projects.length}）
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {projects.map(proj=>{
+                    const active=(sub.subscribed_projects||[]).includes(proj.id);
+                    return (
+                      <div key={proj.id} onClick={()=>handleToggleProject(proj.id)}
+                        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                          padding:"10px 14px", borderRadius:10, cursor:"pointer",
+                          background:active?C.blueLight:C.bg,
+                          border:`1px solid ${active?C.blueBorder:"transparent"}`,
+                          transition:"all 0.15s" }}>
+                        <div>
+                          <div style={{ fontSize:13, color:C.text, fontWeight:active?600:400 }}>{proj.info?.name||"未命名專案"}</div>
+                          {proj.info?.pic&&<div style={{ fontSize:11, color:C.textLight, marginTop:1 }}>👤 {proj.info.pic}</div>}
+                        </div>
+                        <span style={{ fontSize:18 }}>{active?"🔔":"🔕"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 取消訂閱 */}
+              <div style={{ marginTop:28, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
+                <button onClick={handleUnsubscribe} disabled={loading}
+                  style={{ width:"100%", padding:"8px 0", background:"none",
+                    border:`1px solid ${C.red}66`, borderRadius:10, color:C.red,
+                    fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>
+                  {loading?"處理中…":"取消所有推播通知"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── Calendar Page ─────────────────────────────────────────────
 const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
   const today = new Date();
@@ -652,12 +861,13 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
 
 
 // ─── HomePage ─────────────────────────────────────────────────
-const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
+const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
   const [search,        setSearch]        = useState("");
   const [regionFilter,  setRegionFilter]  = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [picFilter,     setPicFilter]     = useState("all");
   const [sortBy,        setSortBy]        = useState("created_desc");
+  const [showNotif,     setShowNotif]     = useState(false);
 
   const regionOptions = useMemo(() => {
     const s = new Set(projects.map(p => p.info.region==="其他"?(p.info.regionOther||"其他"):p.info.region).filter(Boolean));
@@ -727,7 +937,18 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
 
       {/* Filters */}
       <div style={{ marginBottom:20 }}>
-        <h2 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 16px" }}>專案列表</h2>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+          <h2 style={{ fontSize:18, fontWeight:700, color:C.text, margin:0 }}>專案列表</h2>
+          <button onClick={()=>setShowNotif(true)} title="推播通知設定"
+            style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
+              border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
+              cursor:"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit",
+              transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.blue; e.currentTarget.style.color=C.blue; }}
+            onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textMid; }}>
+            🔔 通知設定
+          </button>
+        </div>
         <div style={{ display:"flex", alignItems:"flex-end", gap:16, flexWrap:"wrap" }}>
           {/* Search */}
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
@@ -908,6 +1129,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete }) => {
           })}
         </div>
       )}
+      {/* Notification panel */}
+      {showNotif&&<NotificationPanel projects={projects} allPics={allPics} onClose={()=>setShowNotif(false)}/>}
     </div>
   );
 };
@@ -1070,7 +1293,21 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
   const [sheetLinks,    setSheetLinks]    = useState(project.sheetLinks);
   const [tasks,         setTasks]         = useState(project.tasks || []);
   const [saveStatus,    setSaveStatus]    = useState("idle");
+  const [projSub,       setProjSub]       = useState(null);
+  const [subLoading,    setSubLoading]    = useState(false);
   const saveTimer = useRef(null);
+
+  useEffect(() => {
+    (async()=>{
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (!reg) return;
+      const pushSub = await reg.pushManager.getSubscription();
+      if (!pushSub) return;
+      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
+      if (data) setProjSub(data);
+    })();
+  }, [project.id]);
 
   useEffect(() => {
     setSaveStatus("saving");
@@ -1395,11 +1632,32 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
         {step===4&&(
           <div style={{ animation:"fadeIn 0.25s ease" }}>
             <div style={{ marginBottom:24 }}>
-              <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案總覽</h2>
-              <p style={{ fontSize:13, color:C.textMid, margin:0 }}>
-                所有資料的完成度一覽
-                {project.updatedAt&&<span style={{ marginLeft:12, color:C.textLight }}>· 最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}</span>}
-              </p>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+                <div>
+                  <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案總覽</h2>
+                  <p style={{ fontSize:13, color:C.textMid, margin:0 }}>
+                    所有資料的完成度一覽
+                    {project.updatedAt&&<span style={{ marginLeft:12, color:C.textLight }}>· 最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}</span>}
+                  </p>
+                </div>
+                {/* Subscribe toggle */}
+                <button disabled={subLoading} onClick={async()=>{
+                  setSubLoading(true);
+                  if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用推播，再回來訂閱此專案。"); setSubLoading(false); return; }
+                  const isSubscribed=(projSub.subscribed_projects||[]).includes(project.id);
+                  const curr=projSub.subscribed_projects||[];
+                  const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
+                  const updated=await updateSub(projSub.id,{ subscribed_projects:next });
+                  setProjSub(updated); setSubLoading(false);
+                }} style={{ flexShrink:0, display:"flex", alignItems:"center", gap:6,
+                  padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
+                  border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blueBorder:C.border}`,
+                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blueLight:C.bg,
+                  color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blue:C.textMid,
+                  fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
+                  {projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"🔔 已訂閱提醒":"🔕 訂閱此專案提醒"}
+                </button>
+              </div>
             </div>
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
@@ -1704,7 +1962,7 @@ export default function App() {
                 : p
               ));
             }}/>
-          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete}/>
+          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
       }
     </div>
   );
