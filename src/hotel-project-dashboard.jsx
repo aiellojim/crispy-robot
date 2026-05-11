@@ -617,11 +617,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
     if (modal.mode==="add") {
       const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       const { error } = await sb.from("tasks").insert(task);
-      if (!error) onTaskAdded(task);
+      if (!error) onTaskAdded(task, false);
     } else {
       const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       await sb.from("tasks").update(updates).eq("id", draft.taskId);
-      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId });
+      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId }, true);
     }
     closeModal();
   };
@@ -1955,12 +1955,20 @@ export default function App() {
       {isDetailView
         ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} allPics={allPics}/>
         : page==="calendar"
-          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={task => {
-              setAllTasks(prev => [...prev, task]);
-              setProjects(prev => prev.map(p => p.id===task.project_id
-                ? { ...p, tasks:[...p.tasks, task] }
-                : p
-              ));
+          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
+              setAllTasks(prev => isEdit
+                ? prev.map(t => t.id===task.id ? { ...t, ...task } : t)
+                : [...prev, task]
+              );
+              setProjects(prev => prev.map(p => {
+                if (p.id !== task.project_id) return p;
+                return {
+                  ...p,
+                  tasks: isEdit
+                    ? p.tasks.map(t => t.id===task.id ? { ...t, ...task } : t)
+                    : [...p.tasks, task],
+                };
+              }));
             }}/>
           : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
       }
