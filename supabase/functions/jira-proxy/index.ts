@@ -142,6 +142,21 @@ Deno.serve(async (req) => {
     const getData = await getRes.json();
     const existingDesc = getData.fields?.description ?? null;
 
+    // 用固定錨點標記來識別儀表板插入的區塊
+    const ANCHOR_MARKER = "[[dashboard-info]]";
+
+    const isAnchor = (node: any) =>
+      node.type === "paragraph" &&
+      node.content?.[0]?.type === "text" &&
+      node.content[0].text === ANCHOR_MARKER;
+
+    // 移除舊的儀表板區塊（錨點段落及其後所有內容）
+    const existingContent: any[] = existingDesc?.content ?? [];
+    const anchorIndex = existingContent.findIndex(isAnchor);
+    const cleanedContent = anchorIndex >= 0
+      ? existingContent.slice(0, anchorIndex)
+      : existingContent;
+
     // 建立 ADF 表格
     const makeCell = (text: string, isHeader = false) => ({
       type: isHeader ? "tableHeader" : "tableCell",
@@ -159,7 +174,6 @@ Deno.serve(async (req) => {
       makeRow([makeCell("串接功能"),  makeCell((integrations ?? []).join("・") || "—")]),
     ];
 
-    // 只有 AVA 存在才加台數列
     if ((products ?? []).includes("AVA")) {
       rows.push(makeRow([makeCell("AVA 裝機台數"), makeCell(avaUnits ? `${avaUnits} 台` : "—")]));
       rows.push(makeRow([makeCell("AVA 備品台數"), makeCell(avaSpare ? `${avaSpare} 台` : "—")]));
@@ -171,12 +185,10 @@ Deno.serve(async (req) => {
       content: rows,
     };
 
-    // 附加到現有 description 後面
-    const existingContent = existingDesc?.content ?? [];
+    // 組合最終內容：原有內容（已清除舊表格）+ 錨點段落 + 新表格
     const newContent = [
-      ...existingContent,
-      { type: "paragraph", content: [{ type: "text", text: " " }] }, // 空行分隔
-      { type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: "儀表板專案資訊" }] },
+      ...cleanedContent,
+      { type: "paragraph", content: [{ type: "text", text: ANCHOR_MARKER }] },
       table,
     ];
 
