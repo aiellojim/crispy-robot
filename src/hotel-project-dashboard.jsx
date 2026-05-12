@@ -617,11 +617,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
     if (modal.mode==="add") {
       const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       const { error } = await sb.from("tasks").insert(task);
-      if (!error) onTaskAdded(task);
+      if (!error) onTaskAdded(task, false);
     } else {
       const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
       await sb.from("tasks").update(updates).eq("id", draft.taskId);
-      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId });
+      onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId }, true);
     }
     closeModal();
   };
@@ -1144,21 +1144,27 @@ const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VE
 // 顏色依 statusCategory 決定，不依賴狀態名稱字串
 // key: "new" = 待辦（灰）, "indeterminate" = 進行中（藍）, "done" = 完成（綠）
 function statusStyle(statusCategory) {
-  if (statusCategory === "done")         return { bg:"#4bce97", color:"#164b35" };
-  if (statusCategory === "indeterminate") return { bg:"#cce0ff", color:"#0055cc" };
-  return { bg:"#dfe1e6", color:"#44546f" }; // "new" 或未知
+  if (statusCategory === "done")          return { bg:"#b3df72", color:"#3b5a00" };
+  if (statusCategory === "indeterminate") return { bg:"#a1c2f4", color:"#0747a6" };
+  return { bg:"#dfe1e6", color:"#44546f" };
 }
 
 async function jiraFetch(action, params = {}, body = null) {
   const url = new URL(JIRA_PROXY);
   url.searchParams.set("action", action);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString(), {
-    method: body ? "POST" : "GET",
-    headers: { Authorization: `Bearer ${JIRA_ANON}`, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return res.json();
+  try {
+    const res = await fetch(url.toString(), {
+      method: body ? "POST" : "GET",
+      headers: { Authorization: `Bearer ${JIRA_ANON}`, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    return res.json();
+  } catch(e) {
+    return { error: e.message ?? "network error" };
+  }
 }
 
 function parseEpicId(epicUrl) {
@@ -1198,14 +1204,18 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
     }
   };
 
-  const doTransition = async (issueKey, transitionId, toName) => {
+  const doTransition = async (issueKey, transitionId, toName, toCategory) => {
     setUpdating(prev => ({ ...prev, [issueKey]: true }));
     setActiveKey(null);
+    // 樂觀更新：立即更新 UI
+    setIssues(prev => prev.map(i => i.key===issueKey
+      ? { ...i, status: toName, statusCategory: toCategory }
+      : i
+    ));
     const data = await jiraFetch("transition", {}, { issueKey, transitionId });
-    if (data.success) {
-      setIssues(prev => prev.map(i => i.key===issueKey ? { ...i, status: toName } : i));
-    } else {
-      setError(`更新 ${issueKey} 狀態失敗`);
+    if (!data.success) {
+      setError(`更新 ${issueKey} 狀態失敗，請重新同步`);
+      fetchIssues();
     }
     setUpdating(prev => ({ ...prev, [issueKey]: false }));
   };
@@ -1304,7 +1314,7 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
                         {trans.map(t => {
                           const ts = statusStyle(t.statusCategory ?? "new");
                           return (
-                            <button key={t.id} onClick={()=>doTransition(issue.key, t.id, t.name)}
+                            <button key={t.id} onClick={()=>doTransition(issue.key, t.id, t.name, t.statusCategory ?? "new")}
                               style={{ display:"flex", alignItems:"center", gap:8, width:"100%",
                                 padding:"8px 12px", background:"none", border:"none",
                                 cursor:"pointer", fontFamily:"inherit", textAlign:"left",
@@ -2163,12 +2173,20 @@ export default function App() {
       {isDetailView
         ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} allPics={allPics}/>
         : page==="calendar"
-          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={task => {
-              setAllTasks(prev => [...prev, task]);
-              setProjects(prev => prev.map(p => p.id===task.project_id
-                ? { ...p, tasks:[...p.tasks, task] }
-                : p
-              ));
+          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
+              setAllTasks(prev => isEdit
+                ? prev.map(t => t.id===task.id ? { ...t, ...task } : t)
+                : [...prev, task]
+              );
+              setProjects(prev => prev.map(p => {
+                if (p.id !== task.project_id) return p;
+                return {
+                  ...p,
+                  tasks: isEdit
+                    ? p.tasks.map(t => t.id===task.id ? { ...t, ...task } : t)
+                    : [...p.tasks, task],
+                };
+              }));
             }}/>
           : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
       }
