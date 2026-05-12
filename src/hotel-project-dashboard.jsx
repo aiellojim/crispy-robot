@@ -1173,16 +1173,16 @@ function parseEpicId(epicUrl) {
   return m ? m[1].toUpperCase() : null;
 }
 
-const JiraTab = ({ epicUrl, onBack, onNext }) => {
+const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
   const epicId = parseEpicId(epicUrl);
   const [issues,      setIssues]      = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState("");
-  // transitions cache per issue key
   const [transitions, setTransitions] = useState({});
-  // which issue's dropdown is open
   const [activeKey,   setActiveKey]   = useState(null);
   const [updating,    setUpdating]    = useState({});
+  const [descLoading, setDescLoading] = useState(false);
+  const [descSuccess, setDescSuccess] = useState(false);
 
   const fetchIssues = async () => {
     if (!epicId) return;
@@ -1191,6 +1191,24 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
     if (data.error) setError("無法讀取 Jira 資料，請確認 Epic 連結是否正確。");
     else setIssues(data.issues ?? []);
     setLoading(false);
+  };
+
+  const handleUpdateDescription = async () => {
+    if (!epicId) return;
+    setDescLoading(true); setDescSuccess(false); setError("");
+    const data = await jiraFetch("updateDescription", {}, {
+      epicId,
+      hotelName:    projectInfo?.name         ?? "",
+      hotelId:      projectInfo?.hotelId      ?? "",
+      products:     projectInfo?.products     ?? [],
+      integrations: projectInfo?.integrations ?? [],
+      avaUnits:     projectInfo?.avaUnits     ?? "",
+      avaSpare:     projectInfo?.avaSpare     ?? "",
+    });
+    if (data.success) setDescSuccess(true);
+    else setError("更新 Epic Description 失敗，請稍後再試。");
+    setDescLoading(false);
+    setTimeout(() => setDescSuccess(false), 3000);
   };
 
   useEffect(() => { if (epicId) fetchIssues(); }, [epicId]); // eslint-disable-line
@@ -1232,12 +1250,22 @@ const JiraTab = ({ epicUrl, onBack, onNext }) => {
             : <p style={{ fontSize:13, color:C.red, margin:0 }}>尚未填寫 Jira Epic 連結，請至「專案資訊」tab 填寫。</p>}
         </div>
         {epicId && (
-          <button onClick={fetchIssues} disabled={loading}
-            style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
-              border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
-              cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
-            {loading ? "同步中…" : "🔄 同步 Jira"}
-          </button>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={handleUpdateDescription} disabled={descLoading}
+              style={{ display:"flex", alignItems:"center", gap:6,
+                background:descSuccess?C.greenLight:C.white,
+                border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:9, padding:"7px 14px",
+                cursor:descLoading?"wait":"pointer", fontSize:13,
+                color:descSuccess?C.green:C.textMid, fontFamily:"inherit", transition:"all 0.2s" }}>
+              {descLoading?"更新中…":descSuccess?"✓ 已更新":"📝 更新 Epic Description"}
+            </button>
+            <button onClick={fetchIssues} disabled={loading}
+              style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
+                border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
+                cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
+              {loading ? "同步中…" : "🔄 同步 Jira"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -1833,7 +1861,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
 
         {/* Step 3: Jira 子任務 */}
         {step===3&&(
-          <JiraTab epicUrl={info.jiraEpic} onBack={()=>setStep(2)} onNext={()=>setStep(4)}/>
+          <JiraTab epicUrl={info.jiraEpic} projectInfo={info} onBack={()=>setStep(2)} onNext={()=>setStep(4)}/>
         )}
 
         {/* Step 4: 任務紀錄 */}
