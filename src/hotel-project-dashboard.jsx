@@ -772,7 +772,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
       </div>
 
       {/* Calendar grid */}
-      <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden", boxShadow:"0 1px 4px #0000000a" }}
+      <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, overflow:"visible", boxShadow:"0 1px 4px #0000000a" }}
         onClick={()=>setExpandedDay(null)}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
           {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700, color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>)}
@@ -792,9 +792,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                   onClick={e=>{ e.stopPropagation(); if(d&&dayEvents.length>2) setExpandedDay(isExpanded?null:k); }}
                   style={{ minHeight:110, padding:"6px 8px", borderRight:di<6?`1px solid ${C.border}`:"none",
                     background:isToday?C.blueLight:d?C.white:"#fafbfc",
-                    display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0,
+                    display:"flex", flexDirection:"column", overflow:"visible", minWidth:0,
                     cursor:d&&dayEvents.length>2?"pointer":"default", transition:"background 0.15s",
-                    position:"relative", zIndex:isExpanded?10:1 }}>
+                    position:"relative", zIndex:isExpanded?20:1 }}>
                   {d && (
                     <>
                       {/* Date + add button */}
@@ -810,9 +810,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                             title="新增任務">+</button>
                         )}
                       </div>
-                      {/* Event labels */}
-                      <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1 }}>
-                        {visible.map((ev,ei)=>(
+                      {/* Event labels - always show max 2 in cell */}
+                      <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1, overflow:"hidden" }}>
+                        {dayEvents.slice(0,2).map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
                             onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); }}
                             style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", transition:"opacity 0.15s" }}
@@ -824,9 +824,32 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                             <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {hasMore && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>}
-                        {isExpanded && <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px" }}>▲ 收起</div>}
+                        {dayEvents.length>2 && !isExpanded && (
+                          <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>
+                        )}
                       </div>
+                      {/* Expanded dropdown - absolutely positioned to avoid layout break */}
+                      {isExpanded && (
+                        <div style={{ position:"absolute", top:"100%", left:-1, right:-1,
+                          background:C.white, border:`1px solid ${C.blueBorder}`,
+                          borderTop:"none", borderRadius:"0 0 10px 10px",
+                          boxShadow:"0 8px 24px rgba(0,0,0,0.12)",
+                          zIndex:30, padding:"4px 8px 8px", display:"flex", flexDirection:"column", gap:3 }}>
+                          {dayEvents.map((ev,ei)=>(
+                            <div key={ei} title={`${ev.label} — ${ev.sub}`}
+                              onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); }}
+                              style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default" }}
+                              onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                              onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                              <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                {ev.sub}{ev.taskId?" ✎":""}
+                              </div>
+                              <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
+                            </div>
+                          ))}
+                          <div style={{ fontSize:10, color:C.textLight, padding:"1px 4px", textAlign:"center" }}>▲ 收起</div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
