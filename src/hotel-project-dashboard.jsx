@@ -794,7 +794,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                     if(isExpanded) { setExpandedDay(null); setExpandedPos(null); }
                     else {
                       const rect = e.currentTarget.getBoundingClientRect();
-                      setExpandedPos({ top:rect.bottom+window.scrollY, left:rect.left+window.scrollX, width:rect.width });
+                      setExpandedPos({ top:rect.bottom, left:rect.left, width:rect.width });
                       setExpandedDay(k);
                     }
                   }}}
@@ -849,17 +849,24 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
       {/* Fixed dropdown for expanded day events */}
       {expandedDay && expandedPos && (() => {
         const dayEvs = events.filter(e=>e.date===expandedDay);
+        const dropH  = Math.min(dayEvs.length * 52 + 36, 320);
+        const spaceBelow = window.innerHeight - expandedPos.top;
+        const flipUp = spaceBelow < dropH + 8;
         return (
           <div onClick={e=>e.stopPropagation()}
-            style={{ position:"fixed", top:expandedPos.top, left:expandedPos.left,
+            style={{ position:"fixed",
+              top:  flipUp ? "auto" : expandedPos.top,
+              bottom: flipUp ? window.innerHeight - expandedPos.top + 4 : "auto",
+              left:expandedPos.left,
               width:Math.max(expandedPos.width, 180),
+              maxHeight:320, overflowY:"auto",
               background:C.white, border:`1px solid ${C.blueBorder}`,
               borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
               zIndex:9999, padding:"8px", display:"flex", flexDirection:"column", gap:4 }}>
             {dayEvs.map((ev,ei)=>(
               <div key={ei} title={`${ev.label} — ${ev.sub}`}
                 onClick={e=>{ e.stopPropagation(); if(ev.taskId) { openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
-                style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default" }}
+                style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", flexShrink:0 }}
                 onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
                 onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
                 <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
@@ -869,7 +876,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
               </div>
             ))}
             <div onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}
-              style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"2px 0", cursor:"pointer" }}>▲ 收起</div>
+              style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"2px 0", cursor:"pointer", flexShrink:0 }}>▲ 收起</div>
           </div>
         );
       })()}
