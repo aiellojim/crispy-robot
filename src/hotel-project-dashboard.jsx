@@ -487,10 +487,10 @@ const NotificationPanel = ({ projects, allPics, onClose }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:999 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:C.white,
         borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
-        zIndex:1000, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+        zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
@@ -674,7 +674,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
   const realTodayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
   const ModalContent = modal ? (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
       <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
