@@ -11,7 +11,10 @@ const sb = createClient(
 const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS"];
 const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV"];
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
-const PRODUCT_COLORS = { AVA:"#1e6fb5", AVT:"#0891b2", ACA:"#0e7a5a", TMSP:"#7c3aed", GW:"#b45309", KMS:"#be185d" };
+const PRODUCT_COLORS = {
+  AVA:"var(--prod-ava)", AVT:"var(--prod-avt)", ACA:"var(--prod-aca)",
+  TMSP:"var(--prod-tmsp)", GW:"var(--prod-gw)", KMS:"var(--prod-kms)"
+};
 
 const BASIC_ITEMS  = ["房型及機台擺放位置圖片","需申請後台權限的 email 帳號","樓層房號表及 WiFi 資訊","機台重啟（Check out）方式","是否需開啟打掃 & 勿擾功能","通話快捷鍵設定 & 分機提供","歡迎畫面背景","歡迎詞填寫","後台服務功能設定 & 送物 / 修繕項目清單","TMS Pro 設定"];
 const FAQ_TV_ITEM  = "電視頻道設定（若串接項目不含 IPTV 則不用填寫）";
@@ -23,42 +26,130 @@ const BATCH2_LINK_KEYS = ["showcase","ad","popupQR"];
 const GW_ITEM     = "GuestWeb 內容建置";
 const GW_LINK_KEY = "guestWeb";
 
-// Calendar event type colours
+// Calendar event type colours — CSS var based for dark mode
 const CAL_COLORS = {
-  launch:    { bg:"#dbeafe", text:"#1e40af", border:"#93c5fd" },
-  batch1:    { bg:"#dcfce7", text:"#166534", border:"#86efac" },
-  batch2:    { bg:"#f3e8ff", text:"#6b21a8", border:"#d8b4fe" },
-  taskDL:    { bg:"#fef3c7", text:"#92400e", border:"#fcd34d" },
-  taskPeriod:{ bg:"#ffe4e6", text:"#9f1239", border:"#fca5a5" },
+  launch:    { bg:"var(--cal-launch-bg)",  text:"var(--cal-launch-text)",  border:"var(--cal-launch-border)" },
+  batch1:    { bg:"var(--cal-batch1-bg)",  text:"var(--cal-batch1-text)",  border:"var(--cal-batch1-border)" },
+  batch2:    { bg:"var(--cal-batch2-bg)",  text:"var(--cal-batch2-text)",  border:"var(--cal-batch2-border)" },
+  taskDL:    { bg:"var(--cal-task-bg)",    text:"var(--cal-task-text)",    border:"var(--cal-task-border)"   },
+  taskPeriod:{ bg:"var(--cal-period-bg)",  text:"var(--cal-period-text)",  border:"var(--cal-period-border)" },
 };
 
-// ─── Theme ────────────────────────────────────────────────────
+// ─── Theme — all values are CSS variable references ───────────
 const C = {
-  bg:"#f4f6f9", white:"#ffffff", border:"#e2e8f0", borderMid:"#cbd5e1",
-  text:"#1e293b", textMid:"#475569", textLight:"#94a3b8",
-  blue:"#1d4ed8", blueLight:"#eff6ff", blueBorder:"#bfdbfe",
-  green:"#059669", greenLight:"#ecfdf5",
-  amber:"#d97706", amberLight:"#fffbeb",
-  purple:"#7c3aed", purpleLight:"#f5f3ff",
-  red:"#dc2626",
+  bg:         "var(--bg)",
+  white:      "var(--surface)",
+  border:     "var(--border)",
+  borderMid:  "var(--border-mid)",
+  text:       "var(--text)",
+  textMid:    "var(--text-mid)",
+  textLight:  "var(--text-subtle)",
+  blue:       "var(--accent)",
+  blueLight:  "var(--accent-light)",
+  blueBorder: "var(--accent-border)",
+  green:      "var(--green)",
+  greenLight: "var(--green-light)",
+  amber:      "var(--amber)",
+  amberLight: "var(--amber-light)",
+  purple:     "var(--purple)",
+  purpleLight:"var(--purple-light)",
+  red:        "var(--red)",
 };
 
 const baseInput = {
-  width:"100%", background:C.white, border:`1.5px solid ${C.border}`,
-  borderRadius:10, color:C.text, padding:"10px 14px", fontSize:14,
-  outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color 0.2s",
+  width:"100%", background:"var(--surface)", border:"1px solid var(--border)",
+  borderRadius:8, color:"var(--text)", padding:"9px 12px", fontSize:14,
+  outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color 0.15s",
 };
 
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #F5F5F5;
+    --surface: #FFFFFF;
+    --surface-raised: #FAFAFA;
+    --border: #E5E5E5;
+    --border-mid: #D4D4D4;
+    --text: #111111;
+    --text-mid: #6B6B6B;
+    --text-subtle: #A3A3A3;
+    --accent: #5E6AD2;
+    --accent-light: #EEEFFE;
+    --accent-border: rgba(94,106,210,0.28);
+    --accent-subtle: rgba(94,106,210,0.07);
+    --green: #16A34A;
+    --green-light: #F0FDF4;
+    --green-subtle: rgba(22,163,74,0.08);
+    --amber: #B45309;
+    --amber-light: #FFFBEB;
+    --amber-subtle: rgba(180,83,9,0.08);
+    --red: #DC2626;
+    --red-light: #FEF2F2;
+    --red-subtle: rgba(220,38,38,0.07);
+    --purple: #7C3AED;
+    --purple-light: #F5F3FF;
+    --purple-subtle: rgba(124,58,237,0.07);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --cal-launch-bg: #DBEAFE; --cal-launch-text: #1E40AF; --cal-launch-border: #93C5FD;
+    --cal-batch1-bg: #DCFCE7; --cal-batch1-text: #166534; --cal-batch1-border: #86EFAC;
+    --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
+    --cal-task-bg:   #FEF3C7; --cal-task-text:   #92400E; --cal-task-border:   #FCD34D;
+    --cal-period-bg: #FFE4E6; --cal-period-text:  #9F1239; --cal-period-border: #FCA5A5;
+    --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
+    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111111;
+      --surface: #1C1C1C;
+      --surface-raised: #242424;
+      --border: #2E2E2E;
+      --border-mid: #3D3D3D;
+      --text: #EDEDED;
+      --text-mid: #A3A3A3;
+      --text-subtle: #6B6B6B;
+      --accent: #7C85E0;
+      --accent-light: #1A1C40;
+      --accent-border: rgba(124,133,224,0.35);
+      --accent-subtle: rgba(124,133,224,0.1);
+      --green: #22C55E;
+      --green-light: #052E16;
+      --green-subtle: rgba(34,197,94,0.1);
+      --amber: #F59E0B;
+      --amber-light: #1C1200;
+      --amber-subtle: rgba(245,158,11,0.1);
+      --red: #EF4444;
+      --red-light: #2D0F0F;
+      --red-subtle: rgba(239,68,68,0.1);
+      --purple: #A78BFA;
+      --purple-light: #1E0A3C;
+      --purple-subtle: rgba(167,139,250,0.1);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+      --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
+      --cal-batch1-bg: #0A2E1A; --cal-batch1-text: #86EFAC; --cal-batch1-border: #14532D;
+      --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
+      --cal-task-bg:   #2A1C00; --cal-task-text:   #FCD34D; --cal-task-border:   #78350F;
+      --cal-period-bg: #2D0A14; --cal-period-text:  #FCA5A5; --cal-period-border: #881337;
+      --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
+      --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0;
+    }
+  }
+
   *, *::before, *::after { box-sizing: border-box; }
-  body { margin: 0; }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #f1f5f9; }
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
   input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:none; } }
+  @media (prefers-color-scheme: dark) {
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+    select option { background: var(--surface); color: var(--text); }
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
 `;
 
@@ -158,67 +249,59 @@ const newProject = () => ({
 
 // ─── Shared UI components ─────────────────────────────────────
 
-const Ring = ({ pct, size=80, stroke=7, color }) => {
-  const r = (size-stroke)/2, circ = 2*Math.PI*r;
-  return (
-    <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={stroke}/>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
-        strokeDasharray={`${(pct/100)*circ} ${circ}`} strokeLinecap="round"
-        style={{ transition:"stroke-dasharray 0.6s cubic-bezier(.4,2,.6,1)" }}/>
-    </svg>
-  );
-};
+// Linear-style thin progress bar (replaces Ring)
+const LinearProgress = ({ pct, color }) => (
+  <div style={{ height:3, background:"var(--border)", borderRadius:2, overflow:"hidden", width:"100%" }}>
+    <div style={{ height:"100%", borderRadius:2, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
+  </div>
+);
 
 const ProgressCard = ({ label, checked, total, color }) => {
   const pct = total===0 ? 0 : Math.round((checked/total)*100);
   return (
-    <div style={{ background:C.white, border:`1.5px solid ${color}33`, borderRadius:16, padding:"18px 22px",
-      display:"flex", alignItems:"center", gap:18, flex:1, minWidth:160, boxShadow:`0 2px 12px ${color}15` }}>
-      <div style={{ position:"relative", flexShrink:0 }}>
-        <Ring pct={pct} color={color}/>
-        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:14, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{pct}%</div>
+    <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+      padding:"16px 20px", flex:1, minWidth:150 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+        <span style={{ fontSize:11, letterSpacing:1.2, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:600 }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{pct}%</span>
       </div>
-      <div>
-        <div style={{ fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:4, fontWeight:600 }}>{label}</div>
-        <div style={{ fontSize:20, fontWeight:700, color:C.text, fontFamily:"'DM Mono',monospace" }}>
-          {checked}<span style={{ color:C.textLight, fontSize:14 }}>/{total}</span>
-        </div>
-        <div style={{ fontSize:12, color, marginTop:2, fontWeight:500 }}>
-          {total-checked===0 ? "✓ 全部完成" : `還剩 ${total-checked} 項`}
-        </div>
+      <LinearProgress pct={pct} color={color}/>
+      <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
+        <span style={{ fontSize:12, color:"var(--text-subtle)", fontFamily:"'DM Mono',monospace" }}>{checked}/{total}</span>
+        <span style={{ fontSize:11, color:total-checked===0?color:"var(--text-subtle)", fontWeight:total-checked===0?600:400 }}>
+          {total-checked===0 ? "✓ 完成" : `剩 ${total-checked} 項`}
+        </span>
       </div>
     </div>
   );
 };
 
 const MiniBar = ({ pct, color }) => (
-  <div style={{ height:5, background:C.border, borderRadius:3, overflow:"hidden", flex:1 }}>
-    <div style={{ height:"100%", borderRadius:3, background:color, width:`${pct}%`, transition:"width 0.6s ease" }}/>
+  <div style={{ height:4, background:"var(--border)", borderRadius:2, overflow:"hidden", flex:1 }}>
+    <div style={{ height:"100%", borderRadius:2, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
   </div>
 );
 
 const Card = ({ children, style={} }) => (
-  <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16,
-    padding:24, marginBottom:20, boxShadow:"0 1px 4px #0000000a", ...style }}>
+  <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+    padding:24, marginBottom:16, ...style }}>
     {children}
   </div>
 );
 
-const SectionLabel = ({ title, icon, color=C.blue }) => (
-  <div style={{ fontSize:11, letterSpacing:2, color, textTransform:"uppercase", marginBottom:14,
-    display:"flex", alignItems:"center", gap:7, fontWeight:700 }}>
-    <span>{icon}</span>{title}
+const SectionLabel = ({ title, icon, color="var(--accent)" }) => (
+  <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12,
+    display:"flex", alignItems:"center", gap:6, fontWeight:600 }}>
+    {icon && <span>{icon}</span>}{title}
   </div>
 );
 
 const SectionCount = ({ title, checked, total, color }) => (
-  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-    <div style={{ fontSize:15, fontWeight:700, color:C.text }}>{title}</div>
-    <div style={{ background:C.bg, border:`1px solid ${color}44`, borderRadius:10, padding:"6px 14px" }}>
-      <span style={{ fontSize:18, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{checked}</span>
-      <span style={{ fontSize:13, color:C.textLight }}>/{total}</span>
+  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+    <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>{title}</div>
+    <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"4px 12px", background:"var(--surface-raised)" }}>
+      <span style={{ fontSize:16, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{checked}</span>
+      <span style={{ fontSize:12, color:"var(--text-subtle)" }}>/{total}</span>
     </div>
   </div>
 );
@@ -236,99 +319,99 @@ const RichText = ({ text, style:s={} }) => {
   return (
     <div style={{ whiteSpace:"pre-wrap", lineHeight:1.7, ...s }}>
       {parts.map((p,i) => p.t==="link"
-        ? <a key={i} href={p.href} target="_blank" rel="noreferrer" style={{ color:C.blue, textDecoration:"underline", fontWeight:500 }}>{p.label}</a>
+        ? <a key={i} href={p.href} target="_blank" rel="noreferrer" style={{ color:"var(--accent)", textDecoration:"underline", fontWeight:500 }}>{p.label}</a>
         : <span key={i}>{p.v}</span>
       )}
     </div>
   );
 };
 
-const FInput = ({ label, value, onChange, placeholder, type="text", focusColor=C.blue }) => (
-  <div style={{ marginBottom:18 }}>
-    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid,
-      textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>{label}</label>
+const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="var(--accent)" }) => (
+  <div style={{ marginBottom:16 }}>
+    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
+      textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>{label}</label>
     <input type={type} value={value} onChange={e=>onChange(e.target.value)}
       placeholder={placeholder} style={baseInput}
       onFocus={e=>(e.target.style.borderColor=focusColor)}
-      onBlur={e=>(e.target.style.borderColor=C.border)}/>
+      onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
   </div>
 );
 
-const Chip = ({ label, active, onClick, color=C.blue }) => (
-  <button onClick={onClick} style={{ padding:"6px 14px", borderRadius:8, fontFamily:"inherit",
-    border:`1.5px solid ${active?color:C.border}`, background:active?color:C.white,
-    color:active?"#fff":C.textMid, cursor:"pointer", fontSize:13, fontWeight:600, transition:"all 0.15s" }}>
+const Chip = ({ label, active, onClick, color="var(--accent)" }) => (
+  <button onClick={onClick} style={{ padding:"5px 13px", borderRadius:6, fontFamily:"inherit",
+    border:`1px solid ${active?color:"var(--border)"}`, background:active?color:"transparent",
+    color:active?"#fff":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:500, transition:"all 0.12s" }}>
     {label}
   </button>
 );
 
-const CheckRow = ({ label, checked, onChange, color=C.green }) => (
-  <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-    borderRadius:10, cursor:"pointer", marginBottom:6,
-    background: checked ? `${color}0d` : "#fff5f5",
-    border: `1.5px solid ${checked ? color+"55" : "#ef444466"}`,
-    borderLeft: checked ? `1.5px solid ${color}55` : `4px solid #ef4444`,
-    transition:"all 0.15s" }}>
-    <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-      border:`2px solid ${checked ? color : "#ef4444"}`,
-      background: checked ? color : "#fff",
-      display:"flex", alignItems:"center", justifyContent:"center" }}>
-      {checked && <span style={{ color:"#fff", fontSize:12 }}>✓</span>}
+// CheckRow: simplified — checked always green-subtle, no red unchecked state
+const CheckRow = ({ label, checked, onChange, color="var(--green)" }) => (
+  <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
+    borderRadius:8, cursor:"pointer", marginBottom:4,
+    background: checked ? "var(--green-subtle)" : "transparent",
+    border: `1px solid ${checked ? "var(--green)" : "var(--border)"}`,
+    transition:"all 0.12s" }}>
+    <div style={{ width:17, height:17, borderRadius:4, flexShrink:0,
+      border:`1.5px solid ${checked ? "var(--green)" : "var(--border-mid)"}`,
+      background: checked ? "var(--green)" : "transparent",
+      display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
+      {checked && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
     </div>
-    <span style={{ fontSize:14, color: checked ? C.text : C.textMid, flex:1 }}>{label}</span>
-    {!checked && <span style={{ fontSize:10, color:"#ef4444", fontWeight:700, letterSpacing:0.5, flexShrink:0 }}>待完成</span>}
+    <span style={{ fontSize:13, color: checked ? "var(--text)" : "var(--text-mid)", flex:1 }}>{label}</span>
+    {!checked && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500 }}>待完成</span>}
   </div>
 );
 
-const NoteArea = ({ value, onChange, focusColor=C.green }) => (
+const NoteArea = ({ value, onChange, focusColor="var(--accent)" }) => (
   <textarea value={value} onChange={e=>onChange(e.target.value)}
     placeholder="補充說明進行狀況或缺少項目…" rows={2}
-    style={{ ...baseInput, marginTop:4, fontSize:12, color:C.textMid,
-      resize:"vertical", minHeight:56, background:"#fafbfc", borderColor:C.border }}
+    style={{ ...baseInput, marginTop:4, fontSize:12, color:"var(--text-mid)",
+      resize:"vertical", minHeight:52, background:"var(--surface-raised)" }}
     onFocus={e=>(e.target.style.borderColor=focusColor)}
-    onBlur={e=>(e.target.style.borderColor=C.border)}/>
+    onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
 );
 
-const SheetLink = ({ value, onChange, color=C.blue }) => {
+const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
   const invalid = value.length>0 && !value.startsWith("http");
   return (
-    <div style={{ marginTop:14, padding:"12px 14px", background:C.blueLight,
-      border:`1px solid ${invalid?C.red+"55":C.blueBorder}`, borderRadius:12 }}>
-      <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, letterSpacing:1.5,
-        color, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>🔗 資料表連結</label>
+    <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
+      border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
+      <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>🔗 資料表連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Google Sheets 或其他資料表連結"
-        style={{ ...baseInput, borderColor:invalid?C.red:`${color}33` }}
-        onFocus={e=>(e.target.style.borderColor=invalid?C.red:color)}
-        onBlur={e=>(e.target.style.borderColor=invalid?C.red:`${color}33`)}/>
-      {invalid && <div style={{ marginTop:6, fontSize:12, color:C.red }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
+        style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
+        onFocus={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--accent)")}
+        onBlur={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--border)")}/>
+      {invalid && <div style={{ marginTop:5, fontSize:11, color:"var(--red)" }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
       {!invalid && value && <a href={value} target="_blank" rel="noreferrer"
-        style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:8,
-          fontSize:12, color, textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>}
+        style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:7,
+          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>}
     </div>
   );
 };
 
-const NavRow = ({ onBack, onNext, nextLabel, nextColor=C.blue }) => (
+const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
   <div style={{ display:"flex", justifyContent:onBack?"space-between":"flex-end" }}>
-    {onBack && <button onClick={onBack} style={{ background:C.white, color:C.textMid,
-      border:`1px solid ${C.border}`, borderRadius:12, padding:"11px 22px",
-      fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
+    {onBack && <button onClick={onBack} style={{ background:"transparent", color:"var(--text-mid)",
+      border:"1px solid var(--border)", borderRadius:8, padding:"9px 20px",
+      fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
     {onNext && <button onClick={onNext} style={{ background:nextColor, color:"#fff", border:"none",
-      borderRadius:12, padding:"11px 26px", fontSize:14, fontWeight:700,
-      cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${nextColor}40` }}>{nextLabel}</button>}
+      borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:600,
+      cursor:"pointer", fontFamily:"inherit" }}>{nextLabel}</button>}
   </div>
 );
 
 // Read-only overview check row
 const OvCheckRow = ({ label, checked, note, color }) => (
-  <div style={{ borderBottom:`1px solid ${C.bg}` }}>
-    <div style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"8px 0" }}>
-      <span style={{ fontSize:13, color:checked?color:C.border, flexShrink:0, marginTop:1 }}>{checked?"✓":"○"}</span>
+  <div style={{ borderBottom:"1px solid var(--border)" }}>
+    <div style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 0" }}>
+      <span style={{ fontSize:12, color:checked?color:"var(--border-mid)", flexShrink:0, marginTop:2, fontWeight:700 }}>{checked?"✓":"○"}</span>
       <div style={{ flex:1, minWidth:0 }}>
-        <span style={{ fontSize:12, color:checked?C.text:C.textLight, lineHeight:1.5 }}>{label}</span>
-        {note && <div style={{ marginTop:5, padding:"6px 10px", background:`${color}08`,
-          border:`1px solid ${color}22`, borderRadius:7, fontSize:11, color:C.textMid,
+        <span style={{ fontSize:12, color:checked?"var(--text)":"var(--text-subtle)", lineHeight:1.5 }}>{label}</span>
+        {note && <div style={{ marginTop:4, padding:"5px 9px", background:"var(--bg)",
+          border:"1px solid var(--border)", borderRadius:6, fontSize:11, color:"var(--text-mid)",
           lineHeight:1.6, whiteSpace:"pre-wrap" }}>{note}</div>}
       </div>
     </div>
@@ -336,15 +419,15 @@ const OvCheckRow = ({ label, checked, note, color }) => (
 );
 
 const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
-  <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16,
-    padding:18, boxShadow:"0 1px 4px #0000000a" }}>
-    <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>{title}</div>
+  <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, padding:16 }}>
+    <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:600 }}>{title}</div>
     {children}
     {linkKey && sheetLinks[linkKey] && (
       <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-        style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:14,
-          fontSize:12, color, textDecoration:"none", fontWeight:600,
-          background:`${color}11`, border:`1px solid ${color}33`, borderRadius:7, padding:"5px 12px" }}>
+        style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:12,
+          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:600,
+          background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
+          borderRadius:6, padding:"4px 10px" }}>
         🔗 開啟資料表
       </a>
     )}
@@ -354,20 +437,20 @@ const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
 const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
   const done=!!checked, hasNote=note&&note.trim();
   return (
-    <div style={{ background:done?C.purpleLight:"#fafbfc",
-      border:`1px solid ${done?C.purple+"44":C.border}`, borderRadius:12, padding:"12px 14px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:(hasNote||sheetLinks[linkKey])?8:0 }}>
-        <span style={{ fontSize:13, color:done?C.purple:C.border }}>{done?"✓":"○"}</span>
-        <span style={{ fontSize:13, color:done?C.text:C.textLight, fontWeight:done?600:400 }}>{item}</span>
+    <div style={{ background:done?"var(--purple-subtle)":"transparent",
+      border:`1px solid ${done?"var(--purple)":"var(--border)"}`, borderRadius:10, padding:"11px 13px" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:(hasNote||sheetLinks[linkKey])?7:0 }}>
+        <span style={{ fontSize:12, color:done?"var(--purple)":"var(--border-mid)", fontWeight:700 }}>{done?"✓":"○"}</span>
+        <span style={{ fontSize:13, color:done?"var(--text)":"var(--text-subtle)", fontWeight:done?600:400 }}>{item}</span>
       </div>
-      {hasNote && <div style={{ margin:"6px 0 8px 22px", padding:"6px 10px", background:`${C.purple}08`,
-        border:`1px solid ${C.purple}22`, borderRadius:7, fontSize:11, color:C.textMid,
+      {hasNote && <div style={{ margin:"5px 0 7px 20px", padding:"5px 9px", background:"var(--bg)",
+        border:"1px solid var(--border)", borderRadius:6, fontSize:11, color:"var(--text-mid)",
         lineHeight:1.6, whiteSpace:"pre-wrap" }}>{note}</div>}
-      {sheetLinks[linkKey] && <div style={{ marginLeft:22 }}>
+      {sheetLinks[linkKey] && <div style={{ marginLeft:20 }}>
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-          style={{ fontSize:11, color:C.purple, textDecoration:"none", fontWeight:600,
-            background:C.purpleLight, border:`1px solid ${C.purple}33`,
-            borderRadius:6, padding:"3px 10px", display:"inline-block" }}>🔗 連結</a>
+          style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:600,
+            background:"var(--purple-subtle)", border:"1px solid var(--purple)",
+            borderRadius:5, padding:"2px 9px", display:"inline-block" }}>🔗 連結</a>
       </div>}
     </div>
   );
@@ -376,12 +459,12 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
 // Dropdown filter
 const FilterSelect = ({ label, value, onChange, options }) => (
   <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-    <label style={{ fontSize:11, color:C.textLight, fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>
+    <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>
     <select value={value} onChange={e=>onChange(e.target.value)}
-      style={{ ...baseInput, width:"auto", minWidth:130, padding:"8px 32px 8px 12px", fontSize:13, borderRadius:8, cursor:"pointer",
-        appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-        backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center" }}
-      onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}>
+      style={{ ...baseInput, width:"auto", minWidth:130, padding:"8px 30px 8px 11px", fontSize:13, borderRadius:8, cursor:"pointer",
+        appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+        backgroundRepeat:"no-repeat", backgroundPosition:"right 9px center" }}
+      onFocus={e=>(e.target.style.borderColor="var(--accent)")} onBlur={e=>(e.target.style.borderColor="var(--border)")}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   </div>
@@ -502,12 +585,12 @@ const NotificationPanel = ({ projects, allPics, onClose }) => {
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {status==="unsupported" && (
-            <div style={{ background:"#fef2f2", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
               此瀏覽器不支援推播通知，建議改用 Chrome、Edge 或 macOS 13+ 的 Safari。
             </div>
           )}
           {status==="denied" && (
-            <div style={{ background:"#fef2f2", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
               通知權限已被封鎖，請至瀏覽器設定手動開啟後重試。
             </div>
           )}
@@ -683,7 +766,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
   const ModalContent = modal ? (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
-      <div style={{ background:C.white, borderRadius:20, padding:32, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
+      <div style={{ background:C.white, borderRadius:14, padding:28, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <h3 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
@@ -781,9 +864,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       </div>
 
       {/* Calendar grid */}
-      <div ref={gridRef} style={{ border:`1px solid ${C.border}`, borderRadius:16, boxShadow:"0 1px 4px #0000000a", position:"relative", overflow:"visible" }}
+      <div ref={gridRef} style={{ border:`1px solid ${C.border}`, borderRadius:12, position:"relative", overflow:"visible" }}
         onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}>
-        <div style={{ background:C.white, borderRadius:16, overflow:"hidden" }}>
+        <div style={{ background:C.white, borderRadius:12, overflow:"hidden" }}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
           {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700, color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>)}
         </div>
@@ -809,7 +892,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                     }
                   }}}
                   style={{ minHeight:110, padding:"6px 8px", borderRight:di<6?`1px solid ${C.border}`:"none",
-                    background:isToday?C.blueLight:d?C.white:"#fafbfc",
+                    background:isToday?C.blueLight:d?C.white:"var(--surface-raised)",
                     display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0,
                     cursor:d&&dayEvents.length>2?"pointer":"default", transition:"background 0.15s",
                     position:"relative", zIndex:1 }}>
@@ -986,54 +1069,50 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
   const doneCount = projects.filter(p=>calcPct(p)===100).length;
 
   const stats = [
-    { label:"專案總數",    value:projects.length, icon:"📋", color:C.blue,   bg:C.blueLight },
-    { label:"逾期未完成",  value:overdueCount,    icon:"⚠️", color:overdueCount>0?C.red:C.green, bg:overdueCount>0?"#fef2f2":C.greenLight },
-    { label:"即將上線（30天）", value:soonCount,  icon:"🚀", color:C.amber,  bg:C.amberLight },
-    { label:"已完成資料",  value:doneCount,       icon:"✅", color:C.purple, bg:C.purpleLight },
+    { label:"專案總數",         value:projects.length, color:"var(--accent)" },
+    { label:"逾期未完成",       value:overdueCount,    color:overdueCount>0?"var(--red)":"var(--green)" },
+    { label:"即將上線（30天）", value:soonCount,       color:"var(--amber)" },
+    { label:"已完成資料",       value:doneCount,       color:"var(--purple)" },
   ];
 
   return (
-    <div style={{ padding:"36px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
+    <div style={{ padding:"32px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
       {/* Stat cards */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:40 }}>
-        {stats.map(({ label, value, icon, color, bg }, i) => (
-          <div key={label} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16,
-            padding:"22px 24px", boxShadow:"0 1px 4px #0000000a", animation:`fadeUp 0.3s ease ${i*0.06}s both` }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
-              <span style={{ fontSize:13, color:C.textMid, fontWeight:500 }}>{label}</span>
-              <div style={{ width:34, height:34, borderRadius:9, background:bg,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{icon}</div>
-            </div>
-            <div style={{ fontSize:32, fontWeight:700, color:C.text, fontFamily:"'DM Mono',monospace", letterSpacing:-1 }}>{value}</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:36 }}>
+        {stats.map(({ label, value, color }) => (
+          <div key={label} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+            padding:"20px 24px", animation:"fadeIn 0.2s ease" }}>
+            <div style={{ fontSize:12, color:"var(--text-subtle)", fontWeight:500, marginBottom:10 }}>{label}</div>
+            <div style={{ fontSize:30, fontWeight:700, color, fontFamily:"'DM Mono',monospace", letterSpacing:-1 }}>{value}</div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
       <div style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-          <h2 style={{ fontSize:18, fontWeight:700, color:C.text, margin:0 }}>專案列表</h2>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+          <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", margin:0 }}>專案列表</h2>
           <button onClick={()=>setShowNotif(true)} title="推播通知設定"
-            style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
-              border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
-              cursor:"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit",
-              transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.borderColor=C.blue; e.currentTarget.style.color=C.blue; }}
-            onMouseLeave={e=>{ e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textMid; }}>
+            style={{ display:"flex", alignItems:"center", gap:6, background:"transparent",
+              border:"1px solid var(--border)", borderRadius:8, padding:"6px 13px",
+              cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
+              transition:"all 0.12s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
             🔔 通知設定
           </button>
         </div>
-        <div style={{ display:"flex", alignItems:"flex-end", gap:16, flexWrap:"wrap" }}>
+        <div style={{ display:"flex", alignItems:"flex-end", gap:14, flexWrap:"wrap" }}>
           {/* Search */}
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-            <label style={{ fontSize:11, color:C.textLight, fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>搜尋</label>
+            <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>搜尋</label>
             <div style={{ position:"relative" }}>
-              <span style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)",
-                color:C.textLight, fontSize:14, pointerEvents:"none" }}>🔍</span>
+              <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
+                color:"var(--text-subtle)", fontSize:13, pointerEvents:"none" }}>🔍</span>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="飯店名稱…"
-                style={{ ...baseInput, paddingLeft:36, width:200, fontSize:13 }}
-                onFocus={e=>(e.target.style.borderColor=C.blue)}
-                onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                style={{ ...baseInput, paddingLeft:32, width:200, fontSize:13 }}
+                onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
             </div>
           </div>
           <FilterSelect label="地區" value={regionFilter}  onChange={setRegionFilter}  options={regionOptions}/>
@@ -1081,12 +1160,12 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
 
             return (
               <div key={proj.id}
-                style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16,
-                  padding:22, cursor:"pointer", transition:"all 0.18s",
-                  boxShadow:"0 1px 4px #0000000a", animation:`fadeUp 0.3s ease ${i*0.05}s both` }}
+                style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+                  padding:20, cursor:"pointer", transition:"border-color 0.15s, box-shadow 0.15s",
+                  animation:"fadeIn 0.2s ease" }}
                 onClick={()=>onOpen(proj.id)}
-                onMouseEnter={e=>{ e.currentTarget.style.boxShadow="0 8px 24px #1d4ed820"; e.currentTarget.style.borderColor=C.blueBorder; e.currentTarget.style.transform="translateY(-2px)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.boxShadow="0 1px 4px #0000000a"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform="none"; }}>
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent-border)"; e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.08)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.boxShadow="none"; }}>
 
                 {/* Row 1 */}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
@@ -1104,7 +1183,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
                       cursor:"pointer", fontSize:13, color:C.textLight, lineHeight:1,
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
-                    onMouseEnter={e=>{ e.currentTarget.style.background="#fef2f2"; e.currentTarget.style.borderColor=C.red; e.currentTarget.style.color=C.red; }}
+                    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
                     onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}
                     title="移除專案">🗑</button>
                 </div>
@@ -1150,7 +1229,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
                     )}
                     {nd && (
                       <div style={{ display:"flex", alignItems:"center", gap:6,
-                        background:nd.days<=7?"#fef2f2":C.greenLight,
+                        background:nd.days<=7?"var(--red-subtle)":"var(--green-light)",
                         border:`1px solid ${nd.days<=7?C.red+"33":C.green+"33"}`,
                         borderRadius:9, padding:"7px 12px" }}>
                         <span style={{ fontSize:12 }}>🗓️</span>
@@ -1218,9 +1297,9 @@ const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VE
 // 顏色依 statusCategory 決定，不依賴狀態名稱字串
 // key: "new" = 待辦（灰）, "indeterminate" = 進行中（藍）, "done" = 完成（綠）
 function statusStyle(statusCategory) {
-  if (statusCategory === "done")          return { bg:"#b3df72", color:"#3b5a00" };
-  if (statusCategory === "indeterminate") return { bg:"#a1c2f4", color:"#0747a6" };
-  return { bg:"#dfe1e6", color:"#44546f" };
+  if (statusCategory === "done")          return { bg:"#D1FAE5", color:"#065F46" };
+  if (statusCategory === "indeterminate") return { bg:"#DBEAFE", color:"#1E40AF" };
+  return { bg:"var(--border)", color:"var(--text-mid)" };
 }
 
 async function jiraFetch(action, params = {}, body = null) {
@@ -1344,7 +1423,7 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
       </div>
 
       {error && (
-        <div style={{ background:"#fef2f2", border:`1px solid ${C.red}44`, borderRadius:10,
+        <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:10,
           padding:"10px 16px", fontSize:13, color:C.red, marginBottom:16 }}>{error}</div>
       )}
 
@@ -1573,7 +1652,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 <button onClick={()=>removeTask(task.id)}
                   style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
                     cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background="#fef2f2"; e.currentTarget.style.borderColor=C.red; e.currentTarget.style.color=C.red; }}
+                  onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
                   onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}>🗑</button>
               </div>
 
@@ -1624,7 +1703,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
                   </div>
                   {task.period_start && task.period_end && task.period_end < task.period_start && (
-                    <div style={{ gridColumn:"1/-1", padding:"8px 12px", background:"#fef2f2", border:`1px solid ${C.red}44`, borderRadius:8, fontSize:12, color:C.red }}>
+                    <div style={{ gridColumn:"1/-1", padding:"8px 12px", background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:8, fontSize:12, color:C.red }}>
                       ⚠️ 結束日期不能早於開始日期
                     </div>
                   )}
@@ -1879,7 +1958,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                   </div>
                 </div>
                 {info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate&&(
-                  <div style={{ marginTop:10, padding:"9px 14px", background:"#fef2f2", border:`1px solid ${C.red}44`, borderRadius:10, fontSize:12, color:C.red }}>
+                  <div style={{ marginTop:10, padding:"9px 14px", background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:10, fontSize:12, color:C.red }}>
                     ⚠️ 第一批資料期限（{info.batch1Deadline}）晚於上線日期（{info.launchDate}），請確認是否正確。
                   </div>
                 )}
@@ -2097,7 +2176,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                       <a href={info.jiraEpic} target="_blank" rel="noreferrer"
                         style={{ fontSize:13, color:"#0052cc", textDecoration:"none", fontWeight:600,
                           display:"inline-flex", alignItems:"center", gap:5,
-                          background:"#e9f0ff", border:"1px solid #b3c7f7", borderRadius:7, padding:"4px 11px" }}>
+                          background:"var(--accent-light)", border:"1px solid var(--accent-border)", borderRadius:7, padding:"4px 11px" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
                         開啟 Jira Epic ↗
                       </a>
@@ -2148,14 +2227,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
             </div>
             {/* Batch 2 */}
             {(hasAva||hasGw)&&(
-              <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:16, boxShadow:"0 1px 4px #0000000a" }}>
+              <div style={{ background:C.white, border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16 }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>第二批資料</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {hasAva&&BATCH2_ITEMS.map((item,idx)=><OvBatch2Row key={item} item={item} checked={batch2Checked[item]} note={batch2Notes[item]} linkKey={BATCH2_LINK_KEYS[idx]} sheetLinks={sheetLinks}/>)}
                   {hasGw&&(
                     <div style={{ position:"relative" }}>
                       <OvBatch2Row item={GW_ITEM} checked={batch2Checked[GW_ITEM]} note={batch2Notes[GW_ITEM]} linkKey={GW_LINK_KEY} sheetLinks={sheetLinks}/>
-                      <span style={{ position:"absolute", top:12, right:14, fontSize:10, color:"#b45309", background:"#fffbeb", border:"1px solid #fcd34d", borderRadius:5, padding:"2px 7px" }}>GW</span>
+                      <span style={{ position:"absolute", top:12, right:14, fontSize:10, color:"var(--amber)", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:5, padding:"2px 7px" }}>GW</span>
                     </div>
                   )}
                 </div>
@@ -2163,7 +2242,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
             )}
             {/* Tasks overview */}
             {tasks.length>0&&(
-              <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24, boxShadow:"0 1px 4px #0000000a" }}>
+              <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24, boxShadow:"var(--shadow)" }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.blue, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
@@ -2298,7 +2377,7 @@ export default function App() {
             </div>
             <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
               borderRadius:10, padding:"9px 20px", fontSize:14, fontWeight:700,
-              cursor:"pointer", fontFamily:"inherit", boxShadow:"0 2px 8px #1d4ed840" }}>
+              cursor:"pointer", fontFamily:"inherit", boxShadow:"none" }}>
               + 新增專案
             </button>
           </div>
@@ -2320,9 +2399,9 @@ export default function App() {
       {/* Error toast */}
       {error && (
         <div style={{ position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)",
-          background:"#fef2f2", border:`1px solid ${C.red}44`, borderRadius:12,
+          background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:12,
           padding:"12px 20px", fontSize:13, color:C.red, zIndex:9999,
-          boxShadow:"0 4px 16px #0000001a", display:"flex", alignItems:"center",
+          boxShadow:"0 4px 16px rgba(0,0,0,0.1)", display:"flex", alignItems:"center",
           gap:12, fontFamily:"inherit" }}>
           ⚠️ {error}
           <button onClick={()=>setError(null)} style={{ background:"none", border:"none",
