@@ -597,7 +597,7 @@ const NotificationPanel = ({ projects, allPics, onClose }) => {
 };
 
 // ─── Calendar Page ─────────────────────────────────────────────
-const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
+const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
   const today = new Date();
   const [year,        setYear]        = useState(today.getFullYear());
   const [month,       setMonth]       = useState(today.getMonth());
@@ -612,6 +612,13 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
   const openAddModal  = (dateStr) => { setDraft({ projectId:projects[0]?.id||"", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"" }); setModal({ mode:"add", date:dateStr }); };
   const openEditModal = (task)    => { setDraft({ projectId:task.project_id, name:task.name, description:task.description||"", type:task.type, deadline:task.deadline||"", period_start:task.period_start||"", period_end:task.period_end||"", url:task.url||"", taskId:task.id }); setModal({ mode:"edit", date:task.deadline||task.period_start||task.period_end||"" }); };
   const closeModal    = ()        => { setModal(null); setSaving(false); };
+
+  const deleteTask = async (taskId) => {
+    if (!window.confirm("確定要刪除此任務嗎？此操作無法還原。")) return;
+    setExpandedDay(null); setExpandedPos(null); closeModal();
+    await sb.from("tasks").delete().eq("id", taskId);
+    onTaskDeleted(taskId);
+  };
 
   const saveTask = async () => {
     if (!draft.projectId || !draft.name.trim()) return;
@@ -862,14 +869,24 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
               <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
                 {dayEvs.map((ev,ei)=>(
                   <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                    onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
-                    style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", flexShrink:0 }}
-                    onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {ev.sub}{ev.taskId?" ✎":""}
+                    style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, flexShrink:0, display:"flex", alignItems:"flex-start", gap:4 }}>
+                    <div style={{ flex:1, minWidth:0, cursor:ev.taskId?"pointer":"default" }}
+                      onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
+                      onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                      onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                      <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {ev.sub}{ev.taskId?" ✎":""}
+                      </div>
+                      <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                     </div>
-                    <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
+                    {ev.taskId && (
+                      <button onClick={e=>{ e.stopPropagation(); deleteTask(ev.taskId); }}
+                        style={{ background:"none", border:"none", cursor:"pointer", padding:"1px 3px",
+                          fontSize:11, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
+                        onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.color=C.red; }}
+                        onMouseLeave={e=>{ e.currentTarget.style.opacity="0.5"; e.currentTarget.style.color=ev.text; }}
+                        title="刪除任務">🗑</button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -887,14 +904,26 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
           <h3 style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:14 }}>本月事件</h3>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i)=>(
-              <div key={i} onClick={()=>{ if(ev.taskId) openEditModal(ev.taskObj); }}
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:ev.bg, border:`1px solid ${ev.border}`, borderRadius:10, cursor:ev.taskId?"pointer":"default" }}
-                onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.8"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+              <div key={i}
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:ev.bg, border:`1px solid ${ev.border}`, borderRadius:10 }}>
                 <span style={{ fontSize:12, fontWeight:700, color:ev.text, fontFamily:"'DM Mono',monospace", flexShrink:0 }}>{fmtDate(ev.date)}</span>
                 <span style={{ fontSize:13, fontWeight:600, color:ev.text }}>{ev.label}</span>
                 <span style={{ fontSize:12, color:ev.text, opacity:0.8 }}>— {ev.sub}</span>
-                {ev.taskId && <span style={{ marginLeft:"auto", fontSize:11, color:ev.text, opacity:0.6 }}>點擊編輯 ✎</span>}
+                {ev.taskId && (
+                  <>
+                    <span onClick={()=>openEditModal(ev.taskObj)}
+                      style={{ marginLeft:"auto", fontSize:11, color:ev.text, opacity:0.6, cursor:"pointer" }}
+                      onMouseEnter={e=>e.currentTarget.style.opacity="1"}
+                      onMouseLeave={e=>e.currentTarget.style.opacity="0.6"}>點擊編輯 ✎</span>
+                    <button onClick={()=>deleteTask(ev.taskId)}
+                      style={{ background:"none", border:`1px solid ${ev.border}`, borderRadius:6,
+                        padding:"3px 8px", cursor:"pointer", fontSize:12, color:ev.text,
+                        opacity:0.6, fontFamily:"inherit" }}
+                      onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.borderColor=C.red; e.currentTarget.style.color=C.red; }}
+                      onMouseLeave={e=>{ e.currentTarget.style.opacity="0.6"; e.currentTarget.style.borderColor=ev.border; e.currentTarget.style.color=ev.text; }}
+                      title="刪除任務">🗑</button>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -1429,6 +1458,15 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
 // ─── TasksTab ─────────────────────────────────────────────────
 const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   const taskTimer = useRef({});
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const isAllSelected = tasks.length > 0 && selectedIds.size === tasks.length;
+  const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(tasks.map(t => t.id)));
 
   const addTask = () => {
     const t = { ...newTask(), project_id:projectId };
@@ -1441,8 +1479,19 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   };
 
   const removeTask = async (id) => {
+    if (!window.confirm("確定要刪除此任務嗎？此操作無法還原。")) return;
     onTasksChange(tasks.filter(t=>t.id!==id));
+    setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     await sb.from("tasks").delete().eq("id", id);
+  };
+
+  const removeSelected = async () => {
+    if (!selectedIds.size) return;
+    if (!window.confirm(`確定要刪除選取的 ${selectedIds.size} 筆任務嗎？此操作無法還原。`)) return;
+    const ids = [...selectedIds];
+    onTasksChange(tasks.filter(t => !ids.includes(t.id)));
+    setSelectedIds(new Set());
+    await Promise.all(ids.map(id => sb.from("tasks").delete().eq("id", id)));
   };
 
   const updateTask = (id, field, value) => {
@@ -1463,15 +1512,37 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
   return (
     <div style={{ animation:"fadeIn 0.25s ease" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:selectedIds.size>0?12:24 }}>
         <div>
           <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 4px" }}>任務紀錄</h2>
           <p style={{ fontSize:13, color:C.textMid, margin:0 }}>記錄與此專案相關的任務與期限</p>
         </div>
-        <button onClick={addTask} style={{ background:C.blue, color:"#fff", border:"none",
-          borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:700,
-          cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.blue}40` }}>+ 新增任務</button>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          {tasks.length > 0 && (
+            <button onClick={toggleSelectAll}
+              style={{ background:C.bg, color:C.textMid, border:`1px solid ${C.border}`,
+                borderRadius:8, padding:"7px 14px", fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+              {isAllSelected ? "取消全選" : "全選"}
+            </button>
+          )}
+          <button onClick={addTask} style={{ background:C.blue, color:"#fff", border:"none",
+            borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:700,
+            cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.blue}40` }}>+ 新增任務</button>
+        </div>
       </div>
+
+      {/* 批次操作列 */}
+      {selectedIds.size > 0 && (
+        <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
+          background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, marginBottom:16 }}>
+          <span style={{ fontSize:13, color:C.blue, fontWeight:600 }}>已選取 {selectedIds.size} 筆</span>
+          <button onClick={removeSelected}
+            style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"#fff", border:"none",
+              borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+            🗑 刪除選取（{selectedIds.size}）
+          </button>
+        </div>
+      )}
 
       {tasks.length===0 ? (
         <div style={{ textAlign:"center", padding:"50px 0", color:C.textLight }}>
@@ -1480,10 +1551,20 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-          {tasks.map((task, idx) => (
-            <Card key={task.id} style={{ padding:20 }}>
+          {tasks.map((task, idx) => {
+            const isSelected = selectedIds.has(task.id);
+            return (
+            <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.blueBorder : C.border}`, background:isSelected ? C.blueLight : C.white }}>
               <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
+                  {/* Checkbox */}
+                  <div onClick={()=>toggleSelect(task.id)}
+                    style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
+                      border:`2px solid ${isSelected ? C.blue : C.borderMid}`,
+                      background:isSelected ? C.blue : C.white,
+                      display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    {isSelected && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
+                  </div>
                   <span style={{ fontSize:11, fontWeight:700, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
                     placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:600, padding:"8px 12px" }}
@@ -1564,7 +1645,8 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 )}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1572,7 +1654,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 };
 
 // ─── ProjectDetail ────────────────────────────────────────────
-const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
+const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) => {
   const [step, setStep] = useState(isNew ? 0 : 5);
   const [info,          setInfoLocal]     = useState(project.info);
   const [basicChecked,  setBasicChecked]  = useState(project.basicChecked);
@@ -1650,6 +1732,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer",
             color:C.textMid, fontSize:13, fontFamily:"inherit", padding:0 }}>← 返回列表</button>
+          {isNew && (
+            <button onClick={()=>{ onDelete(project.id); onBack(); }}
+              style={{ background:"none", border:`1px solid ${C.red}66`, borderRadius:8,
+                padding:"4px 12px", cursor:"pointer", fontSize:12, color:C.red,
+                fontFamily:"inherit", marginLeft:4 }}>取消新增</button>
+          )}
           <span style={{ color:C.border }}>│</span>
           <div style={{ width:26, height:26, borderRadius:7, background:C.blue,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>🏨</div>
@@ -2244,7 +2332,7 @@ export default function App() {
 
       {/* Content */}
       {isDetailView
-        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} allPics={allPics}/>
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics}/>
         : page==="calendar"
           ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
               setAllTasks(prev => isEdit
@@ -2260,6 +2348,9 @@ export default function App() {
                     : [...p.tasks, task],
                 };
               }));
+            }} onTaskDeleted={(taskId) => {
+              setAllTasks(prev => prev.filter(t => t.id !== taskId));
+              setProjects(prev => prev.map(p => ({ ...p, tasks: p.tasks.filter(t => t.id !== taskId) })));
             }}/>
           : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
       }
