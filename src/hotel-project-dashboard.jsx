@@ -797,11 +797,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                     else {
                       const cellRect = e.currentTarget.getBoundingClientRect();
                       const gridRect = gridRef.current.getBoundingClientRect();
-                      setExpandedPos({
-                        top:  cellRect.bottom - gridRect.top,
-                        left: cellRect.left  - gridRect.left,
-                        width: cellRect.width,
-                      });
+                      setExpandedPos({ top: cellRect.bottom - gridRect.top, left: cellRect.left - gridRect.left, width: cellRect.width });
                       setExpandedDay(k);
                     }
                   }}}
@@ -825,7 +821,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                             title="新增任務">+</button>
                         )}
                       </div>
-                      {/* Event labels - always show max 2 in cell */}
+                      {/* Event labels */}
                       <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1, overflow:"hidden" }}>
                         {dayEvents.slice(0,2).map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
@@ -839,9 +835,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
                             <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {dayEvents.length>2 && !isExpanded && (
-                          <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>
-                        )}
+                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>}
                         {isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>▲ 收起</div>}
                       </div>
                     </>
@@ -853,42 +847,38 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded }) => {
         ))}
         </div>{/* end inner overflow:hidden */}
 
-      {/* Absolute dropdown for expanded day events - inside grid container */}
-      {expandedDay && expandedPos && (() => {
-        const dayEvs = events.filter(e=>e.date===expandedDay);
-        const ITEM_H = 52; // approximate height per item
-        const MAX_ITEMS = 5;
-        const dropH = Math.min(dayEvs.length, MAX_ITEMS) * ITEM_H + 36; // +36 for close button
-        return (
-          <div onClick={e=>e.stopPropagation()}
-            style={{ position:"absolute",
-              top: expandedPos.top,
-              left: expandedPos.left,
-              width: Math.max(expandedPos.width, 180),
-              height: dropH,
-              background:C.white, border:`1px solid ${C.blueBorder}`,
-              borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
-              zIndex:9999, display:"flex", flexDirection:"column" }}>
-            <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
-              {dayEvs.map((ev,ei)=>(
-                <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                  onClick={e=>{ e.stopPropagation(); if(ev.taskId) { openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
-                  style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", flexShrink:0 }}
-                  onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {ev.sub}{ev.taskId?" ✎":""}
+        {/* Absolute dropdown for expanded day - inside relative grid container */}
+        {expandedDay && expandedPos && (() => {
+          const dayEvs = events.filter(e=>e.date===expandedDay);
+          const ITEM_H = 52;
+          const dropH  = Math.min(dayEvs.length, 5) * ITEM_H + 36;
+          return (
+            <div onClick={e=>e.stopPropagation()}
+              style={{ position:"absolute", top:expandedPos.top, left:expandedPos.left,
+                width:Math.max(expandedPos.width, 180), height:dropH,
+                background:C.white, border:`1px solid ${C.blueBorder}`,
+                borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
+                zIndex:9999, display:"flex", flexDirection:"column" }}>
+              <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
+                {dayEvs.map((ev,ei)=>(
+                  <div key={ei} title={`${ev.label} — ${ev.sub}`}
+                    onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
+                    style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", flexShrink:0 }}
+                    onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {ev.sub}{ev.taskId?" ✎":""}
+                    </div>
+                    <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                   </div>
-                  <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}
+                style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"6px 0",
+                  borderTop:`1px solid ${C.border}`, cursor:"pointer", flexShrink:0 }}>▲ 收起</div>
             </div>
-            <div onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}
-              style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"6px 0",
-                borderTop:`1px solid ${C.border}`, cursor:"pointer", flexShrink:0 }}>▲ 收起</div>
-          </div>
-        );
-      })()}
+          );
+        })()}
       </div>{/* end outer grid container */}
 
       {/* Event list */}
@@ -1656,7 +1646,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, allPics }) => {
       {/* Header */}
       <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, padding:"0 40px",
         display:"flex", alignItems:"center", justifyContent:"space-between",
-        height:60, position:"sticky", top:0, zIndex:10 }}>
+        height:60, position:"sticky", top:0, zIndex:10000 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <button onClick={onBack} style={{ background:"none", border:"none", cursor:"pointer",
             color:C.textMid, fontSize:13, fontFamily:"inherit", padding:0 }}>← 返回列表</button>
@@ -2210,7 +2200,7 @@ export default function App() {
 
       {/* Global header — always visible */}
       {!isDetailView && (
-        <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10 }}>
+        <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
