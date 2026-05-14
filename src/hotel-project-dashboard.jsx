@@ -1866,7 +1866,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
 
     // Step 2: 查詢 AHP 專案的 issue types，自動選出 task 類型
     const typesRes = await jiraFetch("getIssueTypes", {});
-    const types: { id:string; name:string }[] = typesRes.types ?? [];
+    const types = typesRes.types ?? [];
     // 排除 Epic / Sub-task，選第一個看起來像 task 的類型
     const SKIP = /epic|子任務|subtask|sub-task/i;
     const taskType = types.find(t => !SKIP.test(t.name)) ?? types[0];
