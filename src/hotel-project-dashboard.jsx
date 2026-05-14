@@ -1821,6 +1821,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const [saveStatus,    setSaveStatus]    = useState("idle");
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
+  const [jiraBoot,      setJiraBoot]      = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[] });
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -1848,6 +1849,32 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const setInfo     = useCallback(fn => setInfoLocal(p=>fn(p)), []);
   const toggleArr   = useCallback((key,val) => setInfo(p=>({ ...p, [key]:p[key].includes(val)?p[key].filter(x=>x!==val):[...p[key],val] })), [setInfo]);
   const toggleCheck = useCallback((setter,key) => setter(p=>({ ...p, [key]:!p[key] })), []);
+
+  const bootstrapJira = async () => {
+    const hotelName = info.name.trim();
+    if (!hotelName) return;
+    setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[] });
+
+    // Step 1: 建立 Epic
+    const epicRes = await jiraFetch("createEpic", {}, { hotelName });
+    if (epicRes.error) {
+      setJiraBoot(p=>({ ...p, step:"error" }));
+      return;
+    }
+    const { epicKey, epicUrl } = epicRes;
+    setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl }));
+
+    // Step 2: 批次建立 51 筆子任務
+    const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName });
+    if (taskRes.error) {
+      setJiraBoot(p=>({ ...p, step:"error" }));
+      return;
+    }
+
+    // 自動將 Epic URL 填回欄位並儲存
+    setInfo(p=>({ ...p, jiraEpic: epicUrl }));
+    setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[] }));
+  };
 
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
   const canBatch1 = hasAva||hasAca, canBatch2 = hasAva||hasGw;
@@ -1956,6 +1983,120 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                   onFocus={e=>(e.target.style.borderColor="#0052cc")} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 {info.jiraEpic&&!info.jiraEpic.startsWith("http")&&<div style={{ marginTop:6, fontSize:12, color:C.red }}>⚠️ 連結格式不正確</div>}
                 {info.jiraEpic&&info.jiraEpic.startsWith("http")&&<a href={info.jiraEpic} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:12, color:"#0052cc", textDecoration:"none", fontWeight:600 }}>↗ 開啟 Jira Epic</a>}
+
+                {/* Bootstrap 按鈕：僅在 jiraEpic 為空且有飯店名稱時顯示 */}
+                {!info.jiraEpic && info.name.trim() && (
+                  <div style={{ marginTop:12, padding:"13px 15px", background:"var(--accent-subtle)",
+                    border:"1px solid var(--accent-border)", borderRadius:10 }}>
+                    <div style={{ fontSize:13, color:"var(--text-mid)", marginBottom:10, lineHeight:1.6 }}>
+                      尚未建立 Jira Epic。點擊下方按鈕可自動建立 Epic 並匯入 51 筆標準子任務。
+                    </div>
+                    <button onClick={()=>setJiraBoot(p=>({ ...p, open:true, step:"idle" }))}
+                      style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
+                        background:"#0052cc", color:"#fff", border:"none", borderRadius:8,
+                        fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+                      🚀 建立 Jira Epic 與任務
+                    </button>
+                  </div>
+                )}
+
+                {/* Bootstrap Modal */}
+                {jiraBoot.open && (
+                  <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:20000,
+                    display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+                    <div style={{ background:"var(--surface)", borderRadius:14, padding:28, width:"100%", maxWidth:460,
+                      boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
+                      <h3 style={{ fontSize:17, fontWeight:700, color:"var(--text)", margin:"0 0 16px" }}>建立 Jira Epic 與任務</h3>
+
+                      {/* Idle：確認畫面 */}
+                      {jiraBoot.step==="idle" && (<>
+                        <div style={{ padding:"10px 14px", background:"var(--surface-raised)",
+                          border:"1px solid var(--border)", borderRadius:8, fontSize:13, marginBottom:18, lineHeight:1.7 }}>
+                          Epic 名稱：<strong style={{ color:"var(--text)" }}>{info.name}</strong><br/>
+                          專案：<strong style={{ color:"var(--text)" }}>AHP</strong>　
+                          子任務：<strong style={{ color:"var(--text)" }}>51 筆</strong>（含指定 assignee）
+                        </div>
+                        <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+                          <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
+                            style={{ padding:"8px 18px", background:"transparent", border:"1px solid var(--border)",
+                              borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit", color:"var(--text-mid)" }}>取消</button>
+                          <button onClick={bootstrapJira}
+                            style={{ padding:"8px 20px", background:"#0052cc", color:"#fff", border:"none",
+                              borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>確認建立</button>
+                        </div>
+                      </>)}
+
+                      {/* Step 1：建立 Epic 中 */}
+                      {jiraBoot.step==="creating_epic" && (
+                        <div style={{ textAlign:"center", padding:"20px 0" }}>
+                          <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
+                            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 14px" }}/>
+                          <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 Epic…</div>
+                        </div>
+                      )}
+
+                      {/* Step 2：建立子任務中 */}
+                      {jiraBoot.step==="creating_tasks" && (
+                        <div style={{ textAlign:"center", padding:"16px 0" }}>
+                          <div style={{ fontSize:13, fontWeight:600, color:"var(--green)", marginBottom:12 }}>
+                            ✓ Epic&nbsp;
+                            <a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
+                              style={{ color:"#0052cc", textDecoration:"none", fontWeight:700 }}>{jiraBoot.epicKey}</a>&nbsp;已建立
+                          </div>
+                          <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
+                            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
+                          <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 51 筆子任務，請稍候（約 15 秒）…</div>
+                        </div>
+                      )}
+
+                      {/* 完成 */}
+                      {jiraBoot.step==="done" && (
+                        <div>
+                          <div style={{ padding:"12px 14px", background:"var(--green-subtle)",
+                            border:"1px solid var(--green)", borderRadius:8, marginBottom:14 }}>
+                            <div style={{ fontSize:14, fontWeight:600, color:"var(--green)", marginBottom:4 }}>✓ 建立完成</div>
+                            <div style={{ fontSize:12, color:"var(--text-mid)" }}>
+                              Epic：<a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
+                                style={{ color:"#0052cc", fontWeight:700, textDecoration:"none" }}>{jiraBoot.epicKey}</a>
+                              　子任務：{jiraBoot.created} 筆已建立
+                            </div>
+                          </div>
+                          {jiraBoot.failed.length>0 && (
+                            <div style={{ padding:"10px 12px", background:"var(--red-subtle)",
+                              border:"1px solid var(--red)", borderRadius:8, marginBottom:14 }}>
+                              <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:6 }}>
+                                ⚠️ {jiraBoot.failed.length} 筆建立失敗
+                              </div>
+                              {jiraBoot.failed.map((f,i)=>(
+                                <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                            <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
+                              style={{ padding:"8px 20px", background:"var(--accent)", color:"#fff", border:"none",
+                                borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 錯誤 */}
+                      {jiraBoot.step==="error" && (
+                        <div>
+                          <div style={{ padding:"12px 14px", background:"var(--red-subtle)",
+                            border:"1px solid var(--red)", borderRadius:8, marginBottom:16, fontSize:13, color:"var(--red)" }}>
+                            ⚠️ 建立 Epic 時發生錯誤，請確認飯店名稱填寫正確並重新嘗試。
+                          </div>
+                          <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                            <button onClick={()=>setJiraBoot({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[] })}
+                              style={{ padding:"8px 18px", background:"transparent", border:"1px solid var(--border)",
+                                borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit", color:"var(--text-mid)" }}>關閉</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>負責人（PIC）</label>
