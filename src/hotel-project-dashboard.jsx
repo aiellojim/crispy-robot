@@ -1821,7 +1821,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const [saveStatus,    setSaveStatus]    = useState("idle");
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
-  const [jiraBoot,      setJiraBoot]      = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[] });
+  const [jiraBoot,      setJiraBoot]      = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"" });
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -1862,7 +1862,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
       return;
     }
     const { epicKey, epicUrl } = epicRes;
-    setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl }));
+    setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName }));
 
     // Step 2: 查詢 AHP 專案的 issue types，自動選出 task 類型
     const typesRes = await jiraFetch("getIssueTypes", {});
@@ -1881,7 +1881,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
 
     // 自動將 Epic URL 填回欄位並儲存
     setInfo(p=>({ ...p, jiraEpic: epicUrl }));
-    setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[] }));
+    setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[], issueTypeName }));
   };
 
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
@@ -2066,6 +2066,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                           <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
                             borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
                           <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 51 筆子任務，請稍候（約 15 秒）…</div>
+                          {jiraBoot.issueTypeName && (
+                            <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
+                              Issue type：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.issueTypeName}</code>
+                            </div>
+                          )}
                         </div>
                       )}
 
