@@ -1853,35 +1853,42 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const bootstrapJira = async () => {
     const hotelName = info.name.trim();
     if (!hotelName) return;
-    setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[] });
+    setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"" });
 
-    // Step 1: 建立 Epic
-    const epicRes = await jiraFetch("createEpic", {}, { hotelName });
-    if (epicRes.error) {
+    try {
+      // Step 1: 建立 Epic
+      const epicRes = await jiraFetch("createEpic", {}, { hotelName });
+      if (epicRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
+      const { epicKey, epicUrl } = epicRes;
+
+      // Step 2: 查詢 AHP issue types，優先選 Task / 任务
+      const typesRes = await jiraFetch("getIssueTypes", {});
+      const types = typesRes.types ?? [];
+      const SKIP   = /epic|子任務|subtask|sub-task/i;
+      const PREFER = /^(task|任务)$/i;
+      const taskType =
+        types.find(t => PREFER.test(t.name)) ||
+        types.find(t => !SKIP.test(t.name))  ||
+        types[0];
+      const issueTypeName = taskType?.name ?? "Task";
+
+      setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName }));
+
+      // Step 3: 批次建立 51 筆子任務
+      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName });
+      if (taskRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
+
+      // Step 4: 直接寫 Supabase，確保 Epic URL 即使 React state 異常也能持久化
+      await sb.from("projects").update({ jira_epic: epicUrl }).eq("id", project.id);
+
+      // 同步更新 React state（觸發自動儲存）
+      setInfo(p=>({ ...p, jiraEpic: epicUrl }));
+      setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[], issueTypeName }));
+
+    } catch (err) {
+      console.error("bootstrapJira error:", err);
       setJiraBoot(p=>({ ...p, step:"error" }));
-      return;
     }
-    const { epicKey, epicUrl } = epicRes;
-    setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName }));
-
-    // Step 2: 查詢 AHP 專案的 issue types，自動選出 task 類型
-    const typesRes = await jiraFetch("getIssueTypes", {});
-    const types = typesRes.types ?? [];
-    // 排除 Epic / Sub-task，選第一個看起來像 task 的類型
-    const SKIP = /epic|子任務|subtask|sub-task/i;
-    const taskType = types.find(t => !SKIP.test(t.name)) ?? types[0];
-    const issueTypeName = taskType?.name ?? "Task";
-
-    // Step 3: 批次建立 51 筆子任務
-    const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName });
-    if (taskRes.error) {
-      setJiraBoot(p=>({ ...p, step:"error" }));
-      return;
-    }
-
-    // 自動將 Epic URL 填回欄位並儲存
-    setInfo(p=>({ ...p, jiraEpic: epicUrl }));
-    setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[], issueTypeName }));
   };
 
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
