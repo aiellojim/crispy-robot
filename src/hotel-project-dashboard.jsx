@@ -2076,11 +2076,23 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                           {jiraBoot.failed.length>0 && (
                             <div style={{ padding:"10px 12px", background:"var(--red-subtle)",
                               border:"1px solid var(--red)", borderRadius:8, marginBottom:14 }}>
-                              <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:6 }}>
+                              <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>
                                 ⚠️ {jiraBoot.failed.length} 筆建立失敗
                               </div>
+                              {/* 顯示第一筆的 Jira 錯誤訊息 */}
+                              {jiraBoot.failed[0]?.msg && (
+                                <div style={{ marginBottom:8, padding:"7px 10px", background:"var(--surface)",
+                                  border:"1px solid var(--border)", borderRadius:6,
+                                  fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
+                                  wordBreak:"break-all", lineHeight:1.6 }}>
+                                  <span style={{ color:"var(--red)", fontWeight:600 }}>Jira 錯誤：</span>
+                                  {typeof jiraBoot.failed[0].msg === "string"
+                                    ? jiraBoot.failed[0].msg
+                                    : JSON.stringify(jiraBoot.failed[0].msg)}
+                                </div>
+                              )}
                               {/* 捲動區域，避免撐破 modal */}
-                              <div style={{ maxHeight:160, overflowY:"auto" }}>
+                              <div style={{ maxHeight:140, overflowY:"auto" }}>
                                 {jiraBoot.failed.map((f,i)=>(
                                   <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
                                 ))}
