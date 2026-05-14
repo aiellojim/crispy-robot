@@ -151,6 +151,50 @@ const GLOBAL_CSS = `
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
+
+  /* Manual theme overrides — higher specificity than media query */
+  html[data-theme="light"] {
+    --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
+    --border: #E5E5E5; --border-mid: #D4D4D4;
+    --text: #111111; --text-mid: #6B6B6B; --text-subtle: #A3A3A3;
+    --accent: #5E6AD2; --accent-light: #EEEFFE;
+    --accent-border: rgba(94,106,210,0.28); --accent-subtle: rgba(94,106,210,0.07);
+    --green: #16A34A; --green-light: #F0FDF4; --green-subtle: rgba(22,163,74,0.08);
+    --amber: #B45309; --amber-light: #FFFBEB; --amber-subtle: rgba(180,83,9,0.08);
+    --red: #DC2626; --red-light: #FEF2F2; --red-subtle: rgba(220,38,38,0.07);
+    --purple: #7C3AED; --purple-light: #F5F3FF; --purple-subtle: rgba(124,58,237,0.07);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --cal-launch-bg: #DBEAFE; --cal-launch-text: #1E40AF; --cal-launch-border: #93C5FD;
+    --cal-batch1-bg: #DCFCE7; --cal-batch1-text: #166534; --cal-batch1-border: #86EFAC;
+    --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
+    --cal-task-bg: #FEF3C7; --cal-task-text: #92400E; --cal-task-border: #FCD34D;
+    --cal-period-bg: #FFE4E6; --cal-period-text: #9F1239; --cal-period-border: #FCA5A5;
+    --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
+    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d;
+  }
+  html[data-theme="dark"] {
+    --bg: #111111; --surface: #1C1C1C; --surface-raised: #242424;
+    --border: #2E2E2E; --border-mid: #3D3D3D;
+    --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #6B6B6B;
+    --accent: #7C85E0; --accent-light: #1A1C40;
+    --accent-border: rgba(124,133,224,0.35); --accent-subtle: rgba(124,133,224,0.1);
+    --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
+    --amber: #F59E0B; --amber-light: #1C1200; --amber-subtle: rgba(245,158,11,0.1);
+    --red: #EF4444; --red-light: #2D0F0F; --red-subtle: rgba(239,68,68,0.1);
+    --purple: #A78BFA; --purple-light: #1E0A3C; --purple-subtle: rgba(167,139,250,0.1);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+    --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
+    --cal-batch1-bg: #0A2E1A; --cal-batch1-text: #86EFAC; --cal-batch1-border: #14532D;
+    --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
+    --cal-task-bg: #2A1C00; --cal-task-text: #FCD34D; --cal-task-border: #78350F;
+    --cal-period-bg: #2D0A14; --cal-period-text: #FCA5A5; --cal-period-border: #881337;
+    --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
+    --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0;
+  }
+  html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+  html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
 `;
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -467,6 +511,36 @@ const FilterSelect = ({ label, value, onChange, options }) => (
       onFocus={e=>(e.target.style.borderColor="var(--accent)")} onBlur={e=>(e.target.style.borderColor="var(--border)")}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
+  </div>
+);
+
+// ─── ThemeToggle ──────────────────────────────────────────────
+const THEME_OPTIONS = [
+  { value:"light",  label:"普通", icon:"☀️" },
+  { value:"dark",   label:"深色", icon:"🌙" },
+  { value:"system", label:"系統", icon:"💻" },
+];
+
+const ThemeToggle = ({ theme, setTheme }) => (
+  <div style={{ display:"flex", alignItems:"center", background:"var(--surface-raised)",
+    border:"1px solid var(--border)", borderRadius:8, padding:3, gap:2 }}>
+    {THEME_OPTIONS.map(({ value, label, icon }) => {
+      const active = theme === value;
+      return (
+        <button key={value} onClick={() => setTheme(value)}
+          title={label}
+          style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
+            borderRadius:6, border:"none", fontFamily:"inherit", cursor:"pointer",
+            background: active ? "var(--surface)" : "transparent",
+            color: active ? "var(--text)" : "var(--text-subtle)",
+            fontSize:12, fontWeight: active ? 600 : 400,
+            boxShadow: active ? "var(--shadow-sm)" : "none",
+            transition:"all 0.12s" }}>
+          <span style={{ fontSize:13 }}>{icon}</span>
+          <span>{label}</span>
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -2283,7 +2357,19 @@ export default function App() {
   const [isNew,    setIsNew]    = useState(false);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
+  const [theme,    setTheme]    = useState(() => localStorage.getItem("hotel-dash-theme") || "system");
   const saveTimer = useRef({});
+
+  // Apply theme to <html> element whenever it changes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "system") {
+      root.removeAttribute("data-theme");
+    } else {
+      root.setAttribute("data-theme", theme);
+    }
+    localStorage.setItem("hotel-dash-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     (async () => {
@@ -2375,11 +2461,14 @@ export default function App() {
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🏨</div>
               <span style={{ fontSize:17, fontWeight:700, color:C.text }}>專案交付中心</span>
             </div>
-            <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
-              borderRadius:10, padding:"9px 20px", fontSize:14, fontWeight:700,
-              cursor:"pointer", fontFamily:"inherit", boxShadow:"none" }}>
-              + 新增專案
-            </button>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <ThemeToggle theme={theme} setTheme={setTheme}/>
+              <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
+                borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600,
+                cursor:"pointer", fontFamily:"inherit" }}>
+                + 新增專案
+              </button>
+            </div>
           </div>
           {/* Page nav */}
           <div style={{ padding:"0 40px", display:"flex", borderTop:`1px solid ${C.border}` }}>
