@@ -2003,10 +2003,22 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                 {/* Bootstrap Modal */}
                 {jiraBoot.open && (
                   <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:20000,
-                    display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+                    display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+                    onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
+                      setJiraBoot(p=>({...p,open:false})); }}>
                     <div style={{ background:"var(--surface)", borderRadius:14, padding:28, width:"100%", maxWidth:460,
                       boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
-                      <h3 style={{ fontSize:17, fontWeight:700, color:"var(--text)", margin:"0 0 16px" }}>建立 Jira Epic 與任務</h3>
+
+                      {/* Header 含 X 關閉按鈕 */}
+                      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+                        <h3 style={{ fontSize:17, fontWeight:700, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
+                        {!["creating_epic","creating_tasks"].includes(jiraBoot.step) && (
+                          <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
+                            style={{ background:"none", border:"1px solid var(--border)", borderRadius:6,
+                              padding:"3px 9px", cursor:"pointer", fontSize:15, color:"var(--text-mid)",
+                              lineHeight:1, fontFamily:"inherit" }}>✕</button>
+                        )}
+                      </div>
 
                       {/* Idle：確認畫面 */}
                       {jiraBoot.step==="idle" && (<>
@@ -2067,9 +2079,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                               <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:6 }}>
                                 ⚠️ {jiraBoot.failed.length} 筆建立失敗
                               </div>
-                              {jiraBoot.failed.map((f,i)=>(
-                                <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
-                              ))}
+                              {/* 捲動區域，避免撐破 modal */}
+                              <div style={{ maxHeight:160, overflowY:"auto" }}>
+                                {jiraBoot.failed.map((f,i)=>(
+                                  <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
+                                ))}
+                              </div>
                             </div>
                           )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
