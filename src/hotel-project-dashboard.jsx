@@ -1864,8 +1864,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
     const { epicKey, epicUrl } = epicRes;
     setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl }));
 
-    // Step 2: 批次建立 51 筆子任務
-    const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName });
+    // Step 2: 查詢 AHP 專案的 issue types，自動選出 task 類型
+    const typesRes = await jiraFetch("getIssueTypes", {});
+    const types: { id:string; name:string }[] = typesRes.types ?? [];
+    // 排除 Epic / Sub-task，選第一個看起來像 task 的類型
+    const SKIP = /epic|子任務|subtask|sub-task/i;
+    const taskType = types.find(t => !SKIP.test(t.name)) ?? types[0];
+    const issueTypeName = taskType?.name ?? "Task";
+
+    // Step 3: 批次建立 51 筆子任務
+    const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName });
     if (taskRes.error) {
       setJiraBoot(p=>({ ...p, step:"error" }));
       return;
