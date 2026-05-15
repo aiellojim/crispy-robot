@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const sb = createClient(
-  "https://yqoingcpcryrcpnhkjzu.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxb2luZ2NwY3J5cmNwbmhranp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTg5NTMsImV4cCI6MjA5MjgzNDk1M30.mDbv7McB9urXXYoqm795dnNj2SHUDal_L0Y1_klFy4Y"
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
 // ─── Constants ────────────────────────────────────────────────
@@ -1363,8 +1363,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
 };
 
 // ─── JiraTab ──────────────────────────────────────────────────
-const JIRA_PROXY = "https://yqoingcpcryrcpnhkjzu.supabase.co/functions/v1/jira-proxy";
-const JIRA_ANON  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxb2luZ2NwY3J5cmNwbmhranp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTg5NTMsImV4cCI6MjA5MjgzNDk1M30.mDbv7McB9urXXYoqm795dnNj2SHUDal_L0Y1_klFy4Y";
+const JIRA_PROXY = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
+const JIRA_ANON  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VERIFICATION","INIT","INIT_DONE","LINK TO RD JIRA","PROCESSING","TEST","TEST_DONE","完成"];
 
