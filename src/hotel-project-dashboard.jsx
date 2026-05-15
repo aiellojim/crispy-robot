@@ -1821,7 +1821,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const [saveStatus,    setSaveStatus]    = useState("idle");
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
-  const [jiraBoot,      setJiraBoot]      = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"" });
+  const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"" });
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -1853,15 +1853,26 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   const bootstrapJira = async () => {
     const hotelName = info.name.trim();
     if (!hotelName) return;
-    setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"" });
+    setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"" });
 
     try {
-      // Step 1: 建立 Epic
-      const epicRes = await jiraFetch("createEpic", {}, { hotelName });
+      // Step 1: 查詢 PIC 的 Jira accountId（找不到就跳過，不影響建立流程）
+      let reporterAccountId = null;
+      let reporterName = "";
+      if (info.pic?.trim()) {
+        const userRes = await jiraFetch("searchUser", { query: info.pic.trim() });
+        const users = userRes.users ?? [];
+        // 優先精確比對顯示名稱，其次取第一筆
+        const match = users.find(u => u.displayName === info.pic.trim()) || users[0];
+        if (match) { reporterAccountId = match.accountId; reporterName = match.displayName; }
+      }
+
+      // Step 2: 建立 Epic（帶入 reporter）
+      const epicRes = await jiraFetch("createEpic", {}, { hotelName, reporterAccountId });
       if (epicRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
       const { epicKey, epicUrl } = epicRes;
 
-      // Step 2: 查詢 AHP issue types，優先選 Task / 任务
+      // Step 3: 查詢 AHP issue types，優先選 Task / 任务
       const typesRes = await jiraFetch("getIssueTypes", {});
       const types = typesRes.types ?? [];
       const SKIP   = /epic|子任務|subtask|sub-task/i;
@@ -1872,18 +1883,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
         types[0];
       const issueTypeName = taskType?.name ?? "Task";
 
-      setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName }));
+      setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName, reporterName }));
 
-      // Step 3: 批次建立 51 筆子任務
-      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName });
+      // Step 4: 批次建立 51 筆子任務（帶入 reporter）
+      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId });
       if (taskRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
 
-      // Step 4: 直接寫 Supabase，確保 Epic URL 即使 React state 異常也能持久化
+      // Step 5: 直接寫 Supabase，確保 Epic URL 持久化
       await sb.from("projects").update({ jira_epic: epicUrl }).eq("id", project.id);
 
-      // 同步更新 React state（觸發自動儲存）
       setInfo(p=>({ ...p, jiraEpic: epicUrl }));
-      setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[], issueTypeName }));
+      setJiraBoot(p=>({ ...p, step:"done", created:taskRes.created, failed:taskRes.failed??[], issueTypeName, reporterName }));
 
     } catch (err) {
       console.error("bootstrapJira error:", err);
@@ -2076,6 +2086,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                           {jiraBoot.issueTypeName && (
                             <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
                               Issue type：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.issueTypeName}</code>
+                              {jiraBoot.reporterName && <>　Reporter：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.reporterName}</code></>}
                             </div>
                           )}
                         </div>
