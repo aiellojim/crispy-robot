@@ -2002,6 +2002,23 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                 <FInput label="Hotel ID" value={info.hotelId} onChange={v=>setInfo(p=>({ ...p, hotelId:v }))} placeholder="例：TPE-001"/>
               </div>
               <div style={{ marginBottom:18 }}>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>負責人（PIC）</label>
+                <datalist id="pic-list">{allPics.map(p=><option key={p} value={p}/>)}</datalist>
+                <input list="pic-list" value={info.pic} onChange={e=>setInfo(p=>({ ...p, pic:e.target.value }))}
+                  placeholder="輸入負責人姓名，若不在清單內將自動新增" style={baseInput}
+                  onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                {info.pic&&!allPics.includes(info.pic)&&<div style={{ marginTop:6, fontSize:12, color:C.green }}>✦ 將新增「{info.pic}」至 PIC 清單</div>}
+              </div>
+              <FInput label="地址" value={info.address} onChange={v=>setInfo(p=>({ ...p, address:v }))} placeholder="例：台北市中山區南京東路一段"/>
+              <div style={{ marginBottom:18 }}>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>所在國家</label>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:10 }}>
+                  {COUNTRIES.map(c=><Chip key={c} label={c} active={info.region===c} color={C.blue} onClick={()=>setInfo(p=>({ ...p, region:c, regionOther:c!=="其他"?"":p.regionOther }))}/>)}
+                </div>
+                {info.region==="其他"&&<input type="text" value={info.regionOther} onChange={e=>setInfo(p=>({ ...p, regionOther:e.target.value }))}
+                  placeholder="請輸入國家／地區名稱" style={{ ...baseInput, borderColor:C.blue }}/>}
+              </div>
+              <div style={{ marginBottom:18 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>Jira Epic 連結</label>
                 <input type="url" value={info.jiraEpic} onChange={e=>setInfo(p=>({ ...p, jiraEpic:e.target.value }))}
                   placeholder="https://your-domain.atlassian.net/browse/EPIC-123" style={baseInput}
@@ -2052,6 +2069,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                           Epic 名稱：<strong style={{ color:"var(--text)" }}>{info.name}</strong><br/>
                           專案：<strong style={{ color:"var(--text)" }}>AHP</strong>　
                           子任務：<strong style={{ color:"var(--text)" }}>51 筆</strong>（含指定 assignee）
+                          {info.pic && <><br/>Reporter：<strong style={{ color:"var(--text)" }}>{info.pic}</strong></>}
                         </div>
                         <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
                           <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
@@ -2110,7 +2128,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                               <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>
                                 ⚠️ {jiraBoot.failed.length} 筆建立失敗
                               </div>
-                              {/* 顯示第一筆的 Jira 錯誤訊息 */}
                               {jiraBoot.failed[0]?.msg && (
                                 <div style={{ marginBottom:8, padding:"7px 10px", background:"var(--surface)",
                                   border:"1px solid var(--border)", borderRadius:6,
@@ -2122,7 +2139,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                                     : JSON.stringify(jiraBoot.failed[0].msg)}
                                 </div>
                               )}
-                              {/* 捲動區域，避免撐破 modal */}
                               <div style={{ maxHeight:140, overflowY:"auto" }}>
                                 {jiraBoot.failed.map((f,i)=>(
                                   <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
@@ -2155,23 +2171,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
                     </div>
                   </div>
                 )}
-              </div>
-              <div style={{ marginBottom:18 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>負責人（PIC）</label>
-                <datalist id="pic-list">{allPics.map(p=><option key={p} value={p}/>)}</datalist>
-                <input list="pic-list" value={info.pic} onChange={e=>setInfo(p=>({ ...p, pic:e.target.value }))}
-                  placeholder="輸入負責人姓名，若不在清單內將自動新增" style={baseInput}
-                  onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-                {info.pic&&!allPics.includes(info.pic)&&<div style={{ marginTop:6, fontSize:12, color:C.green }}>✦ 將新增「{info.pic}」至 PIC 清單</div>}
-              </div>
-              <FInput label="地址" value={info.address} onChange={v=>setInfo(p=>({ ...p, address:v }))} placeholder="例：台北市中山區南京東路一段"/>
-              <div style={{ marginBottom:18 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>所在國家</label>
-                <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:10 }}>
-                  {COUNTRIES.map(c=><Chip key={c} label={c} active={info.region===c} color={C.blue} onClick={()=>setInfo(p=>({ ...p, region:c, regionOther:c!=="其他"?"":p.regionOther }))}/>)}
-                </div>
-                {info.region==="其他"&&<input type="text" value={info.regionOther} onChange={e=>setInfo(p=>({ ...p, regionOther:e.target.value }))}
-                  placeholder="請輸入國家／地區名稱" style={{ ...baseInput, borderColor:C.blue }}/>}
               </div>
             </Card>
             <Card>
