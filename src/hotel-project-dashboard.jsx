@@ -557,7 +557,7 @@ function subToKeys(sub) {
   const auth   = btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth")))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
   return { endpoint:sub.endpoint, p256dh, auth };
 }
-async function getOrCreateSub(picName) {
+async function getOrCreateSub(picName, userId = null) {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
   const reg = await navigator.serviceWorker.register("/sw.js");
   let pushSub = await reg.pushManager.getSubscription();
@@ -571,7 +571,9 @@ async function getOrCreateSub(picName) {
   const keys = subToKeys(pushSub);
   const { data:existing } = await sb.from("push_subscriptions").select("*").eq("endpoint",keys.endpoint).maybeSingle();
   if (existing) return existing;
-  const { data:created } = await sb.from("push_subscriptions").insert({ pic_name:picName, ...keys, subscribed_projects:[], notify_days_before:0 }).select().single();
+  const { data:created } = await sb.from("push_subscriptions").insert({
+    pic_name:picName, user_id:userId, ...keys, subscribed_projects:[], notify_days_before:0
+  }).select().single();
   return created;
 }
 async function updateSub(id, patch) {
@@ -591,30 +593,37 @@ const NOTIFY_OPTIONS = [
   { label:"提前 7 天", value:7 },
 ];
 
-const NotificationPanel = ({ projects, allPics, onClose }) => {
-  const [picName,  setPicName]  = useState("");
-  const [sub,      setSub]      = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [status,   setStatus]   = useState(""); // "" | "unsupported" | "denied"
+const NotificationPanel = ({ projects, session, profile, onClose }) => {
+  const [sub,     setSub]     = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [status,  setStatus]  = useState(""); // "" | "unsupported" | "denied"
+
+  const displayName = profile?.display_name || session?.user?.email || "";
+  const userId      = session?.user?.id ?? null;
 
   useEffect(() => {
     if (!("Notification" in window)||!("serviceWorker" in navigator)) { setStatus("unsupported"); return; }
     if (Notification.permission==="denied") { setStatus("denied"); return; }
-    // Check if already subscribed in this browser
     (async()=>{
       const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      if (!reg) return;
-      const pushSub = await reg.pushManager.getSubscription();
-      if (!pushSub) return;
-      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
-      if (data) setSub(data);
+      if (reg) {
+        const pushSub = await reg.pushManager.getSubscription();
+        if (pushSub) {
+          const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
+          if (data) { setSub(data); return; }
+        }
+      }
+      // Fallback：用 user_id 查詢（換裝置時仍能恢復設定）
+      if (userId) {
+        const { data } = await sb.from("push_subscriptions").select("*").eq("user_id",userId).maybeSingle();
+        if (data) setSub(data);
+      }
     })();
   }, []);
 
   const handleSubscribe = async () => {
-    if (!picName.trim()) return;
     setLoading(true);
-    const result = await getOrCreateSub(picName.trim());
+    const result = await getOrCreateSub(displayName, userId);
     if (!result) setStatus("denied");
     else setSub(result);
     setLoading(false);
@@ -660,7 +669,7 @@ const NotificationPanel = ({ projects, allPics, onClose }) => {
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {status==="unsupported" && (
             <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
-              此瀏覽器不支援推播通知，建議改用 Chrome、Edge 或 macOS 13+ 的 Safari。
+              此瀏覽器不支援推播通知，建議改用 Chrome 或 Edge。
             </div>
           )}
           {status==="denied" && (
@@ -671,16 +680,17 @@ const NotificationPanel = ({ projects, allPics, onClose }) => {
           {status===""&&!sub&&(
             <div>
               <div style={{ fontSize:13, color:C.textMid, marginBottom:14, lineHeight:1.6 }}>
-                選擇你的 PIC 名稱以啟用推播通知。首次使用時瀏覽器會詢問通知授權。
+                點擊下方按鈕啟用推播通知，首次使用時瀏覽器會詢問通知授權。
               </div>
-              <datalist id="notif-pic-list">{allPics.map(p=><option key={p} value={p}/>)}</datalist>
-              <input list="notif-pic-list" value={picName} onChange={e=>setPicName(e.target.value)}
-                placeholder="輸入你的名稱" style={{ ...baseInput, marginBottom:12 }}
-                onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-              <button onClick={handleSubscribe} disabled={loading||!picName.trim()}
-                style={{ width:"100%", padding:"10px 0", background:picName.trim()?C.blue:C.border,
-                  color:picName.trim()?"#fff":C.textMid, border:"none", borderRadius:10,
-                  fontSize:14, fontWeight:700, cursor:picName.trim()?"pointer":"default", fontFamily:"inherit" }}>
+              <div style={{ padding:"10px 14px", background:"var(--surface-raised)",
+                border:"1px solid var(--border)", borderRadius:8, marginBottom:14,
+                fontSize:13, color:"var(--text)" }}>
+                通知顯示名稱：<strong>{displayName || "（請先至個人設定填入顯示名稱）"}</strong>
+              </div>
+              <button onClick={handleSubscribe} disabled={loading}
+                style={{ width:"100%", padding:"10px 0", background:C.blue, color:"#fff",
+                  border:"none", borderRadius:8, fontSize:14, fontWeight:700,
+                  cursor:"pointer", fontFamily:"inherit" }}>
                 {loading?"啟用中…":"啟用推播通知"}
               </button>
             </div>
@@ -1092,7 +1102,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
 
 
 // ─── HomePage ─────────────────────────────────────────────────
-const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
+const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile }) => {
   const [search,        setSearch]        = useState("");
   const [regionFilter,  setRegionFilter]  = useState("all");
   const [productFilter, setProductFilter] = useState("all");
@@ -1357,7 +1367,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics }) => {
         </div>
       )}
       {/* Notification panel */}
-      {showNotif&&<NotificationPanel projects={projects} allPics={allPics} onClose={()=>setShowNotif(false)}/>}
+      {showNotif&&<NotificationPanel projects={projects} session={session} profile={profile} onClose={()=>setShowNotif(false)}/>}
     </div>
   );
 };
@@ -1865,18 +1875,21 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     setJiraBoot({ open:true, step:"creating_epic", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"" });
 
     try {
-      // Step 1: 查詢 PIC 的 Jira accountId（找不到就跳過，不影響建立流程）
+      // Step 1: 判斷是否使用個人 token
+      // 有個人 token → reporter 自動是本人，不需要 searchUser
+      // 無個人 token → Fallback AlanFang，用 searchUser 查 PIC accountId 設 reporter
+      const hasPersonalToken = !!(profile?.jira_email && profile?.jira_token);
       let reporterAccountId = null;
       let reporterName = "";
-      if (info.pic?.trim()) {
+
+      if (!hasPersonalToken && info.pic?.trim()) {
         const userRes = await jiraFetch("searchUser", { query: info.pic.trim() }, null, session?.access_token);
         const users = userRes.users ?? [];
-        // 優先精確比對顯示名稱，其次取第一筆
         const match = users.find(u => u.displayName === info.pic.trim()) || users[0];
         if (match) { reporterAccountId = match.accountId; reporterName = match.displayName; }
       }
 
-      // Step 2: 建立 Epic（帶入 reporter）
+      // Step 2: 建立 Epic
       const epicRes = await jiraFetch("createEpic", {}, { hotelName, reporterAccountId }, session?.access_token);
       if (epicRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
       const { epicKey, epicUrl } = epicRes;
@@ -1894,7 +1907,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
       setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName, reporterName }));
 
-      // Step 4: 批次建立 51 筆子任務（帶入 reporter）
+      // Step 4: 批次建立 51 筆子任務
       const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId }, session?.access_token);
       if (taskRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
 
@@ -2947,7 +2960,7 @@ export default function App() {
               setAllTasks(prev => prev.filter(t => t.id !== taskId));
               setProjects(prev => prev.map(p => ({ ...p, tasks: p.tasks.filter(t => t.id !== taskId) })));
             }}/>
-          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics}/>
+          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics} session={session} profile={profile}/>
       }
     </div>
   );
