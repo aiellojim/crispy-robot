@@ -1376,14 +1376,19 @@ function statusStyle(statusCategory) {
   return { bg:"var(--border)", color:"var(--text-mid)" };
 }
 
-async function jiraFetch(action, params = {}, body = null) {
+async function jiraFetch(action, params = {}, body = null, accessToken = null) {
   const url = new URL(JIRA_PROXY);
   url.searchParams.set("action", action);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
   try {
+    const headers = {
+      Authorization: `Bearer ${JIRA_ANON}`,
+      "Content-Type": "application/json",
+    };
+    if (accessToken) headers["x-user-token"] = accessToken;
     const res = await fetch(url.toString(), {
       method: body ? "POST" : "GET",
-      headers: { Authorization: `Bearer ${JIRA_ANON}`, "Content-Type": "application/json" },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
     });
@@ -1400,7 +1405,7 @@ function parseEpicId(epicUrl) {
   return m ? m[1].toUpperCase() : null;
 }
 
-const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
+const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken }) => {
   const epicId = parseEpicId(epicUrl);
   const [issues,      setIssues]      = useState([]);
   const [loading,     setLoading]     = useState(false);
@@ -1414,7 +1419,7 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
   const fetchIssues = async () => {
     if (!epicId) return;
     setLoading(true); setError("");
-    const data = await jiraFetch("issues", { epicId });
+    const data = await jiraFetch("issues", { epicId }, null, accessToken);
     if (data.error) setError("無法讀取 Jira 資料，請確認 Epic 連結是否正確。");
     else setIssues(data.issues ?? []);
     setLoading(false);
@@ -1431,7 +1436,7 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
       integrations: projectInfo?.integrations ?? [],
       avaUnits:     projectInfo?.avaUnits     ?? "",
       avaSpare:     projectInfo?.avaSpare     ?? "",
-    });
+    }, accessToken);
     if (data.success) setDescSuccess(true);
     else setError("更新 Epic Description 失敗，請稍後再試。");
     setDescLoading(false);
@@ -1444,12 +1449,13 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
     if (activeKey === issueKey) { setActiveKey(null); return; }
     setActiveKey(issueKey);
     if (!transitions[issueKey]) {
-      const data = await jiraFetch("transitions", { issueKey });
+      const data = await jiraFetch("transitions", { issueKey }, null, accessToken);
       setTransitions(prev => ({ ...prev, [issueKey]: data.transitions ?? [] }));
     }
   };
 
   const doTransition = async (issueKey, transitionId, toName, toCategory) => {
+    const fromStatus = issues.find(i => i.key === issueKey)?.status ?? "";
     setUpdating(prev => ({ ...prev, [issueKey]: true }));
     setActiveKey(null);
     // 樂觀更新：立即更新 UI
@@ -1457,7 +1463,10 @@ const JiraTab = ({ epicUrl, projectInfo, onBack, onNext }) => {
       ? { ...i, status: toName, statusCategory: toCategory }
       : i
     ));
-    const data = await jiraFetch("transition", {}, { issueKey, transitionId });
+    const data = await jiraFetch("transition", {}, {
+      issueKey, transitionId,
+      fromStatus, toStatus: toName, projectId,
+    }, accessToken);
     if (!data.success) {
       setError(`更新 ${issueKey} 狀態失敗，請重新同步`);
       fetchIssues();
@@ -1807,7 +1816,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 };
 
 // ─── ProjectDetail ────────────────────────────────────────────
-const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) => {
+const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session }) => {
   const [step, setStep] = useState(isNew ? 0 : 5);
   const [info,          setInfoLocal]     = useState(project.info);
   const [basicChecked,  setBasicChecked]  = useState(project.basicChecked);
@@ -1860,7 +1869,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
       let reporterAccountId = null;
       let reporterName = "";
       if (info.pic?.trim()) {
-        const userRes = await jiraFetch("searchUser", { query: info.pic.trim() });
+        const userRes = await jiraFetch("searchUser", { query: info.pic.trim() }, null, session?.access_token);
         const users = userRes.users ?? [];
         // 優先精確比對顯示名稱，其次取第一筆
         const match = users.find(u => u.displayName === info.pic.trim()) || users[0];
@@ -1868,12 +1877,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
       }
 
       // Step 2: 建立 Epic（帶入 reporter）
-      const epicRes = await jiraFetch("createEpic", {}, { hotelName, reporterAccountId });
+      const epicRes = await jiraFetch("createEpic", {}, { hotelName, reporterAccountId }, session?.access_token);
       if (epicRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
       const { epicKey, epicUrl } = epicRes;
 
       // Step 3: 查詢 AHP issue types，優先選 Task / 任务
-      const typesRes = await jiraFetch("getIssueTypes", {});
+      const typesRes = await jiraFetch("getIssueTypes", {}, null, session?.access_token);
       const types = typesRes.types ?? [];
       const SKIP   = /epic|子任務|subtask|sub-task/i;
       const PREFER = /^(task|任务)$/i;
@@ -1886,7 +1895,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
       setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName, reporterName }));
 
       // Step 4: 批次建立 51 筆子任務（帶入 reporter）
-      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId });
+      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId }, session?.access_token);
       if (taskRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
 
       // Step 5: 直接寫 Supabase，確保 Epic URL 持久化
@@ -2345,7 +2354,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
 
         {/* Step 3: Jira 子任務 */}
         {step===3&&(
-          <JiraTab epicUrl={info.jiraEpic} projectInfo={info} onBack={()=>setStep(2)} onNext={()=>setStep(4)}/>
+          <JiraTab epicUrl={info.jiraEpic} projectInfo={info} projectId={project.id}
+            onBack={()=>setStep(2)} onNext={()=>setStep(4)}
+            accessToken={session?.access_token}/>
         )}
 
         {/* Step 4: 任務紀錄 */}
@@ -2545,10 +2556,171 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics }) 
   );
 };
 
+// ─── LoginPage ────────────────────────────────────────────────
+const LoginPage = ({ theme, setTheme }) => {
+  const [email,   setEmail]   = useState("");
+  const [sent,    setSent]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err,     setErr]     = useState("");
+
+  const send = async () => {
+    if (!email.trim()) return;
+    setLoading(true); setErr("");
+    const { error } = await sb.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) setErr(error.message);
+    else setSent(true);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
+      <style>{GLOBAL_CSS}</style>
+      {/* Theme toggle 右上角 */}
+      <div style={{ position:"fixed", top:16, right:20 }}>
+        <ThemeToggle theme={theme} setTheme={setTheme}/>
+      </div>
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
+        padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
+        boxShadow:"0 4px 24px rgba(0,0,0,0.08)" }}>
+        <div style={{ fontSize:36, marginBottom:14 }}>🏨</div>
+        <h1 style={{ fontSize:20, fontWeight:700, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
+        <p style={{ fontSize:13, color:"var(--text-mid)", margin:"0 0 28px" }}>輸入公司 email 以收取登入連結</p>
+        {!sent ? (<>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+            placeholder="your@aiello.ai"
+            style={{ ...baseInput, marginBottom:12, textAlign:"center" }}
+            onKeyDown={e=>e.key==="Enter"&&send()}
+            onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+            onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+          {err && <div style={{ fontSize:12, color:"var(--red)", marginBottom:8 }}>{err}</div>}
+          <button onClick={send} disabled={loading||!email.trim()}
+            style={{ width:"100%", padding:"10px 0", background:email.trim()?"var(--accent)":"var(--border)",
+              color:email.trim()?"#fff":"var(--text-subtle)", border:"none", borderRadius:8,
+              fontSize:14, fontWeight:600, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
+            {loading ? "寄送中…" : "寄送登入連結"}
+          </button>
+        </>) : (
+          <div style={{ animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:40, marginBottom:14 }}>📬</div>
+            <p style={{ fontSize:14, color:"var(--text-mid)", lineHeight:1.8 }}>
+              登入連結已寄至<br/>
+              <strong style={{ color:"var(--text)" }}>{email}</strong><br/>
+              請點擊信件中的連結完成登入
+            </p>
+            <button onClick={()=>{ setSent(false); setEmail(""); }}
+              style={{ marginTop:16, background:"none", border:"none", color:"var(--text-subtle)",
+                fontSize:12, cursor:"pointer", fontFamily:"inherit", textDecoration:"underline" }}>
+              重新輸入 email
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── UserSettingsPanel ────────────────────────────────────────
+const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
+  const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [jiraEmail,   setJiraEmail]   = useState(profile?.jira_email   || "");
+  const [jiraToken,   setJiraToken]   = useState(profile?.jira_token   || "");
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    await sb.from("user_profiles").upsert({
+      id: userId, display_name: displayName,
+      jira_email: jiraEmail, jira_token: jiraToken,
+      updated_at: new Date().toISOString(),
+    });
+    setSaving(false); setSaved(true);
+    onSaved({ display_name: displayName, jira_email: jiraEmail, jira_token: jiraToken });
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const logout = async () => { await sb.auth.signOut(); onClose(); };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--surface)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+        zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
+          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>個人設定</div>
+            <div style={{ fontSize:12, color:"var(--text-mid)", marginTop:2 }}>Jira 連線與帳號管理</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
+            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
+            color:"var(--text-mid)", fontFamily:"inherit" }}>✕</button>
+        </div>
+        <div style={{ flex:1, overflowY:"auto", padding:20 }}>
+          <div style={{ marginBottom:18 }}>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
+              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>顯示名稱</label>
+            <input value={displayName} onChange={e=>setDisplayName(e.target.value)}
+              placeholder="與 Jira 顯示名稱一致" style={baseInput}
+              onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+              onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+            <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:4 }}>
+              建立 Jira Epic 時作為 reporter，請與 Jira 顯示名稱完全一致
+            </div>
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
+              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>Jira Email</label>
+            <input type="email" value={jiraEmail} onChange={e=>setJiraEmail(e.target.value)}
+              placeholder="your@aiello.ai" style={baseInput}
+              onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+              onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+          </div>
+          <div style={{ marginBottom:24 }}>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
+              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>Jira API Token</label>
+            <input type="password" value={jiraToken} onChange={e=>setJiraToken(e.target.value)}
+              placeholder="ATATT3x…" style={baseInput}
+              onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+              onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+            <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:4 }}>
+              前往&nbsp;
+              <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
+                target="_blank" rel="noreferrer" style={{ color:"var(--accent)" }}>
+                Atlassian 帳號設定
+              </a>&nbsp;建立 API token
+            </div>
+          </div>
+          <button onClick={save} disabled={saving}
+            style={{ width:"100%", padding:"10px 0",
+              background:saved?"var(--green)":"var(--accent)", color:"#fff",
+              border:"none", borderRadius:8, fontSize:13, fontWeight:600,
+              cursor:"pointer", fontFamily:"inherit", transition:"background 0.2s" }}>
+            {saving?"儲存中…":saved?"✓ 已儲存":"儲存設定"}
+          </button>
+        </div>
+        <div style={{ padding:"16px 20px", borderTop:"1px solid var(--border)" }}>
+          <button onClick={logout}
+            style={{ width:"100%", padding:"8px 0", background:"none",
+              border:"1px solid var(--red)", borderRadius:8, color:"var(--red)",
+              fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>
+            登出
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── Root ─────────────────────────────────────────────────────
 export default function App() {
-  const [page,     setPage]     = useState("home"); // "home" | "calendar"
-  const [view,     setView]     = useState("home"); // "home" | "detail"
+  const [page,     setPage]     = useState("home");
+  const [view,     setView]     = useState("home");
   const [projects, setProjects] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -2556,7 +2728,33 @@ export default function App() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
   const [theme,    setTheme]    = useState(() => localStorage.getItem("hotel-dash-theme") || "system");
+  // Auth
+  const [session,      setSession]      = useState(null);
+  const [profile,      setProfile]      = useState(null);
+  const [authLoading,  setAuthLoading]  = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const saveTimer = useRef({});
+
+  // ── Auth state ───────────────────────────────────────────────
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else setAuthLoading(false);
+    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else { setProfile(null); setAuthLoading(false); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadProfile = async (userId) => {
+    const { data } = await sb.from("user_profiles").select("*").eq("id", userId).maybeSingle();
+    setProfile(data);
+    setAuthLoading(false);
+  };
 
   // Apply theme to <html> element whenever it changes
   useEffect(() => {
@@ -2633,6 +2831,17 @@ export default function App() {
   const activeProject = projects.find(p=>p.id===activeId);
   const allPics = useMemo(()=>[...new Set(projects.map(p=>p.info.pic).filter(Boolean))].sort(),[projects]);
 
+  if (authLoading) return (
+    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center",
+      justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
+      <style>{GLOBAL_CSS}</style>
+      <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
+        borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+    </div>
+  );
+
+  if (!session) return <LoginPage theme={theme} setTheme={setTheme}/>;
+
   if (loading) return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC',sans-serif", gap:16 }}>
@@ -2659,8 +2868,19 @@ export default function App() {
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🏨</div>
               <span style={{ fontSize:17, fontWeight:700, color:C.text }}>專案交付中心</span>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <ThemeToggle theme={theme} setTheme={setTheme}/>
+              {/* 使用者設定 */}
+              <button onClick={()=>setShowSettings(true)}
+                style={{ display:"flex", alignItems:"center", gap:7, background:"var(--surface-raised)",
+                  border:"1px solid var(--border)", borderRadius:8, padding:"6px 13px",
+                  cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
+                  transition:"all 0.12s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
+                <span style={{ fontSize:14 }}>👤</span>
+                <span>{profile?.display_name || session?.user?.email || "設定"}</span>
+              </button>
               <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
                 borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600,
                 cursor:"pointer", fontFamily:"inherit" }}>
@@ -2668,6 +2888,15 @@ export default function App() {
               </button>
             </div>
           </div>
+          {/* UserSettingsPanel */}
+          {showSettings && (
+            <UserSettingsPanel
+              profile={profile}
+              userId={session.user.id}
+              onClose={()=>setShowSettings(false)}
+              onSaved={updated=>setProfile(p=>({ ...p, ...updated }))}
+            />
+          )}
           {/* Page nav */}
           <div style={{ padding:"0 40px", display:"flex", borderTop:`1px solid ${C.border}` }}>
             {[{ id:"home", label:"🏠 專案列表" }, { id:"calendar", label:"📅 專案行事曆" }].map(({ id, label }) => (
@@ -2698,7 +2927,7 @@ export default function App() {
 
       {/* Content */}
       {isDetailView
-        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics}/>
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session}/>
         : page==="calendar"
           ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
               setAllTasks(prev => isEdit
