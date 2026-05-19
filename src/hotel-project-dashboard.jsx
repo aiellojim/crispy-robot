@@ -2096,8 +2096,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           border:"1px solid var(--border)", borderRadius:8, fontSize:13, marginBottom:18, lineHeight:1.7 }}>
                           Epic 名稱：<strong style={{ color:"var(--text)" }}>{info.name}</strong><br/>
                           專案：<strong style={{ color:"var(--text)" }}>AHP</strong>　
-                          子任務：<strong style={{ color:"var(--text)" }}>51 筆</strong>（含指定 assignee）
-                          {info.pic && <><br/>Reporter：<strong style={{ color:"var(--text)" }}>{info.pic}</strong></>}
+                          子任務：<strong style={{ color:"var(--text)" }}>51 筆</strong>（含指定 assignee）<br/>
+                          {profile?.jira_email && profile?.jira_token ? (<>
+                            Reporter：<strong style={{ color:"var(--text)" }}>{profile.display_name || profile.jira_email}</strong>
+                            <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:6 }}>（使用個人 API Token）</span>
+                          </>) : info.pic ? (<>
+                            Reporter：<strong style={{ color:"var(--text)" }}>{info.pic}</strong>
+                          </>) : null}
                         </div>
                         <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
                           <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
@@ -2349,16 +2354,19 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
           <div style={{ animation:"fadeIn 0.25s ease" }}>
             {!canBatch2?<LockScreen msg="請先選購 AVA 或 GW 以開啟第二批資料"/>:(
               <>
-                <div style={{ marginBottom:24 }}>
-                  <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 6px" }}>第二批資料</h2>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:4 }}>
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>第二批資料</h2>
+                    <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"4px 12px", background:"var(--surface-raised)" }}>
+                      <span style={{ fontSize:16, fontWeight:700, color:C.purple, fontFamily:"'DM Mono',monospace" }}>{b2Count+gwCount}</span>
+                      <span style={{ fontSize:12, color:"var(--text-subtle)" }}>/{(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:8 }}>
                     <span style={{ fontSize:11, background:C.purpleLight, color:C.purple, border:`1px solid ${C.purple}44`, borderRadius:6, padding:"2px 10px", fontWeight:700 }}>第二批</span>
                     {info.batch2Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch2Deadline}</span>}
                   </div>
                 </div>
-                <Card style={{ padding:"10px 20px", marginBottom:14 }}>
-                  <SectionCount title="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>
-                </Card>
                 {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
                   const isDone = !!batch2Checked[item];
                   return (
