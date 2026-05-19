@@ -2257,14 +2257,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第一批資料期限</label>
-                    <div style={{ fontSize:10, color:C.textLight, marginBottom:6 }}>基礎設定 ＋ FAQ</div>
                     <input type="date" value={info.batch1Deadline} onChange={e=>setInfo(p=>({ ...p, batch1Deadline:e.target.value }))}
                       style={{ ...baseInput, borderColor:info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:`${C.green}44`, background:C.greenLight }}
                       onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:`${C.green}44`)}/>
                   </div>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第二批資料期限</label>
-                    <div style={{ fontSize:10, color:C.textLight, marginBottom:6 }}>Showcase ＋ 廣告 ＋ QR</div>
                     <input type="date" value={info.batch2Deadline} onChange={e=>setInfo(p=>({ ...p, batch2Deadline:e.target.value }))}
                       style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
                       onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
