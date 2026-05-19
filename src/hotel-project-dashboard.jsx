@@ -422,9 +422,9 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>🔗 資料表連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>🔗 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
-        placeholder="貼上 Google Sheets 或其他資料表連結"
+        placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
         onFocus={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--accent)")}
         onBlur={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--border)")}/>
@@ -1840,7 +1840,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [saveStatus,    setSaveStatus]    = useState("idle");
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
-  const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"" });
+  const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -1891,7 +1891,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
       // Step 2: 建立 Epic
       const epicRes = await jiraFetch("createEpic", {}, { hotelName, reporterAccountId }, session?.access_token);
-      if (epicRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
+      if (epicRes.error) {
+        setJiraBoot(p=>({ ...p, step:"error", errorMsg: typeof epicRes.error === "string" ? epicRes.error : JSON.stringify(epicRes.error) }));
+        return;
+      }
       const { epicKey, epicUrl } = epicRes;
 
       // Step 3: 查詢 AHP issue types，優先選 Task / 任务
@@ -2183,8 +2186,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                             border:"1px solid var(--red)", borderRadius:8, marginBottom:16, fontSize:13, color:"var(--red)" }}>
                             ⚠️ 建立 Epic 時發生錯誤，請確認飯店名稱填寫正確並重新嘗試。
                           </div>
+                          {jiraBoot.errorMsg && (
+                            <div style={{ padding:"9px 12px", background:"var(--surface-raised)",
+                              border:"1px solid var(--border)", borderRadius:7, marginBottom:14,
+                              fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
+                              wordBreak:"break-all", lineHeight:1.6 }}>
+                              <span style={{ color:"var(--red)", fontWeight:600 }}>錯誤詳情：</span>{jiraBoot.errorMsg}
+                            </div>
+                          )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
-                            <button onClick={()=>setJiraBoot({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[] })}
+                            <button onClick={()=>setJiraBoot({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], errorMsg:"" })}
                               style={{ padding:"8px 18px", background:"transparent", border:"1px solid var(--border)",
                                 borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit", color:"var(--text-mid)" }}>關閉</button>
                           </div>
@@ -2344,21 +2355,59 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 </div>
                 <Card>
                   <SectionCount title="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>
-                  {hasAva&&BATCH2_ITEMS.map((item,idx)=>(
-                    <div key={item} style={{ marginBottom:16 }}>
-                      <CheckRow label={item} checked={!!batch2Checked[item]} onChange={()=>toggleCheck(setBatch2Checked,item)} color={C.purple}/>
-                      <NoteArea value={batch2Notes[item]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [item]:v }))} focusColor={C.purple}/>
-                      <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v=>setSheetLinks(p=>({ ...p, [BATCH2_LINK_KEYS[idx]]:v }))} color={C.purple}/>
-                    </div>
-                  ))}
-                  {hasGw&&(
-                    <div style={{ marginBottom:16 }}>
-                      <CheckRow label={GW_ITEM} checked={!!batch2Checked[GW_ITEM]} onChange={()=>toggleCheck(setBatch2Checked,GW_ITEM)} color={C.purple}/>
-                      <NoteArea value={batch2Notes[GW_ITEM]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [GW_ITEM]:v }))} focusColor={C.purple}/>
-                      <SheetLink value={sheetLinks[GW_LINK_KEY]} onChange={v=>setSheetLinks(p=>({ ...p, [GW_LINK_KEY]:v }))} color={C.purple}/>
-                    </div>
-                  )}
                 </Card>
+                {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
+                  const isDone = !!batch2Checked[item];
+                  return (
+                    <div key={item} style={{ background:isDone?"var(--purple-subtle)":"var(--surface)",
+                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
+                      borderRadius:12, marginBottom:12, overflow:"hidden" }}>
+                      {/* 卡片 header：點擊切換勾選 */}
+                      <div onClick={()=>toggleCheck(setBatch2Checked,item)}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
+                        <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
+                          border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
+                          background:isDone?"var(--purple)":"transparent",
+                          display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
+                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:14, fontWeight:600, color:"var(--text)", flex:1 }}>{item}</span>
+                        {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500 }}>待完成</span>}
+                      </div>
+                      {/* 卡片 body：備註 + 檔案連結 */}
+                      <div style={{ padding:"0 16px 16px" }}>
+                        <NoteArea value={batch2Notes[item]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [item]:v }))} focusColor="var(--purple)"/>
+                        <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v=>setSheetLinks(p=>({ ...p, [BATCH2_LINK_KEYS[idx]]:v }))} color="var(--purple)"/>
+                      </div>
+                    </div>
+                  );
+                })}
+                {hasGw&&(()=>{
+                  const isDone = !!batch2Checked[GW_ITEM];
+                  return (
+                    <div style={{ background:isDone?"var(--purple-subtle)":"var(--surface)",
+                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
+                      borderRadius:12, marginBottom:12, overflow:"hidden" }}>
+                      <div onClick={()=>toggleCheck(setBatch2Checked,GW_ITEM)}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
+                        <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
+                          border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
+                          background:isDone?"var(--purple)":"transparent",
+                          display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
+                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:14, fontWeight:600, color:"var(--text)", flex:1 }}>{GW_ITEM}</span>
+                        <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
+                          border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:600 }}>GW</span>
+                        {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500, marginLeft:4 }}>待完成</span>}
+                      </div>
+                      <div style={{ padding:"0 16px 16px" }}>
+                        <NoteArea value={batch2Notes[GW_ITEM]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [GW_ITEM]:v }))} focusColor="var(--purple)"/>
+                        <SheetLink value={sheetLinks[GW_LINK_KEY]} onChange={v=>setSheetLinks(p=>({ ...p, [GW_LINK_KEY]:v }))} color="var(--purple)"/>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <NavRow onBack={()=>setStep(1)} onNext={()=>setStep(3)} nextLabel="下一步：Jira 子任務 →" nextColor={C.purple}/>
               </>
             )}
@@ -2578,6 +2627,10 @@ const LoginPage = ({ theme, setTheme }) => {
 
   const send = async () => {
     if (!email.trim()) return;
+    if (!email.trim().toLowerCase().endsWith("@aiello.ai")) {
+      setErr("僅限 @aiello.ai 帳號登入");
+      return;
+    }
     setLoading(true); setErr("");
     const { error } = await sb.auth.signInWithOtp({
       email: email.trim(),
