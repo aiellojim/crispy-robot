@@ -1826,7 +1826,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 };
 
 // ─── ProjectDetail ────────────────────────────────────────────
-const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session }) => {
+const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session, profile }) => {
   const [step, setStep] = useState(isNew ? 0 : 5);
   const [info,          setInfoLocal]     = useState(project.info);
   const [basicChecked,  setBasicChecked]  = useState(project.basicChecked);
@@ -2356,7 +2356,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     {info.batch2Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch2Deadline}</span>}
                   </div>
                 </div>
-                <Card>
+                <Card style={{ padding:"10px 20px", marginBottom:14 }}>
                   <SectionCount title="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>
                 </Card>
                 {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
@@ -2996,7 +2996,7 @@ export default function App() {
 
       {/* Content */}
       {isDetailView
-        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session}/>
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session} profile={profile}/>
         : page==="calendar"
           ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
               setAllTasks(prev => isEdit
