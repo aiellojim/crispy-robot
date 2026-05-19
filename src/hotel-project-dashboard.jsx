@@ -1912,7 +1912,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
       // Step 4: 批次建立 51 筆子任務
       const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId }, session?.access_token);
-      if (taskRes.error) { setJiraBoot(p=>({ ...p, step:"error" })); return; }
+      if (taskRes.error) {
+        setJiraBoot(p=>({ ...p, step:"error", errorMsg: typeof taskRes.error === "string" ? taskRes.error : JSON.stringify(taskRes.error) }));
+        return;
+      }
 
       // Step 5: 直接寫 Supabase，確保 Epic URL 持久化
       await sb.from("projects").update({ jira_epic: epicUrl }).eq("id", project.id);
@@ -1922,7 +1925,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
     } catch (err) {
       console.error("bootstrapJira error:", err);
-      setJiraBoot(p=>({ ...p, step:"error" }));
+      setJiraBoot(p=>({ ...p, step:"error", errorMsg: err?.message || String(err) || "JavaScript 執行錯誤" }));
     }
   };
 
