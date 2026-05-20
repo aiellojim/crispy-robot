@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── Supabase ─────────────────────────────────────────────────
@@ -233,7 +233,7 @@ const calcPct = (proj) => {
 const newTask = () => ({
   id: crypto.randomUUID(), project_id: null,
   name:"", description:"", type:"deadline",
-  deadline:"", period_start:"", period_end:"", url:"",
+  deadline:"", period_start:"", period_end:"", url:"", completed:false,
 });
 
 // ─── DB ↔ UI ──────────────────────────────────────────────────
@@ -407,13 +407,68 @@ const CheckRow = ({ label, checked, onChange, color="var(--green)" }) => (
   </div>
 );
 
+// ── useAutoList：Enter 自動延續列表格式 ──────────────────────
+function useAutoList(onChange) {
+  const textareaRef  = useRef(null);
+  const pendingCursor = useRef(null);
+
+  useLayoutEffect(() => {
+    if (pendingCursor.current !== null && textareaRef.current) {
+      textareaRef.current.setSelectionRange(pendingCursor.current, pendingCursor.current);
+      pendingCursor.current = null;
+    }
+  });
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key !== "Enter") return;
+    const { value, selectionStart: pos } = e.target;
+    const lineStart = value.lastIndexOf("\n", pos - 1) + 1;
+    const line = value.substring(lineStart, pos);
+    const ul = line.match(/^(\s*)([\*\-]) /);
+    const ol = line.match(/^(\s*)(\d+)\. /);
+    let newVal = null, newCursor = null;
+
+    if (ul) {
+      if (!line.slice(ul[0].length).trim()) {
+        newVal = value.slice(0, lineStart) + "\n" + value.slice(pos);
+        newCursor = lineStart + 1;
+      } else {
+        const ins = "\n" + ul[1] + ul[2] + " ";
+        newVal = value.slice(0, pos) + ins + value.slice(pos);
+        newCursor = pos + ins.length;
+      }
+    } else if (ol) {
+      if (!line.slice(ol[0].length).trim()) {
+        newVal = value.slice(0, lineStart) + "\n" + value.slice(pos);
+        newCursor = lineStart + 1;
+      } else {
+        const ins = "\n" + ol[1] + (parseInt(ol[2]) + 1) + ". ";
+        newVal = value.slice(0, pos) + ins + value.slice(pos);
+        newCursor = pos + ins.length;
+      }
+    }
+    if (newVal !== null) { e.preventDefault(); onChange(newVal); pendingCursor.current = newCursor; }
+  }, [onChange]);
+
+  return { textareaRef, handleKeyDown };
+}
+
+// SmartTextarea：帶自動列表的 textarea
+const SmartTextarea = ({ value, onChange, placeholder, rows=2, style={}, focusColor="var(--accent)" }) => {
+  const { textareaRef, handleKeyDown } = useAutoList(onChange);
+  return (
+    <textarea ref={textareaRef} value={value} onChange={e=>onChange(e.target.value)}
+      onKeyDown={handleKeyDown} placeholder={placeholder} rows={rows} style={style}
+      onFocus={e=>(e.target.style.borderColor=focusColor)}
+      onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+  );
+};
+
 const NoteArea = ({ value, onChange, focusColor="var(--accent)" }) => (
-  <textarea value={value} onChange={e=>onChange(e.target.value)}
+  <SmartTextarea value={value} onChange={onChange} focusColor={focusColor}
     placeholder="補充說明進行狀況或缺少項目…" rows={2}
     style={{ ...baseInput, marginTop:4, fontSize:12, color:"var(--text-mid)",
-      resize:"vertical", minHeight:52, background:"var(--surface-raised)" }}
-    onFocus={e=>(e.target.style.borderColor=focusColor)}
-    onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+      resize:"vertical", minHeight:52, background:"var(--surface-raised)" }}/>
 );
 
 const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
@@ -568,35 +623,11 @@ async function getOrCreateSub(picName, userId = null) {
     }
     pushSub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
   }
-  const newEp = subToKeys(pushSub); // { endpoint, p256dh, auth }
-
-  // 查現有記錄：優先 user_id，其次 pic_name
-  let existing = null;
-  if (userId) {
-    const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", userId).maybeSingle();
-    existing = data;
-  }
-  if (!existing && picName) {
-    const { data } = await sb.from("push_subscriptions").select("*").eq("pic_name", picName).maybeSingle();
-    existing = data;
-  }
-
-  if (existing) {
-    const eps = existing.endpoints || [];
-    // 此 endpoint 已存在，直接回傳
-    if (eps.some(e => e.endpoint === newEp.endpoint)) return existing;
-    // 將新 endpoint append 進陣列
-    const { data: updated } = await sb.from("push_subscriptions")
-      .update({ endpoints: [...eps, newEp], pic_name: picName })
-      .eq("id", existing.id).select().single();
-    return updated;
-  }
-
-  // 全新建立
-  const { data: created } = await sb.from("push_subscriptions").insert({
-    pic_name: picName, user_id: userId,
-    endpoints: [newEp],
-    subscribed_projects: [], notify_days_before: 0,
+  const keys = subToKeys(pushSub);
+  const { data:existing } = await sb.from("push_subscriptions").select("*").eq("endpoint",keys.endpoint).maybeSingle();
+  if (existing) return existing;
+  const { data:created } = await sb.from("push_subscriptions").insert({
+    pic_name:picName, user_id:userId, ...keys, subscribed_projects:[], notify_days_before:0
   }).select().single();
   return created;
 }
@@ -628,10 +659,20 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
   useEffect(() => {
     if (!("Notification" in window)||!("serviceWorker" in navigator)) { setStatus("unsupported"); return; }
     if (Notification.permission==="denied") { setStatus("denied"); return; }
-    if (!userId) return;
     (async()=>{
-      const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", userId).maybeSingle();
-      if (data) setSub(data);
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (reg) {
+        const pushSub = await reg.pushManager.getSubscription();
+        if (pushSub) {
+          const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
+          if (data) { setSub(data); return; }
+        }
+      }
+      // Fallback：用 user_id 查詢（換裝置時仍能恢復設定）
+      if (userId) {
+        const { data } = await sb.from("push_subscriptions").select("*").eq("user_id",userId).maybeSingle();
+        if (data) setSub(data);
+      }
     })();
   }, []);
 
@@ -836,13 +877,17 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       allTasks.forEach(task => {
         const proj = projects.find(p=>p.id===task.project_id);
         const name = proj?.info.name||"（未命名）";
+        const doneColor = task.completed
+          ? { bg:"var(--surface-raised)", text:"var(--text-subtle)", border:"var(--border)" }
+          : null;
+        const prefix = task.completed ? "✓ " : "";
         if (task.type==="deadline" && task.deadline && inMonth(task.deadline))
-          list.push({ date:task.deadline, label:name, sub:`任務：${task.name}`, ...CAL_COLORS.taskDL, taskId:task.id, taskObj:task });
+          list.push({ date:task.deadline, label:name, sub:`${prefix}任務：${task.name}`, ...(doneColor||CAL_COLORS.taskDL), taskId:task.id, taskObj:task });
         if (task.type==="period") {
           if (task.period_start && inMonth(task.period_start))
-            list.push({ date:task.period_start, label:name, sub:`任務開始：${task.name}`, ...CAL_COLORS.taskPeriod, taskId:task.id, taskObj:task });
+            list.push({ date:task.period_start, label:name, sub:`${prefix}任務開始：${task.name}`, ...(doneColor||CAL_COLORS.taskPeriod), taskId:task.id, taskObj:task });
           if (task.period_end && inMonth(task.period_end))
-            list.push({ date:task.period_end, label:name, sub:`任務結束：${task.name}`, ...CAL_COLORS.taskPeriod, taskId:task.id, taskObj:task });
+            list.push({ date:task.period_end, label:name, sub:`${prefix}任務結束：${task.name}`, ...(doneColor||CAL_COLORS.taskPeriod), taskId:task.id, taskObj:task });
         }
       });
     }
@@ -889,9 +934,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         </div>
         <div style={{ marginBottom:16 }}>
           <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>內容概述</label>
-          <textarea value={draft.description} onChange={e=>setDraft(d=>({ ...d, description:e.target.value }))} placeholder="描述任務目標或相關說明…" rows={3}
-            style={{ ...baseInput, resize:"vertical", minHeight:72 }}
-            onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+          <SmartTextarea value={draft.description} onChange={v=>setDraft(d=>({ ...d, description:v }))}
+            placeholder="描述任務目標或相關說明…" rows={3} focusColor={C.blue}
+            style={{ ...baseInput, resize:"vertical", minHeight:72 }}/>
         </div>
         <div style={{ marginBottom:16 }}>
           <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
@@ -1691,7 +1736,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       await sb.from("tasks").upsert({
         id:t.id, project_id:t.project_id, name:t.name, description:t.description,
         type:t.type, deadline:t.deadline||null, period_start:t.period_start||null, period_end:t.period_end||null,
-        url:t.url||"",
+        url:t.url||"", completed:t.completed||false,
       });
     }, 800);
   };
@@ -1740,10 +1785,13 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
           {tasks.map((task, idx) => {
             const isSelected = selectedIds.has(task.id);
             return (
-            <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.blueBorder : C.border}`, background:isSelected ? C.blueLight : C.white }}>
+            <Card key={task.id} style={{ padding:20,
+              border:`1px solid ${task.completed ? "var(--green)44" : isSelected ? C.blueBorder : C.border}`,
+              background:task.completed ? "var(--green-subtle)" : isSelected ? C.blueLight : C.white,
+              opacity: task.completed ? 0.75 : 1, transition:"all 0.2s" }}>
               <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
-                  {/* Checkbox */}
+                  {/* 批次選取 checkbox */}
                   <div onClick={()=>toggleSelect(task.id)}
                     style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
                       border:`2px solid ${isSelected ? C.blue : C.borderMid}`,
@@ -1751,9 +1799,18 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
                     {isSelected && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
                   </div>
+                  {/* 完成標記 checkbox */}
+                  <div onClick={()=>updateTask(task.id,"completed",!task.completed)} title="標記為完成"
+                    style={{ width:18, height:18, borderRadius:"50%", flexShrink:0, cursor:"pointer",
+                      border:`2px solid ${task.completed ? "var(--green)" : C.borderMid}`,
+                      background:task.completed ? "var(--green)" : C.white,
+                      display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>
+                    {task.completed && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
+                  </div>
                   <span style={{ fontSize:11, fontWeight:700, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
-                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:600, padding:"8px 12px" }}
+                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:600, padding:"8px 12px",
+                      textDecoration:task.completed?"line-through":"none", color:task.completed?"var(--text-subtle)":"var(--text)" }}
                     onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
                 <button onClick={()=>removeTask(task.id)}
@@ -1765,10 +1822,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>內容概述</label>
-                <textarea value={task.description} onChange={e=>updateTask(task.id,"description",e.target.value)}
-                  placeholder="描述任務的目標、範圍或相關說明…" rows={3}
-                  style={{ ...baseInput, resize:"vertical", minHeight:80 }}
-                  onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                <SmartTextarea value={task.description} onChange={v=>updateTask(task.id,"description",v)}
+                  placeholder="描述任務的目標、範圍或相關說明…" rows={3} focusColor={C.blue}
+                  style={{ ...baseInput, resize:"vertical", minHeight:80 }}/>
               </div>
 
               {/* Type toggle */}
@@ -1859,8 +1915,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   useEffect(() => {
     (async()=>{
-      if (!session?.user?.id) return;
-      const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", session.user.id).maybeSingle();
+      if (!("serviceWorker" in navigator)) return;
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (!reg) return;
+      const pushSub = await reg.pushManager.getSubscription();
+      if (!pushSub) return;
+      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
       if (data) setProjSub(data);
     })();
   }, [project.id]);
@@ -2249,10 +2309,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {info.integrations.map(intg=>(
                     <div key={intg}>
                       <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>{intg} 備註說明</label>
-                      <textarea value={info.integrationNotes[intg]||""} onChange={e=>setInfo(p=>({ ...p, integrationNotes:{ ...p.integrationNotes, [intg]:e.target.value } }))}
-                        placeholder={`請說明 ${intg} 串接相關需求或細節`} rows={3}
-                        style={{ ...baseInput, resize:"vertical", minHeight:72 }}
-                        onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                      <SmartTextarea value={info.integrationNotes[intg]||""}
+                        onChange={v=>setInfo(p=>({ ...p, integrationNotes:{ ...p.integrationNotes, [intg]:v } }))}
+                        placeholder={`請說明 ${intg} 串接相關需求或細節`} rows={3} focusColor={C.purple}
+                        style={{ ...baseInput, resize:"vertical", minHeight:72 }}/>
                     </div>
                   ))}
                 </div>
@@ -2286,9 +2346,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
               <div style={{ marginTop:24 }}>
                 <SectionLabel title="其餘功能需求或備注" icon="📝"/>
-                <textarea value={info.notes} onChange={e=>setInfo(p=>({ ...p, notes:e.target.value }))}
-                  placeholder="說明是否有額外功能開發需求…" style={{ ...baseInput, minHeight:90, resize:"vertical" }}
-                  onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
+                <SmartTextarea value={info.notes} onChange={v=>setInfo(p=>({ ...p, notes:v }))}
+                  placeholder="說明是否有額外功能開發需求…" rows={4} focusColor={C.blue}
+                  style={{ ...baseInput, minHeight:90, resize:"vertical" }}/>
                 <div style={{ marginTop:6, fontSize:11, color:C.textLight }}>
                   💡 輸入 <code style={{ background:C.bg, padding:"1px 5px", borderRadius:4, fontSize:11 }}>[顯示文字](https://網址)</code> 可在總覽頁顯示為超連結
                 </div>
@@ -2866,7 +2926,7 @@ export default function App() {
         const tasksByProject = {};
         (taskRows??[]).forEach(t => {
           if (!tasksByProject[t.project_id]) tasksByProject[t.project_id]=[];
-          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"" });
+          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"", completed:t.completed||false });
         });
         const projs = (rows??[]).map(r=>({ ...dbToUi(r,progMap[r.id]), tasks:tasksByProject[r.id]||[] }));
         setProjects(projs);
