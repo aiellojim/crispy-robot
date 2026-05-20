@@ -571,6 +571,10 @@ async function getOrCreateSub(picName, userId = null) {
   const keys = subToKeys(pushSub);
   const { data:existing } = await sb.from("push_subscriptions").select("*").eq("endpoint",keys.endpoint).maybeSingle();
   if (existing) return existing;
+  // 清理同 user_id 的舊記錄（endpoint 不同，代表舊訂閱未正確刪除）
+  if (userId) {
+    await sb.from("push_subscriptions").delete().eq("user_id", userId).neq("endpoint", keys.endpoint);
+  }
   const { data:created } = await sb.from("push_subscriptions").insert({
     pic_name:picName, user_id:userId, ...keys, subscribed_projects:[], notify_days_before:0
   }).select().single();
@@ -581,9 +585,14 @@ async function updateSub(id, patch) {
   return data;
 }
 async function deleteSub(id) {
-  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-  if (reg) { const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); }
-  await sb.from("push_subscriptions").delete().eq("id",id);
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (reg) { const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); }
+  } catch(e) { console.error("[deleteSub] unsubscribe error:", e); }
+  try {
+    const { error } = await sb.from("push_subscriptions").delete().eq("id", id);
+    if (error) console.error("[deleteSub] db delete error:", error);
+  } catch(e) { console.error("[deleteSub] db error:", e); }
 }
 
 const NOTIFY_OPTIONS = [
