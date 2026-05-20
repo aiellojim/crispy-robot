@@ -568,15 +568,35 @@ async function getOrCreateSub(picName, userId = null) {
     }
     pushSub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
   }
-  const keys = subToKeys(pushSub);
-  const { data:existing } = await sb.from("push_subscriptions").select("*").eq("endpoint",keys.endpoint).maybeSingle();
-  if (existing) return existing;
-  // 清理同 user_id 的舊記錄（endpoint 不同，代表舊訂閱未正確刪除）
+  const newEp = subToKeys(pushSub); // { endpoint, p256dh, auth }
+
+  // 查現有記錄：優先 user_id，其次 pic_name
+  let existing = null;
   if (userId) {
-    await sb.from("push_subscriptions").delete().eq("user_id", userId).neq("endpoint", keys.endpoint);
+    const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", userId).maybeSingle();
+    existing = data;
   }
-  const { data:created } = await sb.from("push_subscriptions").insert({
-    pic_name:picName, user_id:userId, ...keys, subscribed_projects:[], notify_days_before:0
+  if (!existing && picName) {
+    const { data } = await sb.from("push_subscriptions").select("*").eq("pic_name", picName).maybeSingle();
+    existing = data;
+  }
+
+  if (existing) {
+    const eps = existing.endpoints || [];
+    // 此 endpoint 已存在，直接回傳
+    if (eps.some(e => e.endpoint === newEp.endpoint)) return existing;
+    // 將新 endpoint append 進陣列
+    const { data: updated } = await sb.from("push_subscriptions")
+      .update({ endpoints: [...eps, newEp], pic_name: picName })
+      .eq("id", existing.id).select().single();
+    return updated;
+  }
+
+  // 全新建立
+  const { data: created } = await sb.from("push_subscriptions").insert({
+    pic_name: picName, user_id: userId,
+    endpoints: [newEp],
+    subscribed_projects: [], notify_days_before: 0,
   }).select().single();
   return created;
 }
@@ -585,14 +605,9 @@ async function updateSub(id, patch) {
   return data;
 }
 async function deleteSub(id) {
-  try {
-    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-    if (reg) { const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); }
-  } catch(e) { console.error("[deleteSub] unsubscribe error:", e); }
-  try {
-    const { error } = await sb.from("push_subscriptions").delete().eq("id", id);
-    if (error) console.error("[deleteSub] db delete error:", error);
-  } catch(e) { console.error("[deleteSub] db error:", e); }
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (reg) { const s = await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); }
+  await sb.from("push_subscriptions").delete().eq("id",id);
 }
 
 const NOTIFY_OPTIONS = [
@@ -613,20 +628,10 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
   useEffect(() => {
     if (!("Notification" in window)||!("serviceWorker" in navigator)) { setStatus("unsupported"); return; }
     if (Notification.permission==="denied") { setStatus("denied"); return; }
+    if (!userId) return;
     (async()=>{
-      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      if (reg) {
-        const pushSub = await reg.pushManager.getSubscription();
-        if (pushSub) {
-          const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
-          if (data) { setSub(data); return; }
-        }
-      }
-      // Fallback：用 user_id 查詢（換裝置時仍能恢復設定）
-      if (userId) {
-        const { data } = await sb.from("push_subscriptions").select("*").eq("user_id",userId).maybeSingle();
-        if (data) setSub(data);
-      }
+      const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", userId).maybeSingle();
+      if (data) setSub(data);
     })();
   }, []);
 
@@ -1854,12 +1859,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   useEffect(() => {
     (async()=>{
-      if (!("serviceWorker" in navigator)) return;
-      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      if (!reg) return;
-      const pushSub = await reg.pushManager.getSubscription();
-      if (!pushSub) return;
-      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
+      if (!session?.user?.id) return;
+      const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", session.user.id).maybeSingle();
       if (data) setProjSub(data);
     })();
   }, [project.id]);
