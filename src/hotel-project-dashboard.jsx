@@ -1837,7 +1837,7 @@ async function callGemini(systemPrompt, history) {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
       }),
     });
     const data = await res.json();
@@ -1887,6 +1887,72 @@ ${info.notes ? `== 備注 ==\n${info.notes}` : ""}`;
 }
 
 // ─── AiPanel ──────────────────────────────────────────────────
+// ── Markdown 渲染（處理 Gemini 常見輸出格式）────────────────
+function renderMarkdown(text) {
+  const lines = text.split("\n");
+  const elements = [];
+  let listItems = [];
+  let key = 0;
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={key++} style={{ margin:"6px 0", paddingLeft:20, lineHeight:1.8 }}>
+          {listItems.map((item, i) => <li key={i} style={{ marginBottom:2 }}>{parseLine(item)}</li>)}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  const parseLine = (line) => {
+    // **bold** and *italic*
+    const parts = [];
+    let remaining = line;
+    let i = 0;
+    const re = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+    let last = 0, m;
+    while ((m = re.exec(remaining)) !== null) {
+      if (m.index > last) parts.push(remaining.slice(last, m.index));
+      if (m[2]) parts.push(<strong key={i++}>{m[2]}</strong>);
+      else if (m[3]) parts.push(<em key={i++}>{m[3]}</em>);
+      last = m.index + m[0].length;
+    }
+    if (last < remaining.length) parts.push(remaining.slice(last));
+    return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : parts;
+  };
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+
+    if (/^###\s+/.test(line)) {
+      flushList();
+      elements.push(<h3 key={key++} style={{ fontSize:14, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^###\s+/, ""))}</h3>);
+    } else if (/^##\s+/.test(line)) {
+      flushList();
+      elements.push(<h2 key={key++} style={{ fontSize:15, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^##\s+/, ""))}</h2>);
+    } else if (/^#\s+/.test(line)) {
+      flushList();
+      elements.push(<h1 key={key++} style={{ fontSize:16, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^#\s+/, ""))}</h1>);
+    } else if (/^---+$/.test(line.trim())) {
+      flushList();
+      elements.push(<hr key={key++} style={{ border:"none", borderTop:"1px solid var(--border)", margin:"8px 0" }}/>);
+    } else if (/^[\*\-]\s+/.test(line)) {
+      listItems.push(line.replace(/^[\*\-]\s+/, ""));
+    } else if (/^\d+\.\s+/.test(line)) {
+      listItems.push(line.replace(/^\d+\.\s+/, ""));
+    } else if (line.trim() === "") {
+      flushList();
+      if (elements.length > 0) elements.push(<div key={key++} style={{ height:6 }}/>);
+    } else {
+      flushList();
+      elements.push(<p key={key++} style={{ margin:"2px 0", lineHeight:1.7 }}>{parseLine(line)}</p>);
+    }
+  }
+  flushList();
+  return elements;
+}
+
 const AiPanel = ({ info, basicChecked, faqChecked, batch2Checked, tasks, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [input,    setInput]    = useState("");
@@ -1972,13 +2038,13 @@ const AiPanel = ({ info, basicChecked, faqChecked, batch2Checked, tasks, onClose
           {messages.map((msg, i) => (
             <div key={i} style={{ display:"flex", justifyContent:msg.role==="user"?"flex-end":"flex-start" }}>
               <div style={{ maxWidth:"88%", padding:"10px 14px", borderRadius:12, fontSize:13, lineHeight:1.7,
-                whiteSpace:"pre-wrap", wordBreak:"break-word",
+                wordBreak:"break-word",
                 background:msg.role==="user"?"var(--accent)":"var(--surface-raised)",
                 color:msg.role==="user"?"#fff":"var(--text)",
                 border:msg.role==="user"?"none":"1px solid var(--border)",
                 borderBottomRightRadius:msg.role==="user"?4:12,
                 borderBottomLeftRadius:msg.role==="model"?4:12 }}>
-                {msg.text}
+                {msg.role==="user" ? msg.text : renderMarkdown(msg.text)}
               </div>
             </div>
           ))}
