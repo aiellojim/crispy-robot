@@ -74,10 +74,10 @@ const GLOBAL_CSS = `
     --text: #111111;
     --text-mid: #6B6B6B;
     --text-subtle: #A3A3A3;
-    --accent: #5E6AD2;
-    --accent-light: #EEEFFE;
-    --accent-border: rgba(94,106,210,0.28);
-    --accent-subtle: rgba(94,106,210,0.07);
+    --accent: #E8621A;
+    --accent-light: #FFF4EE;
+    --accent-border: rgba(232,98,26,0.25);
+    --accent-subtle: rgba(232,98,26,0.07);
     --green: #16A34A;
     --green-light: #F0FDF4;
     --green-subtle: rgba(22,163,74,0.08);
@@ -103,30 +103,30 @@ const GLOBAL_CSS = `
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111111;
-      --surface: #1C1C1C;
-      --surface-raised: #242424;
-      --border: #2E2E2E;
-      --border-mid: #3D3D3D;
+      --bg: #17171E;
+      --surface: #21212B;
+      --surface-raised: #2A2A36;
+      --border: #32323F;
+      --border-mid: #42424F;
       --text: #EDEDED;
       --text-mid: #A3A3A3;
       --text-subtle: #6B6B6B;
-      --accent: #7C85E0;
-      --accent-light: #1A1C40;
-      --accent-border: rgba(124,133,224,0.35);
-      --accent-subtle: rgba(124,133,224,0.1);
-      --green: #22C55E;
-      --green-light: #052E16;
-      --green-subtle: rgba(34,197,94,0.1);
-      --amber: #F59E0B;
+      --accent: #F4873D;
+      --accent-light: #2A1A0A;
+      --accent-border: rgba(244,135,61,0.3);
+      --accent-subtle: rgba(244,135,61,0.08);
+      --green: #4ADE80;
+      --green-light: #0A2318;
+      --green-subtle: rgba(74,222,128,0.08);
+      --amber: #FBBF24;
       --amber-light: #1C1200;
-      --amber-subtle: rgba(245,158,11,0.1);
-      --red: #EF4444;
-      --red-light: #2D0F0F;
-      --red-subtle: rgba(239,68,68,0.1);
-      --purple: #A78BFA;
+      --amber-subtle: rgba(251,191,36,0.08);
+      --red: #F87171;
+      --red-light: #2A0F0F;
+      --red-subtle: rgba(248,113,113,0.08);
+      --purple: #C084FC;
       --purple-light: #1E0A3C;
-      --purple-subtle: rgba(167,139,250,0.1);
+      --purple-subtle: rgba(192,132,252,0.08);
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
       --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
       --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
@@ -151,15 +151,14 @@ const GLOBAL_CSS = `
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
-  @keyframes bounce { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-6px); } }
 
   /* Manual theme overrides — higher specificity than media query */
   html[data-theme="light"] {
     --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
     --border: #E5E5E5; --border-mid: #D4D4D4;
     --text: #111111; --text-mid: #6B6B6B; --text-subtle: #A3A3A3;
-    --accent: #5E6AD2; --accent-light: #EEEFFE;
-    --accent-border: rgba(94,106,210,0.28); --accent-subtle: rgba(94,106,210,0.07);
+    --accent: #E8621A; --accent-light: #FFF4EE;
+    --accent-border: rgba(232,98,26,0.25); --accent-subtle: rgba(232,98,26,0.07);
     --green: #16A34A; --green-light: #F0FDF4; --green-subtle: rgba(22,163,74,0.08);
     --amber: #B45309; --amber-light: #FFFBEB; --amber-subtle: rgba(180,83,9,0.08);
     --red: #DC2626; --red-light: #FEF2F2; --red-subtle: rgba(220,38,38,0.07);
@@ -175,15 +174,15 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d;
   }
   html[data-theme="dark"] {
-    --bg: #111111; --surface: #1C1C1C; --surface-raised: #242424;
-    --border: #2E2E2E; --border-mid: #3D3D3D;
+    --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
+    --border: #32323F; --border-mid: #42424F;
     --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #6B6B6B;
-    --accent: #7C85E0; --accent-light: #1A1C40;
-    --accent-border: rgba(124,133,224,0.35); --accent-subtle: rgba(124,133,224,0.1);
-    --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
-    --amber: #F59E0B; --amber-light: #1C1200; --amber-subtle: rgba(245,158,11,0.1);
-    --red: #EF4444; --red-light: #2D0F0F; --red-subtle: rgba(239,68,68,0.1);
-    --purple: #A78BFA; --purple-light: #1E0A3C; --purple-subtle: rgba(167,139,250,0.1);
+    --accent: #F4873D; --accent-light: #2A1A0A;
+    --accent-border: rgba(244,135,61,0.3); --accent-subtle: rgba(244,135,61,0.08);
+    --green: #4ADE80; --green-light: #0A2318; --green-subtle: rgba(74,222,128,0.08);
+    --amber: #FBBF24; --amber-light: #1C1200; --amber-subtle: rgba(251,191,36,0.08);
+    --red: #F87171; --red-light: #2A0F0F; --red-subtle: rgba(248,113,113,0.08);
+    --purple: #C084FC; --purple-light: #1E0A3C; --purple-subtle: rgba(192,132,252,0.08);
     --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
     --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
     --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
@@ -1826,266 +1825,6 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   );
 };
 
-// ─── Gemini AI ────────────────────────────────────────────────
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`;
-
-async function callGemini(systemPrompt, history) {
-  try {
-    const res = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) return `錯誤：${data.error?.message || "API 呼叫失敗"}`;
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，無法取得回應。";
-  } catch(e) {
-    return `錯誤：${e.message}`;
-  }
-}
-
-function buildProjectContext(info, basicChecked, faqChecked, batch2Checked, tasks) {
-  const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
-  const activeFaq = FAQ_ITEMS.filter(item => item !== FAQ_TV_ITEM || hasIptv);
-  const uncheckedBasic = hasAva ? BASIC_ITEMS.filter(i => !basicChecked[i]) : [];
-  const uncheckedFaq   = hasAva ? activeFaq.filter(i => !faqChecked[i]) : [];
-  const uncheckedB2    = [...(hasAva ? BATCH2_ITEMS.filter(i => !batch2Checked[i]) : []), ...(hasGw && !batch2Checked[GW_ITEM] ? [GW_ITEM] : [])];
-
-  return `你是 Aiello 專案交付中心的 AI 助理，協助管理飯店 AI 產品的部署進度。
-請用繁體中文回覆，語氣專業但親切，回答盡量具體有幫助。
-回應請簡潔，避免不必要的標題和分隔線，重點用條列式呈現即可。
-
-== 當前專案資訊 ==
-飯店名稱：${info.name || "未填寫"}
-Hotel ID：${info.hotelId || "—"}
-負責人 PIC：${info.pic || "—"}
-地區：${info.region === "其他" ? (info.regionOther || "其他") : (info.region || "—")}
-購置產品：${info.products.join("、") || "—"}
-串接功能：${info.integrations.join("、") || "無"}
-${info.products.includes("AVA") ? `AVA 機台：裝機 ${info.avaUnits || "—"} 台 / 備品 ${info.avaSpare || "—"} 台` : ""}
-
-== 重要日期 ==
-上線日期：${info.launchDate || "未設定"}
-第一批資料期限：${info.batch1Deadline || "未設定"}
-第二批資料期限：${info.batch2Deadline || "未設定"}
-
-== 資料進度 ==
-${hasAva ? `基礎設定：待完成 ${uncheckedBasic.length}/${BASIC_ITEMS.length} 項${uncheckedBasic.length > 0 ? "\n  待完成：" + uncheckedBasic.join("、") : "（全部完成）"}` : ""}
-${hasAva ? `FAQ 資料：待完成 ${uncheckedFaq.length}/${activeFaq.length} 項${uncheckedFaq.length > 0 ? "\n  待完成：" + uncheckedFaq.join("、") : "（全部完成）"}` : ""}
-${(hasAva || hasGw) ? `第二批資料：待完成 ${uncheckedB2.length} 項${uncheckedB2.length > 0 ? "\n  待完成：" + uncheckedB2.join("、") : "（全部完成）"}` : ""}
-
-${tasks.length > 0 ? `== 任務紀錄 ==\n${tasks.map(t => {
-  const status = t.completed ? "✓" : "○";
-  const date = t.type === "deadline" ? (t.deadline || "未設定") : `${t.period_start || "?"} → ${t.period_end || "?"}`;
-  return `${status} ${t.name}（${date}）${t.description ? "：" + t.description.slice(0, 50) : ""}`;
-}).join("\n")}` : ""}
-
-${info.notes ? `== 備注 ==\n${info.notes}` : ""}`;
-}
-
-// ─── AiPanel ──────────────────────────────────────────────────
-// ── Markdown 渲染（處理 Gemini 常見輸出格式）────────────────
-function renderMarkdown(text) {
-  const lines = text.split("\n");
-  const elements = [];
-  let listItems = [];
-  let key = 0;
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={key++} style={{ margin:"6px 0", paddingLeft:20, lineHeight:1.8 }}>
-          {listItems.map((item, i) => <li key={i} style={{ marginBottom:2 }}>{parseLine(item)}</li>)}
-        </ul>
-      );
-      listItems = [];
-    }
-  };
-
-  const parseLine = (line) => {
-    // **bold** and *italic*
-    const parts = [];
-    let remaining = line;
-    let i = 0;
-    const re = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
-    let last = 0, m;
-    while ((m = re.exec(remaining)) !== null) {
-      if (m.index > last) parts.push(remaining.slice(last, m.index));
-      if (m[2]) parts.push(<strong key={i++}>{m[2]}</strong>);
-      else if (m[3]) parts.push(<em key={i++}>{m[3]}</em>);
-      last = m.index + m[0].length;
-    }
-    if (last < remaining.length) parts.push(remaining.slice(last));
-    return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : parts;
-  };
-
-  for (let idx = 0; idx < lines.length; idx++) {
-    const line = lines[idx];
-
-    if (/^###\s+/.test(line)) {
-      flushList();
-      elements.push(<h3 key={key++} style={{ fontSize:14, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^###\s+/, ""))}</h3>);
-    } else if (/^##\s+/.test(line)) {
-      flushList();
-      elements.push(<h2 key={key++} style={{ fontSize:15, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^##\s+/, ""))}</h2>);
-    } else if (/^#\s+/.test(line)) {
-      flushList();
-      elements.push(<h1 key={key++} style={{ fontSize:16, fontWeight:700, margin:"10px 0 4px", color:"var(--text)" }}>{parseLine(line.replace(/^#\s+/, ""))}</h1>);
-    } else if (/^---+$/.test(line.trim())) {
-      flushList();
-      elements.push(<hr key={key++} style={{ border:"none", borderTop:"1px solid var(--border)", margin:"8px 0" }}/>);
-    } else if (/^[\*\-]\s+/.test(line)) {
-      listItems.push(line.replace(/^[\*\-]\s+/, ""));
-    } else if (/^\d+\.\s+/.test(line)) {
-      listItems.push(line.replace(/^\d+\.\s+/, ""));
-    } else if (line.trim() === "") {
-      flushList();
-      if (elements.length > 0) elements.push(<div key={key++} style={{ height:6 }}/>);
-    } else {
-      flushList();
-      elements.push(<p key={key++} style={{ margin:"2px 0", lineHeight:1.7 }}>{parseLine(line)}</p>);
-    }
-  }
-  flushList();
-  return elements;
-}
-
-const AiPanel = ({ info, basicChecked, faqChecked, batch2Checked, tasks, onClose }) => {
-  const [messages, setMessages] = useState([]);
-  const [input,    setInput]    = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const bottomRef = useRef(null);
-  const systemPrompt = useMemo(
-    () => buildProjectContext(info, basicChecked, faqChecked, batch2Checked, tasks),
-    [info, basicChecked, faqChecked, batch2Checked, tasks]
-  );
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages, loading]);
-
-  const send = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = { role:"user", text:input.trim() };
-    const newHistory = [...messages, userMsg];
-    setMessages(newHistory);
-    setInput("");
-    setLoading(true);
-    const reply = await callGemini(systemPrompt, newHistory);
-    setMessages([...newHistory, { role:"model", text:reply }]);
-    setLoading(false);
-  };
-
-  const SUGGESTIONS = ["目前哪些項目最緊急？", "幫我草擬一封給飯店的進度確認信", "距離上線還有哪些事要做？"];
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:440,
-        background:"var(--surface)", borderLeft:"1px solid var(--border)",
-        boxShadow:"-4px 0 24px rgba(0,0,0,0.12)", zIndex:20001,
-        display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
-
-        {/* Header */}
-        <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)",
-          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)", display:"flex", alignItems:"center", gap:7 }}>
-              <span>✨</span> AI 助理
-            </div>
-            <div style={{ fontSize:12, color:"var(--text-mid)", marginTop:2 }}>{info.name}</div>
-          </div>
-          <div style={{ display:"flex", gap:8 }}>
-            {messages.length > 0 && (
-              <button onClick={()=>setMessages([])}
-                style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
-                  padding:"4px 10px", cursor:"pointer", fontSize:12, color:"var(--text-subtle)", fontFamily:"inherit" }}>
-                清除對話
-              </button>
-            )}
-            <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
-              borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-              color:"var(--text-mid)", fontFamily:"inherit" }}>✕</button>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div style={{ flex:1, overflowY:"auto", padding:16, display:"flex", flexDirection:"column", gap:10 }}>
-          {messages.length === 0 && (
-            <div style={{ textAlign:"center", padding:"32px 16px" }}>
-              <div style={{ fontSize:32, marginBottom:12 }}>✨</div>
-              <div style={{ fontSize:14, fontWeight:600, color:"var(--text)", marginBottom:6 }}>AI 助理已就緒</div>
-              <div style={{ fontSize:12, color:"var(--text-mid)", lineHeight:1.7, marginBottom:20 }}>
-                可以問我關於 {info.name} 的任何問題
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                {SUGGESTIONS.map(s => (
-                  <button key={s} onClick={()=>{ setInput(s); }}
-                    style={{ padding:"8px 14px", background:"var(--surface-raised)",
-                      border:"1px solid var(--border)", borderRadius:9, cursor:"pointer",
-                      fontSize:12, color:"var(--text-mid)", fontFamily:"inherit",
-                      textAlign:"left", lineHeight:1.4, transition:"all 0.12s" }}
-                    onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div key={i} style={{ display:"flex", justifyContent:msg.role==="user"?"flex-end":"flex-start" }}>
-              <div style={{ maxWidth:"88%", padding:"10px 14px", borderRadius:12, fontSize:13, lineHeight:1.7,
-                wordBreak:"break-word",
-                background:msg.role==="user"?"var(--accent)":"var(--surface-raised)",
-                color:msg.role==="user"?"#fff":"var(--text)",
-                border:msg.role==="user"?"none":"1px solid var(--border)",
-                borderBottomRightRadius:msg.role==="user"?4:12,
-                borderBottomLeftRadius:msg.role==="model"?4:12 }}>
-                {msg.role==="user" ? msg.text : renderMarkdown(msg.text)}
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{ display:"flex", justifyContent:"flex-start" }}>
-              <div style={{ padding:"12px 16px", borderRadius:12, borderBottomLeftRadius:4,
-                background:"var(--surface-raised)", border:"1px solid var(--border)",
-                display:"flex", gap:5, alignItems:"center" }}>
-                {[0,1,2].map(i=>(
-                  <div key={i} style={{ width:6, height:6, borderRadius:"50%", background:"var(--text-subtle)",
-                    animation:`bounce 1.2s ease-in-out ${i*0.2}s infinite` }}/>
-                ))}
-              </div>
-            </div>
-          )}
-          <div ref={bottomRef}/>
-        </div>
-
-        {/* Input */}
-        <div style={{ padding:"12px 16px", borderTop:"1px solid var(--border)", display:"flex", gap:8 }}>
-          <input value={input} onChange={e=>setInput(e.target.value)}
-            onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); send(); }}}
-            placeholder="輸入問題… Enter 送出" disabled={loading}
-            style={{ ...baseInput, flex:1, fontSize:13, padding:"9px 12px" }}
-            onFocus={e=>(e.target.style.borderColor="var(--accent)")}
-            onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-          <button onClick={send} disabled={loading||!input.trim()}
-            style={{ padding:"8px 16px", background:input.trim()&&!loading?"var(--accent)":"var(--border)",
-              color:"#fff", border:"none", borderRadius:9, fontFamily:"inherit",
-              cursor:input.trim()&&!loading?"pointer":"default",
-              fontSize:13, fontWeight:600, flexShrink:0, transition:"background 0.15s" }}>
-            送出
-          </button>
-        </div>
-      </div>
-    </>
-  );
-};
-
 // ─── ProjectDetail ────────────────────────────────────────────
 const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session, profile }) => {
   const [step, setStep] = useState(isNew ? 0 : 5);
@@ -2101,7 +1840,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [saveStatus,    setSaveStatus]    = useState("idle");
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
-  const [showAi,        setShowAi]        = useState(false);
   const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
   const saveTimer = useRef(null);
 
@@ -2247,19 +1985,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             color:saveStatus==="saving"?C.amber:saveStatus==="saved"?C.green:C.textLight }}>
             {saveStatus==="saving"?"· 儲存中…":saveStatus==="saved"?"· 已儲存 ✓":"· 自動儲存"}
           </span>
-          <span style={{ color:C.border, marginLeft:4 }}>│</span>
-          <button onClick={()=>setShowAi(v=>!v)}
-            style={{ background:"none", border:"none", cursor:"pointer", padding:"2px 4px",
-              fontSize:14, fontFamily:"inherit", color:showAi?"var(--accent)":C.textMid,
-              display:"flex", alignItems:"center", gap:5, fontWeight:showAi?700:400 }}
-            title="AI 助理">
-            ✨ AI
-          </button>
         </div>
-        {showAi && (
-          <AiPanel info={info} basicChecked={basicChecked} faqChecked={faqChecked}
-            batch2Checked={batch2Checked} tasks={tasks} onClose={()=>setShowAi(false)}/>
-        )}
       </div>
 
       {/* Tab nav */}
@@ -3221,16 +2947,29 @@ export default function App() {
               <ThemeToggle theme={theme} setTheme={setTheme}/>
               {/* 使用者設定 */}
               <button onClick={()=>setShowSettings(true)}
-                style={{ display:"flex", alignItems:"center", gap:7, background:"var(--surface-raised)",
-                  border:"1px solid var(--border)", borderRadius:8, padding:"6px 13px",
-                  cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
-                  transition:"all 0.12s" }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
-                <span style={{ fontSize:14 }}>👤</span>
-                <span>{profile?.display_name || session?.user?.email || "設定"}</span>
+                style={{ display:"flex", alignItems:"center", gap:9, background:"var(--surface-raised)",
+                  border:"1px solid var(--border)", borderRadius:10, padding:"5px 12px 5px 5px",
+                  cursor:"pointer", fontFamily:"inherit", transition:"all 0.12s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}>
+                {/* 頭像圓圈 */}
+                <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0,
+                  background:"var(--accent)", display:"flex", alignItems:"center",
+                  justifyContent:"center", fontSize:12, fontWeight:700, color:"#fff" }}>
+                  {(profile?.display_name || session?.user?.email || "?")[0].toUpperCase()}
+                </div>
+                <div style={{ textAlign:"left" }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", lineHeight:1.3 }}>
+                    {profile?.display_name || "設定名稱"}
+                  </div>
+                  {profile?.display_name && (
+                    <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2 }}>
+                      {session?.user?.email}
+                    </div>
+                  )}
+                </div>
               </button>
-              <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
+              <button onClick={handleNew} style={{ background:"var(--accent)", color:"#fff", border:"none",
                 borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600,
                 cursor:"pointer", fontFamily:"inherit" }}>
                 + 新增專案
