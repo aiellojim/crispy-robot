@@ -322,6 +322,40 @@ const ProgressCard = ({ label, checked, total, color }) => {
   );
 };
 
+// ─── SVG Icons（線框風格，strokeWidth=1.6）─────────────────────
+const Icon = ({ d, size=16, color="currentColor", fill="none", strokeWidth=1.6, style={} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}
+    stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d={d}/>
+  </svg>
+);
+
+// 常用 icon paths
+const ICONS = {
+  folder:     "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z",
+  warning:    "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01",
+  rocket:     "M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0 M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5",
+  check:      "M20 6L9 17l-5-5",
+  bell:       "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
+  calendar:   "M3 4h18v18H3z M3 9h18 M8 2v4 M16 2v4",
+  search:     "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35",
+  filter:     "M22 3H2l8 9.46V19l4 2v-8.54L22 3z",
+  sort:       "M3 6h18 M7 12h10 M10 18h4",
+  user:       "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  pin:        "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
+  link:       "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
+  chevronR:   "M9 18l6-6-6-6",
+  tag:        "M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z M7 7h.01",
+  grid:       "M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z",
+  trash:      "M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6",
+  jira:       "M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z",
+};
+
+// 語意化 icon 元件
+const Ico = ({ name, size=16, color="currentColor", strokeWidth=1.6, style={} }) => (
+  <Icon d={ICONS[name]||""} size={size} color={color} strokeWidth={strokeWidth} style={style}/>
+);
+
 const MiniBar = ({ pct, color }) => (
   <div style={{ height:4, background:"var(--border)", borderRadius:2, overflow:"hidden", flex:1 }}>
     <div style={{ height:"100%", borderRadius:2, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
@@ -504,12 +538,13 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
 
 // Dropdown filter
 const FilterSelect = ({ label, value, onChange, options }) => (
-  <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-    <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>
+  <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+    {label && <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>}
     <select value={value} onChange={e=>onChange(e.target.value)}
-      style={{ ...baseInput, width:"auto", minWidth:130, padding:"8px 30px 8px 11px", fontSize:13, borderRadius:8, cursor:"pointer",
-        appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-        backgroundRepeat:"no-repeat", backgroundPosition:"right 9px center" }}
+      style={{ ...baseInput, width:"auto", minWidth:110, padding:"7px 28px 7px 10px", fontSize:13,
+        borderRadius:8, cursor:"pointer", appearance:"none",
+        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+        backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
       onFocus={e=>(e.target.style.borderColor="var(--accent)")} onBlur={e=>(e.target.style.borderColor="var(--border)")}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -1054,7 +1089,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                           fontSize:11, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
                         onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.color=C.red; }}
                         onMouseLeave={e=>{ e.currentTarget.style.opacity="0.5"; e.currentTarget.style.color=ev.text; }}
-                        title="刪除任務">🗑</button>
+                        title="刪除任務"><Ico name="trash" size={14} color="currentColor"/></button>
                     )}
                   </div>
                 ))}
@@ -1090,7 +1125,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                         opacity:0.6, fontFamily:"inherit" }}
                       onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.borderColor=C.red; e.currentTarget.style.color=C.red; }}
                       onMouseLeave={e=>{ e.currentTarget.style.opacity="0.6"; e.currentTarget.style.borderColor=ev.border; e.currentTarget.style.color=ev.text; }}
-                      title="刪除任務">🗑</button>
+                      title="刪除任務"><Ico name="trash" size={14} color="currentColor"/></button>
                   </>
                 )}
               </div>
@@ -1155,64 +1190,73 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
   const doneCount = projects.filter(p=>calcPct(p)===100).length;
 
   const stats = [
-    { label:"專案總數",         value:projects.length, color:"var(--accent)" },
-    { label:"逾期未完成",       value:overdueCount,    color:overdueCount>0?"var(--red)":"var(--green)" },
-    { label:"即將上線（30天）", value:soonCount,       color:"var(--amber)" },
-    { label:"已完成資料",       value:doneCount,       color:"var(--purple)" },
+    { label:"專案總數",         value:projects.length, icon:"folder",  color:"var(--accent)",  sub:"所有專案" },
+    { label:"逾期未完成",       value:overdueCount,    icon:"warning", color:overdueCount>0?"var(--red)":"var(--green)", sub:overdueCount>0?"需立即處理":"目前正常" },
+    { label:"即將上線（30天）", value:soonCount,       icon:"rocket",  color:"var(--amber)",   sub:"預計 30 天內上線" },
+    { label:"已完成資料",       value:doneCount,       icon:"check",   color:"var(--purple)",  sub:"已歸檔完成" },
   ];
 
   return (
-    <div style={{ padding:"32px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
+    <div style={{ padding:"28px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
       {/* Stat cards */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:36 }}>
-        {stats.map(({ label, value, color }) => (
-          <div key={label} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
-            padding:"20px 24px", animation:"fadeIn 0.2s ease" }}>
-            <div style={{ fontSize:12, color:"var(--text-subtle)", fontWeight:500, marginBottom:10 }}>{label}</div>
-            <div style={{ fontSize:30, fontWeight:700, color, fontFamily:"'DM Mono',monospace", letterSpacing:-1 }}>{value}</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
+        {stats.map(({ label, value, icon, color, sub }) => (
+          <div key={label} style={{ background:"var(--surface)", border:"1px solid var(--border)",
+            borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
+              <span style={{ fontSize:12, color:"var(--text-mid)", fontWeight:500, lineHeight:1.4 }}>{label}</span>
+              <div style={{ width:32, height:32, borderRadius:8, background:color+"15",
+                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Ico name={icon} size={16} color={color} strokeWidth={1.8}/>
+              </div>
+            </div>
+            <div style={{ fontSize:32, fontWeight:700, color, fontFamily:"'DM Mono',monospace",
+              letterSpacing:-1, marginBottom:4 }}>{value}</div>
+            <div style={{ fontSize:11, color:"var(--text-subtle)" }}>{sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-          <h2 style={{ fontSize:16, fontWeight:600, color:"var(--text)", margin:0 }}>專案列表</h2>
-          <button onClick={()=>setShowNotif(true)} title="推播通知設定"
-            style={{ display:"flex", alignItems:"center", gap:6, background:"transparent",
-              border:"1px solid var(--border)", borderRadius:8, padding:"6px 13px",
-              cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
-              transition:"all 0.12s" }}
+      {/* 篩選欄（含通知設定，統一外框） */}
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+        borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+          {/* 搜尋 */}
+          <div style={{ position:"relative", flex:"0 0 220px" }}>
+            <div style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }}>
+              <Ico name="search" size={14} color="var(--text-subtle)"/>
+            </div>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="飯店名稱、地區、產品、PIC..."
+              style={{ ...baseInput, paddingLeft:32, fontSize:13, width:"100%" }}
+              onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+              onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+          </div>
+          <div style={{ width:1, height:28, background:"var(--border)", flexShrink:0 }}/>
+          {/* 篩選 selects */}
+          <FilterSelect label="" value={regionFilter}  onChange={setRegionFilter}  options={regionOptions} placeholder="地區"/>
+          <FilterSelect label="" value={productFilter} onChange={setProductFilter} options={productOptions} placeholder="產品"/>
+          <FilterSelect label="" value={picFilter}     onChange={setPicFilter}     options={picOptions} placeholder="PIC"/>
+          {/* 分隔線 */}
+          <div style={{ width:1, height:28, background:"var(--border)", flexShrink:0 }}/>
+          {/* 排序 */}
+          <FilterSelect label="" value={sortBy} onChange={setSortBy} options={[
+            { value:"created_desc", label:"新增時間（最新）" },
+            { value:"created_asc",  label:"新增時間（最舊）" },
+            { value:"launch_asc",   label:"上線日期（最近）" },
+            { value:"launch_desc",  label:"上線日期（最遠）" },
+          ]} placeholder="排序"/>
+          {/* 通知設定 */}
+          <button onClick={()=>setShowNotif(true)}
+            style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6,
+              background:"transparent", border:"1px solid var(--border)", borderRadius:8,
+              padding:"7px 13px", cursor:"pointer", fontFamily:"inherit",
+              fontSize:13, color:"var(--text-mid)", transition:"all 0.12s" }}
             onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
             onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
-            🔔 通知設定
+            <Ico name="bell" size={14} color="currentColor"/>
+            通知設定
           </button>
-        </div>
-        <div style={{ display:"flex", alignItems:"flex-end", gap:14, flexWrap:"wrap" }}>
-          {/* Search */}
-          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-            <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>搜尋</label>
-            <div style={{ position:"relative" }}>
-              <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)",
-                color:"var(--text-subtle)", fontSize:13, pointerEvents:"none" }}>🔍</span>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="飯店名稱…"
-                style={{ ...baseInput, paddingLeft:32, width:200, fontSize:13 }}
-                onFocus={e=>(e.target.style.borderColor="var(--accent)")}
-                onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-            </div>
-          </div>
-          <FilterSelect label="地區" value={regionFilter}  onChange={setRegionFilter}  options={regionOptions}/>
-          <FilterSelect label="產品" value={productFilter} onChange={setProductFilter} options={productOptions}/>
-          <FilterSelect label="PIC"  value={picFilter}     onChange={setPicFilter}     options={picOptions}/>
-          {/* Sort */}
-          <div style={{ marginLeft:"auto" }}>
-            <FilterSelect label="排序" value={sortBy} onChange={setSortBy} options={[
-              { value:"created_desc", label:"新增時間（最新）" },
-              { value:"created_asc",  label:"新增時間（最舊）" },
-              { value:"launch_asc",   label:"上線日期（最近）" },
-              { value:"launch_desc",  label:"上線日期（最遠）" },
-            ]}/>
-          </div>
         </div>
       </div>
 
@@ -1263,7 +1307,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                       {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:700 }}>✓ 完成</span>}
                       {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 9px", fontWeight:700 }}>🚀 即將上線</span>}
                     </div>
-                    {proj.info.address && <div style={{ fontSize:12, color:C.textLight, marginTop:2 }}>📍 {proj.info.address}</div>}
+                    {proj.info.address && <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:C.textLight, marginTop:2 }}>
+                      <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
+                    </div>}
                   </div>
                   <button onClick={e=>{ e.stopPropagation(); if(window.confirm(`確定要移除「${proj.info.name||"此專案"}」嗎？`)) onDelete(proj.id); }}
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
@@ -1271,7 +1317,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
                     onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
                     onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}
-                    title="移除專案">🗑</button>
+                    title="移除專案"><Ico name="trash" size={14} color="currentColor"/></button>
                 </div>
 
                 {/* Row 2a: Products + PIC */}
@@ -1307,7 +1353,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                   <div style={{ display:"grid", gridTemplateColumns:nd&&proj.info.launchDate?"1fr 1fr":"1fr", gap:8, marginBottom:14 }}>
                     {proj.info.launchDate && (
                       <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:9, padding:"7px 12px" }}>
-                        <span style={{ fontSize:12 }}>📅</span>
+                        <Ico name="calendar" size={13} color="var(--text-subtle)"/>
                         <span style={{ fontSize:12, color:C.textMid }}>上線日</span>
                         <span style={{ fontSize:12, color:C.text, fontWeight:700, fontFamily:"'DM Mono',monospace" }}>{proj.info.launchDate}</span>
                         {d!==null&&d>=0 && <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600, color:d<=7?C.red:d<=30?C.amber:C.textLight }}>{d===0?"今天":`${d}天後`}</span>}
@@ -2512,7 +2558,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700 }}>📋 專案資訊</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
                   {[
-                    ["飯店名稱",info.name],
+                    ["飯店名稱",info.name],["Hotel ID",info.hotelId||"—"],
                     ["負責人（PIC）",info.pic||"—"],["地址",info.address],
                     ["所在國家",info.region==="其他"?(info.regionOther||"其他"):info.region],
                     ["上線日期",info.launchDate||"—"],
@@ -2527,21 +2573,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ fontSize:14, color:C.text, fontWeight:500 }}>{v||"—"}</div>
                     </div>
                   ))}
-                  {/* Hotel ID 獨立欄位含複製按鈕 */}
-                  <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
-                    <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Hotel ID</div>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:14, color:C.text, fontWeight:500, fontFamily:"'DM Mono',monospace" }}>{info.hotelId||"—"}</span>
-                      {info.hotelId&&(
-                        <button onClick={()=>{ navigator.clipboard.writeText(info.hotelId); setCopiedHotelId(true); setTimeout(()=>setCopiedHotelId(false),1500); }}
-                          style={{ background:"none", border:`1px solid ${copiedHotelId?"var(--green)":"var(--border)"}`,
-                            borderRadius:6, padding:"2px 9px", cursor:"pointer", fontFamily:"inherit",
-                            fontSize:11, color:copiedHotelId?"var(--green)":"var(--text-subtle)", transition:"all 0.15s" }}>
-                          {copiedHotelId?"✓ 已複製":"複製"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
                   {info.jiraEpic&&(
                     <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Jira Epic</div>
@@ -2956,7 +2987,6 @@ export default function App() {
         <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
-            {/* 左側：logo + 標題 */}
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <div style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏨</div>
@@ -2965,13 +2995,10 @@ export default function App() {
                 <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
               </div>
             </div>
-            {/* 右側：三個等高元件 */}
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {/* ThemeToggle — 固定高度 36px */}
               <div style={{ height:36, display:"flex", alignItems:"center" }}>
                 <ThemeToggle theme={theme} setTheme={setTheme}/>
               </div>
-              {/* 使用者 Profile */}
               <button onClick={()=>setShowSettings(true)}
                 style={{ height:36, display:"flex", alignItems:"center", gap:9,
                   background:"var(--surface-raised)", border:"1px solid var(--border)",
@@ -2995,7 +3022,6 @@ export default function App() {
                   )}
                 </div>
               </button>
-              {/* 新增專案 */}
               <button onClick={handleNew}
                 style={{ height:36, background:"var(--accent)", color:"#fff", border:"none",
                   borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:600,
