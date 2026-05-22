@@ -1857,6 +1857,7 @@ function buildProjectContext(info, basicChecked, faqChecked, batch2Checked, task
 
   return `你是 Aiello 專案交付中心的 AI 助理，協助管理飯店 AI 產品的部署進度。
 請用繁體中文回覆，語氣專業但親切，回答盡量具體有幫助。
+回應請簡潔，避免不必要的標題和分隔線，重點用條列式呈現即可。
 
 == 當前專案資訊 ==
 飯店名稱：${info.name || "未填寫"}
