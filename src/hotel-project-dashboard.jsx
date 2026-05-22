@@ -1494,10 +1494,7 @@ function renderMarkdown(md) {
   // lists
   h = h.replace(/^[-•] (.+)$/gm, "<div style='display:flex;gap:6px;margin:2px 0;padding-left:4px'><span style='color:var(--text-subtle);flex-shrink:0'>·</span><span>$1</span></div>");
   // newlines
-  h = h.replace(/
-
-+/g, "<br/><br/>").replace(/
-/g, "<br/>");
+  h = h.replace(/\n\n+/g, "<br/><br/>").replace(/\n/g, "<br/>");
   return h;
 }
 
@@ -1543,7 +1540,7 @@ const AiPanel = ({ projects, onClose }) => {
 
     try {
       const res = await fetch(
-        \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=\${GEMINI_API_KEY}\`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
