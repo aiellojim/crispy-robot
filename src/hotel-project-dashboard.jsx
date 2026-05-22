@@ -1192,8 +1192,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
   const stats = [
     { label:"專案總數",         value:projects.length, icon:"folder",  color:"var(--accent)",  sub:"所有專案" },
     { label:"逾期未完成",       value:overdueCount,    icon:"warning", color:overdueCount>0?"var(--red)":"var(--green)", sub:overdueCount>0?"需立即處理":"目前正常" },
-    { label:"即將上線（30天）", value:soonCount,       icon:"rocket",  color:"var(--amber)",   sub:"預計 30 天內上線" },
-    { label:"已完成資料",       value:doneCount,       icon:"check",   color:"var(--purple)",  sub:"已歸檔完成" },
+    { label:"即將上線", value:soonCount,       icon:"rocket",  color:"var(--amber)",   sub:"預計 30 天內上線" },
+    { label:"已完成資料",       value:doneCount,       icon:"check",   color:"var(--purple)",  sub:"資料已搜集完成" },
   ];
 
   return (
