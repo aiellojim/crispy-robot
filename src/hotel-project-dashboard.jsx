@@ -349,6 +349,12 @@ const ICONS = {
   grid:       "M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z",
   trash:      "M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6",
   jira:       "M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z",
+  home:       "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
+  sun:        "M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z",
+  moon:       "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
+  monitor:    "M2 3h20a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M8 21h8 M12 17v4",
+  send:       "M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z",
+  sparkle:    "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
 };
 
 // 語意化 icon 元件
@@ -553,15 +559,15 @@ const FilterSelect = ({ label, value, onChange, options }) => (
 
 // ─── ThemeToggle ──────────────────────────────────────────────
 const THEME_OPTIONS = [
-  { value:"light",  label:"普通", icon:"☀️" },
-  { value:"dark",   label:"深色", icon:"🌙" },
-  { value:"system", label:"系統", icon:"💻" },
+  { value:"light",  label:"普通", icoName:"sun"     },
+  { value:"dark",   label:"深色", icoName:"moon"    },
+  { value:"system", label:"系統", icoName:"monitor" },
 ];
 
 const ThemeToggle = ({ theme, setTheme }) => (
   <div style={{ display:"flex", alignItems:"center", background:"var(--surface-raised)",
     border:"1px solid var(--border)", borderRadius:9, padding:3, gap:2, height:36 }}>
-    {THEME_OPTIONS.map(({ value, label, icon }) => {
+    {THEME_OPTIONS.map(({ value, label, icoName }) => {
       const active = theme === value;
       return (
         <button key={value} onClick={() => setTheme(value)}
@@ -573,7 +579,7 @@ const ThemeToggle = ({ theme, setTheme }) => (
             fontSize:12, fontWeight: active ? 600 : 400,
             boxShadow: active ? "var(--shadow-sm)" : "none",
             transition:"all 0.12s" }}>
-          <span style={{ fontSize:13 }}>{icon}</span>
+          <Ico name={icoName} size={13} color="currentColor"/>
           <span>{label}</span>
         </button>
       );
@@ -799,6 +805,57 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
     </>
   );
 };
+
+
+// ─── InAppNotifModal ──────────────────────────────────────────
+const InAppNotifModal = ({ urgentNotifs, onClose, onProjectOpen }) => (
+  <>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9997 }}/>
+    <div style={{ position:"fixed", top:58, right:40, width:340, maxHeight:440,
+      background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
+      boxShadow:"0 8px 30px rgba(0,0,0,0.15)", zIndex:9998,
+      display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
+        display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>即將到期</div>
+        {urgentNotifs.length>0 && (
+          <span style={{ fontSize:11, background:"var(--red-light)", color:"var(--red)",
+            borderRadius:20, padding:"2px 9px", fontWeight:600 }}>
+            {urgentNotifs.length} 筆
+          </span>
+        )}
+      </div>
+      <div style={{ overflowY:"auto", flex:1 }}>
+        {urgentNotifs.length===0 ? (
+          <div style={{ padding:"32px 16px", textAlign:"center", color:"var(--text-subtle)", fontSize:13 }}>
+            ✓ 7 天內無到期事件
+          </div>
+        ) : urgentNotifs.map((n, i) => (
+          <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
+            style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
+              borderBottom:"1px solid var(--border)", cursor:"pointer",
+              transition:"background 0.1s" }}
+            onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
+            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
+              background:n.days===0?"var(--red-light)":n.days<=2?"var(--amber-light)":"var(--green-light)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700,
+              color:n.days===0?"var(--red)":n.days<=2?"var(--amber)":"var(--green)" }}>
+              {n.days===0?"今天":`${n.days}天`}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
+                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.name}</div>
+              <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
+                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.label} · {n.date}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </>
+);
 
 // ─── Calendar Page ─────────────────────────────────────────────
 const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
@@ -1105,27 +1162,27 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       {/* Event list */}
       {events.length>0 && (
         <div style={{ marginTop:24 }}>
-          <h3 style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:14 }}>本月事件</h3>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i)=>(
+          <h3 style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:12 }}>本月事件</h3>
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden" }}>
+            {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
               <div key={i}
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:ev.bg, border:`1px solid ${ev.border}`, borderRadius:10 }}>
-                <span style={{ fontSize:12, fontWeight:700, color:ev.text, fontFamily:"'DM Mono',monospace", flexShrink:0 }}>{fmtDate(ev.date)}</span>
-                <span style={{ fontSize:13, fontWeight:600, color:ev.text }}>{ev.label}</span>
-                <span style={{ fontSize:12, color:ev.text, opacity:0.8 }}>— {ev.sub}</span>
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 14px",
+                  borderBottom:i<arr.length-1?"1px solid var(--border)":"none",
+                  borderLeft:`3px solid ${ev.border}`, background:"var(--surface)" }}>
+                <span style={{ fontSize:12, fontWeight:700, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace", flexShrink:0, minWidth:80 }}>{fmtDate(ev.date)}</span>
+                <span style={{ fontSize:12, fontWeight:600, color:"var(--text)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</span>
+                <span style={{ fontSize:11, color:"var(--text-subtle)", flexShrink:0, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.sub}</span>
                 {ev.taskId && (
                   <>
                     <span onClick={()=>openEditModal(ev.taskObj)}
-                      style={{ marginLeft:"auto", fontSize:11, color:ev.text, opacity:0.6, cursor:"pointer" }}
-                      onMouseEnter={e=>e.currentTarget.style.opacity="1"}
-                      onMouseLeave={e=>e.currentTarget.style.opacity="0.6"}>點擊編輯 ✎</span>
+                      style={{ flexShrink:0, fontSize:11, color:"var(--text-subtle)", cursor:"pointer" }}
+                      onMouseEnter={e=>e.currentTarget.style.color="var(--accent)"}
+                      onMouseLeave={e=>e.currentTarget.style.color="var(--text-subtle)"}>編輯 ✎</span>
                     <button onClick={()=>deleteTask(ev.taskId)}
-                      style={{ background:"none", border:`1px solid ${ev.border}`, borderRadius:6,
-                        padding:"3px 8px", cursor:"pointer", fontSize:12, color:ev.text,
-                        opacity:0.6, fontFamily:"inherit" }}
-                      onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.borderColor=C.red; e.currentTarget.style.color=C.red; }}
-                      onMouseLeave={e=>{ e.currentTarget.style.opacity="0.6"; e.currentTarget.style.borderColor=ev.border; e.currentTarget.style.color=ev.text; }}
-                      title="刪除任務"><Ico name="trash" size={14} color="currentColor"/></button>
+                      style={{ background:"none", border:"none", cursor:"pointer", padding:"2px 4px", color:"var(--text-subtle)", flexShrink:0 }}
+                      onMouseEnter={e=>e.currentTarget.style.color="var(--red)"}
+                      onMouseLeave={e=>e.currentTarget.style.color="var(--text-subtle)"}
+                      title="刪除任務"><Ico name="trash" size={13} color="currentColor"/></button>
                   </>
                 )}
               </div>
@@ -1305,7 +1362,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                       {proj.info.hotelId && <span style={{ fontSize:11, color:C.textLight, fontFamily:"'DM Mono',monospace", background:C.bg, padding:"2px 7px", borderRadius:5 }}>#{proj.info.hotelId}</span>}
                       {rd && <span style={{ fontSize:11, background:C.blueLight, color:C.blue, border:`1px solid ${C.blueBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:600 }}>{rd}</span>}
                       {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:700 }}>✓ 完成</span>}
-                      {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 9px", fontWeight:700 }}>🚀 即將上線</span>}
+                      {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:700, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
                     </div>
                     {proj.info.address && <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:C.textLight, marginTop:2 }}>
                       <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
@@ -1326,7 +1383,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                     {proj.info.products.map(p=>(
                       <span key={p} style={{ fontSize:12, fontWeight:700, color:"#fff", background:PRODUCT_COLORS[p]||C.blue, borderRadius:7, padding:"3px 11px" }}>{p}</span>
                     ))}
-                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:600 }}>👤 {proj.info.pic}</span>}
+                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
                   </div>
                 )}
 
@@ -1417,6 +1474,200 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
       {/* Notification panel */}
       {showNotif&&<NotificationPanel projects={projects} session={session} profile={profile} onClose={()=>setShowNotif(false)}/>}
     </div>
+  );
+};
+
+
+// ─── AI Chat ──────────────────────────────────────────────────
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
+
+function renderMarkdown(md) {
+  let h = md
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // bold / italic / inline code
+  h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/\*([^*]+?)\*/g, "<em>$1</em>");
+  h = h.replace(/`([^`]+)`/g, "<code style='background:var(--surface-raised);padding:1px 5px;border-radius:4px;font-family:DM Mono,monospace;font-size:0.88em'>$1</code>");
+  // headers
+  h = h.replace(/^### (.+)$/gm, "<div style='font-size:13px;font-weight:700;margin:10px 0 3px;color:var(--text)'>$1</div>");
+  h = h.replace(/^## (.+)$/gm,  "<div style='font-size:14px;font-weight:700;margin:12px 0 4px;color:var(--text)'>$1</div>");
+  // lists
+  h = h.replace(/^[-•] (.+)$/gm, "<div style='display:flex;gap:6px;margin:2px 0;padding-left:4px'><span style='color:var(--text-subtle);flex-shrink:0'>·</span><span>$1</span></div>");
+  // newlines
+  h = h.replace(/
+
++/g, "<br/><br/>").replace(/
+/g, "<br/>");
+  return h;
+}
+
+const AiPanel = ({ projects, onClose }) => {
+  const [msgs,   setMsgs]   = useState([]);
+  const [input,  setInput]  = useState("");
+  const [busy,   setBusy]   = useState(false);
+  const bottomRef = useRef(null);
+  const inputRef  = useRef(null);
+
+  // Build project context summary once
+  const projectCtx = useMemo(() => {
+    if (!projects.length) return "（目前無專案資料）";
+    return projects.map(p => {
+      const pct  = calcPct(p);
+      const tags = [...p.info.products, ...p.info.integrations].join(",") || "無";
+      const dl1  = p.info.batch1Deadline ? `第一批期限:${p.info.batch1Deadline}` : "";
+      const dl2  = p.info.batch2Deadline ? `第二批期限:${p.info.batch2Deadline}` : "";
+      const launch = p.info.launchDate ? `上線:${p.info.launchDate}` : "";
+      return `[${p.info.name||"未命名"}] ID:${p.info.hotelId||"-"} PIC:${p.info.pic||"-"} ${tags} 完成度:${pct}% ${[launch,dl1,dl2].filter(Boolean).join(" ")}`;
+    }).join("\n");
+  }, [projects]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [msgs, busy]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || busy || !GEMINI_API_KEY) return;
+    setInput("");
+    const userMsg = { role:"user", text };
+    setMsgs(prev => [...prev, userMsg]);
+    setBusy(true);
+
+    const history = [...msgs, userMsg];
+    const contents = history.map(m => ({
+      role: m.role === "user" ? "user" : "model",
+      parts: [{ text: m.text }],
+    }));
+
+    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n專案資料：\n${projectCtx}`;
+
+    try {
+      const res = await fetch(
+        \`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=\${GEMINI_API_KEY}\`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: { maxOutputTokens: 500, temperature: 0.4 },
+          }),
+        }
+      );
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "（AI 無回應，請確認 API Key）";
+      setMsgs(prev => [...prev, { role:"model", text: reply }]);
+    } catch(e) {
+      setMsgs(prev => [...prev, { role:"model", text: "⚠️ 呼叫 AI 失敗：" + e.message }]);
+    }
+    setBusy(false);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.2)", zIndex:19998 }}/>
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:400,
+        background:"var(--surface)", borderLeft:"1px solid var(--border)",
+        boxShadow:"-6px 0 32px rgba(0,0,0,0.12)", zIndex:19999,
+        display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+        {/* Header */}
+        <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)",
+          display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:30, height:30, borderRadius:8, background:"var(--accent)",
+              display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Ico name="sparkle" size={15} color="#fff" fill="#fff" strokeWidth={0}/>
+            </div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>AI 助理</div>
+              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 2.5 Flash</div>
+            </div>
+          </div>
+          <button onClick={onClose}
+            style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
+              padding:"4px 10px", cursor:"pointer", fontSize:16, color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+        </div>
+
+        {/* Messages */}
+        <div style={{ flex:1, overflowY:"auto", padding:"16px 20px", display:"flex", flexDirection:"column", gap:12 }}>
+          {msgs.length===0 && (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
+              <div style={{ fontSize:28, marginBottom:10 }}>✨</div>
+              <div style={{ fontSize:13, lineHeight:1.7 }}>
+                你好！我能讀取所有專案資料，<br/>請問有什麼可以幫到你的嗎？
+              </div>
+            </div>
+          )}
+          {msgs.map((m, i) => (
+            <div key={i} style={{ display:"flex", flexDirection:m.role==="user"?"row-reverse":"row", gap:8 }}>
+              <div style={{ width:28, height:28, borderRadius:8, flexShrink:0,
+                background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
+                border:"1px solid var(--border)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:12, fontWeight:700, color:m.role==="user"?"#fff":"var(--text-subtle)" }}>
+                {m.role==="user" ? "我" : "AI"}
+              </div>
+              <div style={{ maxWidth:"80%",
+                padding:"9px 13px", borderRadius:12,
+                background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
+                border:m.role==="user"?"none":"1px solid var(--border)" }}>
+                {m.role==="user" ? (
+                  <span style={{ fontSize:13, color:"#fff", lineHeight:1.6 }}>{m.text}</span>
+                ) : (
+                  <div style={{ fontSize:13, color:"var(--text)", lineHeight:1.7 }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }}/>
+                )}
+              </div>
+            </div>
+          ))}
+          {busy && (
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:"var(--surface-raised)",
+                border:"1px solid var(--border)", display:"flex", alignItems:"center",
+                justifyContent:"center", fontSize:12, color:"var(--text-subtle)" }}>AI</div>
+              <div style={{ padding:"9px 13px", borderRadius:12, background:"var(--surface-raised)",
+                border:"1px solid var(--border)", display:"flex", gap:5 }}>
+                {[0,1,2].map(i=>(
+                  <div key={i} style={{ width:6, height:6, borderRadius:"50%", background:"var(--text-subtle)",
+                    animation:"spin 1s linear infinite", animationDelay:`${i*0.2}s`,
+                    opacity:0.6 }}/>
+                ))}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef}/>
+        </div>
+
+        {/* Input */}
+        {!GEMINI_API_KEY && (
+          <div style={{ padding:"8px 20px", background:"var(--amber-light)",
+            borderTop:"1px solid var(--amber)", fontSize:12, color:"var(--amber)" }}>
+            ⚠️ 未設定 VITE_GEMINI_API_KEY，AI 功能停用
+          </div>
+        )}
+        <div style={{ padding:"12px 20px", borderTop:"1px solid var(--border)", flexShrink:0,
+          display:"flex", gap:8 }}>
+          <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={2}
+            disabled={!GEMINI_API_KEY}
+            style={{ ...baseInput, flex:1, resize:"none", fontSize:13, lineHeight:1.5 }}
+            onFocus={e=>e.target.style.borderColor="var(--accent)"}
+            onBlur={e=>e.target.style.borderColor="var(--border)"}/>
+          <button onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
+            style={{ width:40, height:40, borderRadius:10, border:"none", flexShrink:0, alignSelf:"flex-end",
+              background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
+              cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
+              display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
+            <Ico name="send" size={16} color="#fff"/>
+          </button>
+        </div>
+      </div>
+    </>
   );
 };
 
@@ -2852,6 +3103,8 @@ export default function App() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
   const [theme,    setTheme]    = useState(() => localStorage.getItem("hotel-dash-theme") || "system");
+  const [showInAppNotif, setShowInAppNotif] = useState(false);
+  const [showAi,         setShowAi]         = useState(false);
   // Auth
   const [session,      setSession]      = useState(null);
   const [profile,      setProfile]      = useState(null);
@@ -2955,6 +3208,31 @@ export default function App() {
   const activeProject = projects.find(p=>p.id===activeId);
   const allPics = useMemo(()=>[...new Set(projects.map(p=>p.info.pic).filter(Boolean))].sort(),[projects]);
 
+  // Urgent notifications: project dates + task deadlines within 7 days
+  const urgentNotifs = useMemo(() => {
+    const list = [];
+    projects.forEach(proj => {
+      const name = proj.info.name || "（未命名）";
+      [
+        { label:"上線日",   date:proj.info.launchDate      },
+        { label:"第一批期限", date:proj.info.batch1Deadline },
+        { label:"第二批期限", date:proj.info.batch2Deadline },
+      ].forEach(({ label, date }) => {
+        const d = daysUntil(date);
+        if (d !== null && d >= 0 && d <= 7)
+          list.push({ projId:proj.id, name, label, date, days:d });
+      });
+      (proj.tasks || []).forEach(task => {
+        if (task.type === "deadline") {
+          const d = daysUntil(task.deadline);
+          if (d !== null && d >= 0 && d <= 7)
+            list.push({ projId:proj.id, name, label:`任務：${task.name}`, date:task.deadline, days:d });
+        }
+      });
+    });
+    return list.sort((a, b) => a.days - b.days);
+  }, [projects]);
+
   if (authLoading) return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center",
       justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
@@ -2999,6 +3277,39 @@ export default function App() {
               <div style={{ height:36, display:"flex", alignItems:"center" }}>
                 <ThemeToggle theme={theme} setTheme={setTheme}/>
               </div>
+              {/* Bell: in-app notifications */}
+              <div style={{ position:"relative" }}>
+                <button onClick={()=>setShowInAppNotif(v=>!v)}
+                  style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
+                    background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:9,
+                    cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
+                  onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+                  <Ico name="bell" size={16} color="currentColor"/>
+                </button>
+                {urgentNotifs.length>0 && (
+                  <div style={{ position:"absolute", top:4, right:4, width:8, height:8,
+                    borderRadius:"50%", background:"var(--red)",
+                    border:"2px solid var(--surface)", pointerEvents:"none" }}/>
+                )}
+                {showInAppNotif && (
+                  <InAppNotifModal
+                    urgentNotifs={urgentNotifs}
+                    onClose={()=>setShowInAppNotif(false)}
+                    onProjectOpen={id=>{ setShowInAppNotif(false); handleOpen(id); }}/>
+                )}
+              </div>
+              {/* AI assistant button */}
+              <button onClick={()=>setShowAi(v=>!v)}
+                style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
+                  background:showAi?"var(--accent)":"var(--surface-raised)",
+                  border:"1px solid var(--border)", borderRadius:9,
+                  cursor:"pointer", color:showAi?"#fff":"var(--text-subtle)", transition:"all 0.12s" }}
+                onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}}
+                onMouseLeave={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}}
+                title="AI 助理">
+                <Ico name="sparkle" size={16} color="currentColor" fill={showAi?"currentColor":"none"} strokeWidth={showAi?0:1.6}/>
+              </button>
               <button onClick={()=>setShowSettings(true)}
                 style={{ height:36, display:"flex", alignItems:"center", gap:9,
                   background:"var(--surface-raised)", border:"1px solid var(--border)",
@@ -3041,12 +3352,13 @@ export default function App() {
           )}
           {/* Page nav */}
           <div style={{ padding:"0 40px", display:"flex", borderTop:`1px solid ${C.border}` }}>
-            {[{ id:"home", label:"🏠 專案列表" }, { id:"calendar", label:"📅 專案行事曆" }].map(({ id, label }) => (
+            {[{ id:"home", label:"專案列表", ico:"home" }, { id:"calendar", label:"專案行事曆", ico:"calendar" }].map(({ id, label, ico }) => (
               <button key={id} onClick={()=>setPage(id)}
-                style={{ padding:"12px 20px", background:"none", border:"none", fontFamily:"inherit",
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"12px 20px", background:"none", border:"none", fontFamily:"inherit",
                   borderBottom:`2.5px solid ${page===id?C.blue:"transparent"}`,
                   color:page===id?C.blue:C.textLight, cursor:"pointer",
                   fontSize:13, fontWeight:page===id?700:500, transition:"all 0.15s" }}>
+                <Ico name={ico} size={14} color="currentColor"/>
                 {label}
               </button>
             ))}
@@ -3066,6 +3378,9 @@ export default function App() {
             cursor:"pointer", color:C.red, fontWeight:700, fontSize:16, padding:0, lineHeight:1 }}>×</button>
         </div>
       )}
+
+      {/* AI Panel */}
+      {showAi && <AiPanel projects={projects} onClose={()=>setShowAi(false)}/>}
 
       {/* Content */}
       {isDetailView
