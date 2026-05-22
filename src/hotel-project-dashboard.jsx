@@ -63,7 +63,7 @@ const baseInput = {
 };
 
 const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
   :root {
     --bg: #F5F5F5;
@@ -74,10 +74,10 @@ const GLOBAL_CSS = `
     --text: #111111;
     --text-mid: #6B6B6B;
     --text-subtle: #A3A3A3;
-    --accent: #5E6AD2;
-    --accent-light: #EEEFFE;
-    --accent-border: rgba(94,106,210,0.28);
-    --accent-subtle: rgba(94,106,210,0.07);
+    --accent: #E8621A;
+    --accent-light: #FFF4EE;
+    --accent-border: rgba(232,98,26,0.25);
+    --accent-subtle: rgba(232,98,26,0.07);
     --green: #16A34A;
     --green-light: #F0FDF4;
     --green-subtle: rgba(22,163,74,0.08);
@@ -103,18 +103,18 @@ const GLOBAL_CSS = `
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111111;
-      --surface: #1C1C1C;
-      --surface-raised: #242424;
-      --border: #2E2E2E;
-      --border-mid: #3D3D3D;
+      --bg: #17171E;
+      --surface: #21212B;
+      --surface-raised: #2A2A36;
+      --border: #32323F;
+      --border-mid: #42424F;
       --text: #EDEDED;
       --text-mid: #A3A3A3;
       --text-subtle: #6B6B6B;
-      --accent: #7C85E0;
-      --accent-light: #1A1C40;
-      --accent-border: rgba(124,133,224,0.35);
-      --accent-subtle: rgba(124,133,224,0.1);
+      --accent: #F4873D;
+      --accent-light: #2A1A0A;
+      --accent-border: rgba(244,135,61,0.3);
+      --accent-subtle: rgba(244,135,61,0.08);
       --green: #22C55E;
       --green-light: #052E16;
       --green-subtle: rgba(34,197,94,0.1);
@@ -140,7 +140,9 @@ const GLOBAL_CSS = `
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Inter', 'Noto Sans TC', sans-serif; font-weight: 400; }
+  :lang(zh), :lang(zh-TW) { font-family: 'Noto Sans TC', 'Inter', sans-serif; font-weight: 300; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
@@ -157,8 +159,8 @@ const GLOBAL_CSS = `
     --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
     --border: #E5E5E5; --border-mid: #D4D4D4;
     --text: #111111; --text-mid: #6B6B6B; --text-subtle: #A3A3A3;
-    --accent: #5E6AD2; --accent-light: #EEEFFE;
-    --accent-border: rgba(94,106,210,0.28); --accent-subtle: rgba(94,106,210,0.07);
+    --accent: #E8621A; --accent-light: #FFF4EE;
+    --accent-border: rgba(232,98,26,0.25); --accent-subtle: rgba(232,98,26,0.07);
     --green: #16A34A; --green-light: #F0FDF4; --green-subtle: rgba(22,163,74,0.08);
     --amber: #B45309; --amber-light: #FFFBEB; --amber-subtle: rgba(180,83,9,0.08);
     --red: #DC2626; --red-light: #FEF2F2; --red-subtle: rgba(220,38,38,0.07);
@@ -174,11 +176,11 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d;
   }
   html[data-theme="dark"] {
-    --bg: #111111; --surface: #1C1C1C; --surface-raised: #242424;
-    --border: #2E2E2E; --border-mid: #3D3D3D;
+    --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
+    --border: #32323F; --border-mid: #42424F;
     --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #6B6B6B;
-    --accent: #7C85E0; --accent-light: #1A1C40;
-    --accent-border: rgba(124,133,224,0.35); --accent-subtle: rgba(124,133,224,0.1);
+    --accent: #F4873D; --accent-light: #2A1A0A;
+    --accent-border: rgba(244,135,61,0.3); --accent-subtle: rgba(244,135,61,0.08);
     --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
     --amber: #F59E0B; --amber-light: #1C1200; --amber-subtle: rgba(245,158,11,0.1);
     --red: #EF4444; --red-light: #2D0F0F; --red-subtle: rgba(239,68,68,0.1);
@@ -448,28 +450,6 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
 );
 
 // Read-only overview check row
-const MiniProgressCard = ({ label, checked, total, color }) => {
-  const pct = total===0 ? 0 : Math.round((checked/total)*100);
-  return (
-    <div style={{ flex:1, minWidth:140, background:"var(--surface)", borderRadius:12,
-      border:"1px solid var(--border)", padding:"14px 16px" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:8 }}>
-        <span style={{ fontSize:12, color:"var(--text-mid)", fontWeight:500 }}>{label}</span>
-        <span style={{ fontSize:20, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{pct}%</span>
-      </div>
-      <div style={{ height:4, background:"var(--border)", borderRadius:2, overflow:"hidden", marginBottom:7 }}>
-        <div style={{ height:"100%", borderRadius:2, width:`${pct}%`, background:color, transition:"width 0.6s ease" }}/>
-      </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <span style={{ fontSize:11, color:"var(--text-subtle)", fontFamily:"'DM Mono',monospace" }}>{checked} / {total}</span>
-        {total-checked>0
-          ? <span style={{ fontSize:11, color:"var(--text-subtle)" }}>剩 {total-checked} 項</span>
-          : <span style={{ fontSize:11, color, fontWeight:600 }}>✓ 完成</span>}
-      </div>
-    </div>
-  );
-};
-
 const OvCheckRow = ({ label, checked, note, color }) => (
   <div style={{ borderBottom:"1px solid var(--border)" }}>
     <div style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 0" }}>
@@ -545,14 +525,14 @@ const THEME_OPTIONS = [
 
 const ThemeToggle = ({ theme, setTheme }) => (
   <div style={{ display:"flex", alignItems:"center", background:"var(--surface-raised)",
-    border:"1px solid var(--border)", borderRadius:8, padding:3, gap:2 }}>
+    border:"1px solid var(--border)", borderRadius:9, padding:3, gap:2, height:36 }}>
     {THEME_OPTIONS.map(({ value, label, icon }) => {
       const active = theme === value;
       return (
         <button key={value} onClick={() => setTheme(value)}
           title={label}
-          style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
-            borderRadius:6, border:"none", fontFamily:"inherit", cursor:"pointer",
+          style={{ display:"flex", alignItems:"center", gap:5, padding:"0 10px",
+            height:28, borderRadius:6, border:"none", fontFamily:"inherit", cursor:"pointer",
             background: active ? "var(--surface)" : "transparent",
             color: active ? "var(--text)" : "var(--text-subtle)",
             fontSize:12, fontWeight: active ? 600 : 400,
@@ -2037,7 +2017,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         })}
       </div>
 
-      <div style={{ maxWidth:step===5?1160:820, margin:"0 auto", padding:step===5?"28px 40px 80px":"32px 32px 80px", transition:"max-width 0.2s ease" }}>
+      <div style={{ maxWidth:820, margin:"0 auto", padding:"32px 32px 80px" }}>
 
         {/* Step 0: 專案資訊 */}
         {step===0 && (
@@ -2466,296 +2446,197 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         {/* Step 5: 總覽 */}
         {step===5&&(
           <div style={{ animation:"fadeIn 0.25s ease" }}>
-
-            {/* ── 標題列 ── */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-              <div>
-                <h2 style={{ fontSize:20, fontWeight:700, color:"var(--text)", margin:"0 0 4px" }}>專案總覽</h2>
-                {project.updatedAt&&<span style={{ fontSize:12, color:"var(--text-subtle)" }}>
-                  最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}
-                </span>}
-              </div>
-              <button disabled={subLoading} onClick={async()=>{
-                setSubLoading(true);
-                if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用推播，再回來訂閱此專案。"); setSubLoading(false); return; }
-                const isSubscribed=(projSub.subscribed_projects||[]).includes(project.id);
-                const next=isSubscribed?(projSub.subscribed_projects||[]).filter(id=>id!==project.id):[...(projSub.subscribed_projects||[]),project.id];
-                const updated=await updateSub(projSub.id,{ subscribed_projects:next });
-                setProjSub(updated); setSubLoading(false);
-              }} style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:9,
-                cursor:subLoading?"wait":"pointer", fontFamily:"inherit", fontSize:13, transition:"all 0.15s",
-                border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"var(--accent-border)":"var(--border)"}`,
-                background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"var(--accent-subtle)":"var(--surface-raised)",
-                color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"var(--accent)":"var(--text-mid)" }}>
-                🔔 {projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"已訂閱":"訂閱提醒"}
-              </button>
-            </div>
-
-            {/* ── 進度 + 日期 (兩欄) ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
-              {/* 整體進度 */}
-              <div style={{ background:"var(--surface)", borderRadius:14, padding:"22px 24px" }}>
-                <div style={{ fontSize:12, color:"var(--text-mid)", marginBottom:8, fontWeight:500 }}>整體完成度</div>
-                <div style={{ fontSize:44, fontWeight:700, color:totalPct===100?"var(--green)":"var(--accent)",
-                  fontFamily:"'DM Mono',monospace", letterSpacing:-2, lineHeight:1, marginBottom:14 }}>{totalPct}%</div>
-                <div style={{ height:6, background:"var(--border)", borderRadius:3, overflow:"hidden" }}>
-                  <div style={{ height:"100%", borderRadius:3, width:`${totalPct}%`, transition:"width 0.8s ease",
-                    background:totalPct===100?"var(--green)":"linear-gradient(90deg,var(--accent),var(--purple))" }}/>
+            <div style={{ marginBottom:24 }}>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+                <div>
+                  <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案總覽</h2>
+                  <p style={{ fontSize:13, color:C.textMid, margin:0 }}>
+                    所有資料的完成度一覽
+                    {project.updatedAt&&<span style={{ marginLeft:12, color:C.textLight }}>· 最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}</span>}
+                  </p>
                 </div>
+                {/* Subscribe toggle */}
+                <button disabled={subLoading} onClick={async()=>{
+                  setSubLoading(true);
+                  if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用推播，再回來訂閱此專案。"); setSubLoading(false); return; }
+                  const isSubscribed=(projSub.subscribed_projects||[]).includes(project.id);
+                  const curr=projSub.subscribed_projects||[];
+                  const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
+                  const updated=await updateSub(projSub.id,{ subscribed_projects:next });
+                  setProjSub(updated); setSubLoading(false);
+                }} style={{ flexShrink:0, display:"flex", alignItems:"center", gap:6,
+                  padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
+                  border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blueBorder:C.border}`,
+                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blueLight:C.bg,
+                  color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blue:C.textMid,
+                  fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
+                  {projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"🔔 已訂閱提醒":"🔕 訂閱此專案提醒"}
+                </button>
               </div>
-              {/* 三個日期 */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+            </div>
+            <Card>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <span style={{ fontSize:13, color:C.textMid, fontWeight:500 }}>整體完成度</span>
+                <span style={{ fontSize:26, fontWeight:700, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.blue }}>{totalPct}%</span>
+              </div>
+              <div style={{ height:10, background:C.bg, borderRadius:5, overflow:"hidden" }}>
+                <div style={{ height:"100%", borderRadius:5, width:`${totalPct}%`, transition:"width 0.8s ease",
+                  background:totalPct===100?C.green:`linear-gradient(90deg,${C.blue},${C.purple})` }}/>
+              </div>
+            </Card>
+            {(info.batch1Deadline||info.batch2Deadline)&&(
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }}>
                 {[
-                  { label:"上線日", date:info.launchDate, color:"var(--text-mid)" },
-                  { label:"第一批期限", date:info.batch1Deadline, color:"var(--accent)" },
-                  { label:"第二批期限", date:info.batch2Deadline, color:"var(--purple)" },
-                ].map(({ label, date, color })=>{
-                  const d = daysUntil(date);
-                  return (
-                    <div key={label} style={{ background:"var(--surface)", borderRadius:12, padding:"16px 14px" }}>
-                      <div style={{ fontSize:10, color, letterSpacing:1.2, textTransform:"uppercase", fontWeight:700, marginBottom:8 }}>{label}</div>
-                      <div style={{ fontSize:15, fontWeight:700, color:date?"var(--text)":"var(--text-subtle)",
-                        fontFamily:"'DM Mono',monospace", marginBottom:4 }}>{date||"未設定"}</div>
-                      {d!==null&&d>=0&&<div style={{ fontSize:11, color:d===0?"var(--red)":d<=7?"var(--amber)":"var(--text-subtle)", fontWeight:500 }}>
-                        {d===0?"今天":"還有 "+d+" 天"}
-                      </div>}
-                      {d!==null&&d<0&&<div style={{ fontSize:11, color:"var(--text-subtle)" }}>已過期 {Math.abs(d)} 天</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── 子進度橫排 ── */}
-            {(hasAva||hasAca||hasGw)&&(
-              <div style={{ display:"flex", gap:12, marginBottom:16 }}>
-                {hasAva&&<MiniProgressCard label="基礎設定" checked={basicCount} total={BASIC_ITEMS.length} color={C.green}/>}
-                {hasAca&&<MiniProgressCard label="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA}/>}
-                {hasAva&&<MiniProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>}
-                {(hasAva||hasGw)&&<MiniProgressCard label="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>}
-              </div>
-            )}
-
-            {/* ── 兩欄主體 ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
-
-              {/* 左欄：專案資訊 */}
-              <div style={{ background:"var(--surface)", borderRadius:14, padding:"20px 22px" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-                  <span style={{ fontSize:15 }}>🏨</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>專案資訊</span>
-                </div>
-                {/* 三欄資訊 grid */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"0 16px" }}>
-                  {[
-                    { k:"飯店名稱",    v:info.name||"—" },
-                    { k:"Hotel ID",    v:info.hotelId||"—", copy:true },
-                    { k:"負責人（PIC）", v:info.pic||"—" },
-                    { k:"所在地區",    v:info.region==="其他"?(info.regionOther||"其他"):(info.region||"—") },
-                    { k:"地址",        v:info.address||"—" },
-                    { k:"串接功能",    v:info.integrations.join("・")||"無" },
-                    ...(info.products.includes("AVA") ? [{ k:"AVA 終端 / 備品", v:`${info.avaUnits||"—"} / ${info.avaSpare||"—"} 台` }] : []),
-                  ].map(({ k, v, copy })=>(
-                    <div key={k} style={{ padding:"9px 0", borderBottom:"1px solid var(--border)" }}>
-                      <div style={{ fontSize:10, color:"var(--text-subtle)", letterSpacing:0.8, textTransform:"uppercase", marginBottom:3, fontWeight:500 }}>{k}</div>
-                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                        <span style={{ fontSize:12, color:"var(--text)", fontWeight:500,
-                          fontFamily:k==="Hotel ID"?"'DM Mono',monospace":"inherit" }}>{v}</span>
-                        {copy&&info.hotelId&&(
-                          <button onClick={()=>{ navigator.clipboard.writeText(info.hotelId); setCopiedHotelId(true); setTimeout(()=>setCopiedHotelId(false),1500); }}
-                            style={{ background:"none", border:"none", cursor:"pointer", padding:"1px 4px",
-                              fontSize:11, color:copiedHotelId?"var(--green)":"var(--text-subtle)", fontFamily:"inherit" }}>
-                            {copiedHotelId?"✓":"⎘"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {/* 購置產品（彩色 tag） */}
-                  <div style={{ padding:"9px 0", borderBottom:"1px solid var(--border)", gridColumn:"1/-1" }}>
-                    <div style={{ fontSize:10, color:"var(--text-subtle)", letterSpacing:0.8, textTransform:"uppercase", marginBottom:5, fontWeight:500 }}>購置產品</div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                      {info.products.length>0 ? info.products.map(p=>(
-                        <span key={p} style={{ fontSize:11, fontWeight:700, color:"#fff",
-                          background:PRODUCT_COLORS[p]||C.blue, borderRadius:5, padding:"2px 9px" }}>{p}</span>
-                      )) : <span style={{ fontSize:12, color:"var(--text-subtle)" }}>—</span>}
+                  { label:"第一批資料期限", date:info.batch1Deadline, sub:"基礎設定 ＋ FAQ", color:C.green, bg:C.greenLight },
+                  { label:"第二批資料期限", date:info.batch2Deadline, sub:"Showcase ＋ 廣告 ＋ QR", color:C.purple, bg:C.purpleLight },
+                ].map(({ label, date, sub, color, bg })=>(
+                  <div key={label} style={{ background:bg, border:`1px solid ${color}33`, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                    <span style={{ fontSize:24 }}>🗓️</span>
+                    <div>
+                      <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:700 }}>{label}</div>
+                      <div style={{ fontSize:15, fontWeight:700, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
+                      <div style={{ fontSize:11, color:C.textMid, marginTop:2 }}>{sub}</div>
                     </div>
                   </div>
-                  {/* Jira Epic */}
+                ))}
+              </div>
+            )}
+            <div style={{ display:"flex", gap:14, marginBottom:20, flexWrap:"wrap" }}>
+              {hasAva&&<ProgressCard label="基礎設定資料表" checked={basicCount} total={BASIC_ITEMS.length} color={C.green}/>}
+              {hasAca&&<ProgressCard label="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA}/>}
+              {hasAva&&<ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>}
+              {(hasAva||hasGw)&&<ProgressCard label="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>}
+            </div>
+            {info.name&&(
+              <Card>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700 }}>📋 專案資訊</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
+                  {[
+                    ["飯店名稱",info.name],
+                    ["負責人（PIC）",info.pic||"—"],["地址",info.address],
+                    ["所在國家",info.region==="其他"?(info.regionOther||"其他"):info.region],
+                    ["上線日期",info.launchDate||"—"],
+                    ["購置產品",info.products.join("、")||"—"],
+                    ["串接功能",info.integrations.join("、")||"無"],
+                    info.products.includes("AVA")&&["AVA 裝機 / 備品",`${info.avaUnits||"—"} / ${info.avaSpare||"—"} 台`],
+                    ["第一批資料期限",info.batch1Deadline||"—"],
+                    ["第二批資料期限",info.batch2Deadline||"—"],
+                  ].filter(Boolean).map(([k,v])=>(
+                    <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>{k}</div>
+                      <div style={{ fontSize:14, color:C.text, fontWeight:500 }}>{v||"—"}</div>
+                    </div>
+                  ))}
+                  {/* Hotel ID 獨立欄位含複製按鈕 */}
+                  <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Hotel ID</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <span style={{ fontSize:14, color:C.text, fontWeight:500, fontFamily:"'DM Mono',monospace" }}>{info.hotelId||"—"}</span>
+                      {info.hotelId&&(
+                        <button onClick={()=>{ navigator.clipboard.writeText(info.hotelId); setCopiedHotelId(true); setTimeout(()=>setCopiedHotelId(false),1500); }}
+                          style={{ background:"none", border:`1px solid ${copiedHotelId?"var(--green)":"var(--border)"}`,
+                            borderRadius:6, padding:"2px 9px", cursor:"pointer", fontFamily:"inherit",
+                            fontSize:11, color:copiedHotelId?"var(--green)":"var(--text-subtle)", transition:"all 0.15s" }}>
+                          {copiedHotelId?"✓ 已複製":"複製"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   {info.jiraEpic&&(
-                    <div style={{ padding:"9px 0", borderBottom:"1px solid var(--border)", gridColumn:"1/-1" }}>
-                      <div style={{ fontSize:10, color:"var(--text-subtle)", letterSpacing:0.8, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Jira Epic</div>
+                    <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Jira Epic</div>
                       <a href={info.jiraEpic} target="_blank" rel="noreferrer"
-                        style={{ fontSize:12, color:"#0052cc", textDecoration:"none", fontWeight:600,
-                          display:"inline-flex", alignItems:"center", gap:4,
-                          background:"#e9f0ff", border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 10px" }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
-                        開啟連結 ↗
+                        style={{ fontSize:13, color:"#0052cc", textDecoration:"none", fontWeight:600,
+                          display:"inline-flex", alignItems:"center", gap:5,
+                          background:"var(--accent-light)", border:"1px solid var(--accent-border)", borderRadius:7, padding:"4px 11px" }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
+                        開啟 Jira Epic ↗
                       </a>
                     </div>
                   )}
                 </div>
-                {/* 備注 */}
                 {info.notes&&(
-                  <div style={{ marginTop:12, padding:"10px 12px", background:"var(--surface-raised)", borderRadius:8 }}>
-                    <div style={{ fontSize:10, color:"var(--text-subtle)", textTransform:"uppercase", letterSpacing:0.8, marginBottom:4, fontWeight:500 }}>備注</div>
-                    <RichText text={info.notes} style={{ fontSize:12, color:"var(--text-mid)" }}/>
+                  <div style={{ marginTop:14, padding:14, background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
+                    <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>其餘功能需求或備注</div>
+                    <RichText text={info.notes} style={{ fontSize:13, color:C.textMid }}/>
                   </div>
                 )}
-                {/* 串接備注 */}
                 {info.integrations.some(k=>info.integrationNotes[k])&&(
-                  <div style={{ marginTop:10, padding:"10px 12px", background:"var(--purple-subtle)", borderRadius:8 }}>
-                    <div style={{ fontSize:10, color:"var(--purple)", textTransform:"uppercase", letterSpacing:0.8, marginBottom:8, fontWeight:700 }}>串接功能備註</div>
+                  <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:10, border:`1px solid ${C.purple}33` }}>
+                    <div style={{ fontSize:11, color:C.purple, letterSpacing:1, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>串接功能備註</div>
                     {info.integrations.filter(k=>info.integrationNotes[k]).map(k=>(
-                      <div key={k} style={{ marginBottom:6 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:"var(--purple)" }}>{k}：</span>
-                        <span style={{ fontSize:11, color:"var(--text-mid)" }}>{info.integrationNotes[k]}</span>
+                      <div key={k} style={{ marginBottom:10, paddingBottom:10, borderBottom:`1px solid ${C.purple}22` }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:C.purple, marginBottom:4 }}>{k}</div>
+                        <div style={{ fontSize:13, color:C.textMid, lineHeight:1.6, whiteSpace:"pre-wrap" }}>{info.integrationNotes[k]}</div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* 右欄：整合設定（第二批）+ Checklist */}
-              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                {/* 第二批 */}
-                {(hasAva||hasGw)&&(
-                  <div style={{ background:"var(--surface)", borderRadius:14, padding:"20px 22px" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-                      <span style={{ fontSize:15 }}>⚙️</span>
-                      <span style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>整合設定</span>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                      {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
-                        const done = !!batch2Checked[item];
-                        const note = batch2Notes[item];
-                        return (
-                          <div key={item} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 12px",
-                            borderRadius:10, transition:"background 0.12s",
-                            background:done?"transparent":"var(--surface-raised)",
-                            border:done?"1px solid transparent":`1px solid var(--border)` }}>
-                            <span style={{ fontSize:13, color:done?"var(--green)":"var(--text-subtle)", marginTop:1, flexShrink:0 }}>
-                              {done?"✓":"🔗"}
-                            </span>
-                            <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
-                                textDecoration:done?"line-through":"none", opacity:done?0.6:1 }}>{item}</div>
-                              {note&&<div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:3, lineHeight:1.5,
-                                overflow:"hidden", textOverflow:"ellipsis", display:"-webkit-box",
-                                WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>{note}</div>}
-                            </div>
-                            <span style={{ flexShrink:0, fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20,
-                              background:done?"var(--green-subtle)":"var(--accent-subtle)",
-                              color:done?"var(--green)":"var(--accent)",
-                              border:`1px solid ${done?"var(--green)44":"var(--accent-border)"}` }}>
-                              {done?"已完成":"待設定"}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {hasGw&&(()=>{
-                        const done = !!batch2Checked[GW_ITEM];
-                        const note = batch2Notes[GW_ITEM];
-                        return (
-                          <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"11px 12px",
-                            borderRadius:10, background:done?"transparent":"var(--surface-raised)",
-                            border:done?"1px solid transparent":`1px solid var(--border)` }}>
-                            <span style={{ fontSize:13, color:done?"var(--green)":"var(--text-subtle)", marginTop:1, flexShrink:0 }}>{done?"✓":"🔗"}</span>
-                            <div style={{ flex:1, minWidth:0 }}>
-                              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", opacity:done?0.6:1 }}>{GW_ITEM}</div>
-                              {note&&<div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:3, lineHeight:1.5 }}>{note}</div>}
-                            </div>
-                            <span style={{ flexShrink:0, fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20,
-                              background:done?"var(--green-subtle)":"var(--amber-subtle)",
-                              color:done?"var(--green)":"var(--amber)",
-                              border:`1px solid ${done?"var(--green)44":"var(--amber)44"}` }}>
-                              {done?"已完成":"GW 待設定"}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                )}
-
-                {/* 基礎設定 checklist（精簡版） */}
-                {hasAva&&(
-                  <OvCard title="基礎設定資料表" color={C.green} linkKey="basic" sheetLinks={sheetLinks}>
-                    {BASIC_ITEMS.map(item=><OvCheckRow key={item} label={item} checked={basicChecked[item]} note={basicNotes[item]} color={C.green}/>)}
-                  </OvCard>
-                )}
-                {hasAva&&(
-                  <OvCard title="FAQ 資料表" color={C.amber} linkKey="faq" sheetLinks={sheetLinks}>
-                    {activeFaq.map(item=><OvCheckRow key={item} label={item} checked={faqChecked[item]} note={faqNotes[item]} color={C.amber}/>)}
-                    {!hasIptv&&<div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", opacity:0.5 }}>
-                      <span style={{ fontSize:12, color:"var(--text-subtle)" }}>{FAQ_TV_ITEM}</span>
-                      <span style={{ marginLeft:"auto", fontSize:10, color:"var(--text-subtle)", background:"var(--surface-raised)", borderRadius:5, padding:"2px 7px" }}>未選 IPTV</span>
-                    </div>}
-                  </OvCard>
-                )}
-                {hasAca&&(
-                  <OvCard title="ACA 設定" color={PRODUCT_COLORS.ACA} linkKey={ACA_LINK_KEY} sheetLinks={sheetLinks}>
-                    <OvCheckRow label={ACA_ITEM} checked={basicChecked[ACA_ITEM]} note={basicNotes[ACA_ITEM]} color={PRODUCT_COLORS.ACA}/>
-                  </OvCard>
-                )}
-              </div>
+              </Card>
+            )}
+            {/* Batch 1 checklists */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+              {hasAva&&(
+                <OvCard title="基礎設定資料表" color={C.green} linkKey="basic" sheetLinks={sheetLinks}>
+                  {BASIC_ITEMS.map(item=><OvCheckRow key={item} label={item} checked={basicChecked[item]} note={basicNotes[item]} color={C.green}/>)}
+                </OvCard>
+              )}
+              {hasAva&&(
+                <OvCard title="FAQ 資料表" color={C.amber} linkKey="faq" sheetLinks={sheetLinks}>
+                  {activeFaq.map(item=><OvCheckRow key={item} label={item} checked={faqChecked[item]} note={faqNotes[item]} color={C.amber}/>)}
+                  {!hasIptv&&<div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", opacity:0.5 }}>
+                    <span style={{ fontSize:13, color:C.border }}>—</span>
+                    <span style={{ fontSize:12, color:C.textLight }}>{FAQ_TV_ITEM}</span>
+                    <span style={{ marginLeft:"auto", fontSize:10, color:C.textLight, background:C.bg, borderRadius:5, padding:"2px 7px" }}>未選 IPTV</span>
+                  </div>}
+                </OvCard>
+              )}
+              {hasAca&&(
+                <OvCard title="ACA 設定" color={PRODUCT_COLORS.ACA} linkKey={ACA_LINK_KEY} sheetLinks={sheetLinks}>
+                  <OvCheckRow label={ACA_ITEM} checked={basicChecked[ACA_ITEM]} note={basicNotes[ACA_ITEM]} color={PRODUCT_COLORS.ACA}/>
+                </OvCard>
+              )}
             </div>
-
-            {/* ── 任務紀錄（全寬） ── */}
-            {tasks.length>0&&(
-              <div style={{ background:"var(--surface)", borderRadius:14, padding:"20px 22px", marginBottom:16 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:"var(--text)", marginBottom:14 }}>
-                  任務紀錄
-                  <span style={{ marginLeft:8, fontSize:12, fontWeight:400, color:"var(--text-subtle)" }}>（{tasks.length} 項）</span>
-                </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                  {tasks.map(task=>{
-                    const d = task.type==="deadline" ? daysUntil(task.deadline) : null;
-                    const dateLabel = task.type==="deadline" ? (task.deadline||"—") : `${task.period_start||"?"} → ${task.period_end||"?"}`;
-                    const isUrgent = d!==null && d>=0 && d<=3;
-                    return (
-                      <div key={task.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                        borderRadius:10, background:task.completed?"transparent":"var(--surface-raised)",
-                        border:`1px solid ${task.completed?"var(--border)":"var(--border)"}`,
-                        opacity:task.completed?0.6:1 }}>
-                        {/* 完成圓圈 */}
-                        <div style={{ width:18, height:18, borderRadius:"50%", flexShrink:0,
-                          border:`1.5px solid ${task.completed?"var(--green)":"var(--border-mid)"}`,
-                          background:task.completed?"var(--green)":"transparent",
-                          display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          {task.completed&&<span style={{ color:"#fff", fontSize:10, lineHeight:1 }}>✓</span>}
-                        </div>
-                        {/* 名稱 */}
-                        <span style={{ fontSize:13, fontWeight:600, color:"var(--text)", flex:1,
-                          textDecoration:task.completed?"line-through":"none" }}>{task.name||"（未命名）"}</span>
-                        {/* 日期 */}
-                        <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, flexShrink:0,
-                          background:isUrgent?"var(--accent-subtle)":task.completed?"var(--green-subtle)":"var(--surface-raised)",
-                          color:isUrgent?"var(--accent)":task.completed?"var(--green)":"var(--text-subtle)",
-                          border:`1px solid ${isUrgent?"var(--accent-border)":task.completed?"var(--green)33":"var(--border)"}`,
-                          fontFamily:"'DM Mono',monospace" }}>{dateLabel}</span>
-                        {/* PIC 頭像 */}
-                        {info.pic&&(
-                          <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
-                            background:"var(--accent)", display:"flex", alignItems:"center",
-                            justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff" }}>
-                            {info.pic[0].toUpperCase()}
-                          </div>
-                        )}
-                        {/* 狀態 */}
-                        <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20, flexShrink:0,
-                          background:task.completed?"var(--green-subtle)":"var(--accent-subtle)",
-                          color:task.completed?"var(--green)":"var(--accent)",
-                          border:`1px solid ${task.completed?"var(--green)33":"var(--accent-border)"}` }}>
-                          {task.completed?"已完成":"進行中"}
-                        </span>
-                      </div>
-                    );
-                  })}
+            {/* Batch 2 */}
+            {(hasAva||hasGw)&&(
+              <div style={{ background:C.white, border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16 }}>
+                <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>第二批資料</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {hasAva&&BATCH2_ITEMS.map((item,idx)=><OvBatch2Row key={item} item={item} checked={batch2Checked[item]} note={batch2Notes[item]} linkKey={BATCH2_LINK_KEYS[idx]} sheetLinks={sheetLinks}/>)}
+                  {hasGw&&(
+                    <div style={{ position:"relative" }}>
+                      <OvBatch2Row item={GW_ITEM} checked={batch2Checked[GW_ITEM]} note={batch2Notes[GW_ITEM]} linkKey={GW_LINK_KEY} sheetLinks={sheetLinks}/>
+                      <span style={{ position:"absolute", top:12, right:14, fontSize:10, color:"var(--amber)", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:5, padding:"2px 7px" }}>GW</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-
+            {/* Tasks overview */}
+            {tasks.length>0&&(
+              <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24, boxShadow:"var(--shadow)" }}>
+                <div style={{ fontSize:11, letterSpacing:1.5, color:C.blue, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>任務紀錄（{tasks.length} 項）</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  {tasks.map((task,idx)=>(
+                    <div key={task.id} style={{ padding:"12px 14px", background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:task.description?6:0 }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:C.textLight }}>#{idx+1}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color:C.text }}>{task.name||"（未命名任務）"}</span>
+                        <span style={{ marginLeft:"auto", fontSize:10, background:task.type==="deadline"?C.amberLight:C.greenLight,
+                          color:task.type==="deadline"?C.amber:C.green,
+                          border:`1px solid ${task.type==="deadline"?C.amber+"44":C.green+"44"}`,
+                          borderRadius:5, padding:"2px 8px", fontWeight:600, whiteSpace:"nowrap" }}>
+                          {task.type==="deadline"
+                            ? `📌 ${task.deadline||"—"}`
+                            : `📅 ${task.period_start||"—"} → ${task.period_end||"—"}`}
+                        </span>
+                      </div>
+                      {task.description&&<div style={{ fontSize:12, color:C.textMid, lineHeight:1.6, marginLeft:34 }}>{task.description}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <NavRow onBack={()=>setStep(4)}/>
           </div>
         )}
@@ -3075,27 +2956,50 @@ export default function App() {
         <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
+            {/* 左側：logo + 標題 */}
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:32, height:32, borderRadius:8, background:C.blue,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🏨</div>
-              <span style={{ fontSize:17, fontWeight:700, color:C.text }}>專案交付中心</span>
+              <div style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏨</div>
+              <div>
+                <div style={{ fontSize:15, fontWeight:700, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
+                <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
+              </div>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <ThemeToggle theme={theme} setTheme={setTheme}/>
-              {/* 使用者設定 */}
+            {/* 右側：三個等高元件 */}
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              {/* ThemeToggle — 固定高度 36px */}
+              <div style={{ height:36, display:"flex", alignItems:"center" }}>
+                <ThemeToggle theme={theme} setTheme={setTheme}/>
+              </div>
+              {/* 使用者 Profile */}
               <button onClick={()=>setShowSettings(true)}
-                style={{ display:"flex", alignItems:"center", gap:7, background:"var(--surface-raised)",
-                  border:"1px solid var(--border)", borderRadius:8, padding:"6px 13px",
-                  cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
-                  transition:"all 0.12s" }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
-                <span style={{ fontSize:14 }}>👤</span>
-                <span>{profile?.display_name || session?.user?.email || "設定"}</span>
+                style={{ height:36, display:"flex", alignItems:"center", gap:9,
+                  background:"var(--surface-raised)", border:"1px solid var(--border)",
+                  borderRadius:10, padding:"0 12px 0 5px", cursor:"pointer",
+                  fontFamily:"inherit", transition:"all 0.12s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}>
+                <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
+                  background:"var(--accent)", display:"flex", alignItems:"center",
+                  justifyContent:"center", fontSize:12, fontWeight:700, color:"#fff" }}>
+                  {(profile?.display_name || session?.user?.email || "?")[0].toUpperCase()}
+                </div>
+                <div style={{ textAlign:"left" }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", lineHeight:1.3 }}>
+                    {profile?.display_name || "設定名稱"}
+                  </div>
+                  {profile?.display_name && (
+                    <div style={{ fontSize:10, color:"var(--text-subtle)", lineHeight:1.2 }}>
+                      {session?.user?.email}
+                    </div>
+                  )}
+                </div>
               </button>
-              <button onClick={handleNew} style={{ background:C.blue, color:"#fff", border:"none",
-                borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600,
-                cursor:"pointer", fontFamily:"inherit" }}>
+              {/* 新增專案 */}
+              <button onClick={handleNew}
+                style={{ height:36, background:"var(--accent)", color:"#fff", border:"none",
+                  borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:600,
+                  cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
                 + 新增專案
               </button>
             </div>
