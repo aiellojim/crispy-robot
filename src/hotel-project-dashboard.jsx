@@ -474,7 +474,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -2090,7 +2090,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
             const isSelected = selectedIds.has(task.id);
             return (
             <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.blueBorder : C.border}`, background:isSelected ? C.blueLight : C.white }}>
-              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:16 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
                   {/* Checkbox */}
                   <div onClick={()=>toggleSelect(task.id)}
