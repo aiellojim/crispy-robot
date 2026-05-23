@@ -1490,19 +1490,49 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 
 function renderMarkdown(md) {
+  // 1. HTML-escape first
   let h = md
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  // bold / italic / inline code
-  h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  h = h.replace(/\*([^*]+?)\*/g, "<em>$1</em>");
-  h = h.replace(/`([^`]+)`/g, "<code style='background:var(--surface-raised);padding:1px 5px;border-radius:4px;font-family:DM Mono,monospace;font-size:0.88em'>$1</code>");
-  // headers
+
+  // 2. Headers (must run before bold so ## text isn't mangled)
   h = h.replace(/^### (.+)$/gm, "<div style='font-size:13px;font-weight:700;margin:10px 0 3px;color:var(--text)'>$1</div>");
   h = h.replace(/^## (.+)$/gm,  "<div style='font-size:14px;font-weight:700;margin:12px 0 4px;color:var(--text)'>$1</div>");
-  // lists
-  h = h.replace(/^[-•] (.+)$/gm, "<div style='display:flex;gap:6px;margin:2px 0;padding-left:4px'><span style='color:var(--text-subtle);flex-shrink:0'>·</span><span>$1</span></div>");
-  // newlines
-  h = h.replace(/\n\n+/g, "<br/><br/>").replace(/\n/g, "<br/>");
+
+  // 3. Process line-by-line so list items don't bleed into each other
+  const lines = h.split("\n");
+  const out = [];
+  let inUL = false, inOL = false;
+
+  for (const raw of lines) {
+    const ulMatch = raw.match(/^[-•]\s+(.+)$/);
+    const olMatch = raw.match(/^(\d+)\.\s+(.+)$/);
+
+    if (ulMatch) {
+      if (inOL) { out.push("</ol>"); inOL = false; }
+      if (!inUL) { out.push("<ul style='margin:6px 0;padding-left:0;list-style:none'>"); inUL = true; }
+      out.push(`<li style='display:flex;gap:6px;margin:3px 0'><span style='color:var(--text-subtle);flex-shrink:0'>·</span><span>${ulMatch[1]}</span></li>`);
+    } else if (olMatch) {
+      if (inUL) { out.push("</ul>"); inUL = false; }
+      if (!inOL) { out.push("<ol style='margin:6px 0;padding-left:18px'>"); inOL = true; }
+      out.push(`<li style='margin:3px 0'>${olMatch[2]}</li>`);
+    } else {
+      if (inUL) { out.push("</ul>"); inUL = false; }
+      if (inOL) { out.push("</ol>"); inOL = false; }
+      out.push(raw === "" ? "<br/>" : raw);
+    }
+  }
+  if (inUL) out.push("</ul>");
+  if (inOL) out.push("</ol>");
+  h = out.join("\n");
+
+  // 4. Inline styles (after list processing so ** inside <li> works)
+  h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
+  h = h.replace(/`([^`\n]+)`/g, "<code style='background:var(--surface-raised);padding:1px 5px;border-radius:4px;font-family:DM Mono,monospace;font-size:0.88em'>$1</code>");
+
+  // 5. Paragraph breaks (consecutive non-list lines separated by blank)
+  h = h.replace(/([^\n])\n([^\n<])/g, "$1<br/>$2");
+
   return h;
 }
 
@@ -1555,7 +1585,11 @@ const AiPanel = ({ projects, onClose }) => {
           body: JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents,
-            generationConfig: { maxOutputTokens: 500, temperature: 0.4 },
+            generationConfig: {
+            maxOutputTokens: 1024,
+            temperature: 0.4,
+            thinkingConfig: { thinkingBudget: 1024 },
+          },
           }),
         }
       );
