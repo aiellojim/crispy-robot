@@ -474,7 +474,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }} style={{display:"inline-flex",alignItems:"center",gap:5}}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -546,7 +546,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
           style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:600,
             background:"var(--purple-subtle)", border:"1px solid var(--purple)",
-            borderRadius:5, padding:"2px 9px", display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="link" size={11} color="currentColor"/> 連結</a>
+            borderRadius:5, padding:"2px 9px", display:"inline-block" }} style={{display:"inline-flex",alignItems:"center",gap:4}}><Ico name="link" size={11} color="currentColor"/>連結</a>
       </div>}
     </div>
   );
@@ -1437,7 +1437,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                         background:nd.days<=7?"var(--red-subtle)":"var(--green-light)",
                         border:`1px solid ${nd.days<=7?C.red+"33":C.green+"33"}`,
                         borderRadius:9, padding:"7px 12px" }}>
-                        <Ico name="calendar" size={13} color={ev.text}/>
+                        <Ico name="calendar" size={13} color={nd.days<=7?C.red:C.green}/>
                         <span style={{ fontSize:12, color:nd.days<=7?C.red:C.green }}>{nd.label}</span>
                         <span style={{ fontSize:11, color:C.text, fontWeight:700, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
                         <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
