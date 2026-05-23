@@ -474,7 +474,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }} style={{display:"inline-flex",alignItems:"center",gap:5}}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -546,7 +546,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
           style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:600,
             background:"var(--purple-subtle)", border:"1px solid var(--purple)",
-            borderRadius:5, padding:"2px 9px", display:"inline-block" }} style={{display:"inline-flex",alignItems:"center",gap:4}}><Ico name="link" size={11} color="currentColor"/>連結</a>
+            borderRadius:5, padding:"2px 9px", display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="link" size={11} color="currentColor"/> 連結</a>
       </div>}
     </div>
   );
