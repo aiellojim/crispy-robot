@@ -2156,8 +2156,8 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
                     <input type="date" value={task.period_end||""} onChange={e=>updateTask(task.id,"period_end",e.target.value)}
-                      style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
-                      onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
+                      style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
+                      onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                   </div>
                   {task.period_start && task.period_end && task.period_end < task.period_start && (
                     <div style={{ gridColumn:"1/-1", padding:"8px 12px", background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:8, fontSize:12, color:C.red }}>
@@ -2623,14 +2623,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第一批資料期限</label>
                     <input type="date" value={info.batch1Deadline} onChange={e=>setInfo(p=>({ ...p, batch1Deadline:e.target.value }))}
-                      style={{ ...baseInput, borderColor:info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:`${C.green}44`, background:C.greenLight }}
-                      onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:`${C.green}44`)}/>
+                      style={{ ...baseInput, borderColor:info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:C.border, background:C.greenLight }}
+                      onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:C.border)}/>
                   </div>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第二批資料期限</label>
                     <input type="date" value={info.batch2Deadline} onChange={e=>setInfo(p=>({ ...p, batch2Deadline:e.target.value }))}
-                      style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
-                      onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
+                      style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
+                      onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                   </div>
                 </div>
                 {info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate&&(
