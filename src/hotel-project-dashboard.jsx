@@ -354,6 +354,7 @@ const ICONS = {
   moon:       "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
   monitor:    "M2 3h20a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M8 21h8 M12 17v4",
   send:       "M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z",
+  msgSquare:  "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   sparkle:    "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
 };
 
@@ -1522,11 +1523,11 @@ const AiPanel = ({ projects, onClose }) => {
     bottomRef.current?.scrollIntoView({ behavior:"smooth" });
   }, [msgs, busy]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || busy || !GEMINI_API_KEY) return;
+  const sendText = async (text) => {
+    const trimmed = text.trim();
+    if (!trimmed || busy || !GEMINI_API_KEY) return;
     setInput("");
-    const userMsg = { role:"user", text };
+    const userMsg = { role:"user", text:trimmed };
     setMsgs(prev => [...prev, userMsg]);
     setBusy(true);
 
@@ -1560,6 +1561,7 @@ const AiPanel = ({ projects, onClose }) => {
     setBusy(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
+  const send = () => sendText(input);
 
   const handleKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
@@ -1578,7 +1580,7 @@ const AiPanel = ({ projects, onClose }) => {
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:"var(--accent)",
               display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <Ico name="sparkle" size={15} color="#fff" fill="#fff" strokeWidth={0}/>
+              <Ico name="msgSquare" size={15} color="#fff"/>
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>AI 助理</div>
@@ -1593,24 +1595,34 @@ const AiPanel = ({ projects, onClose }) => {
         {/* Messages */}
         <div style={{ flex:1, overflowY:"auto", padding:"16px 20px", display:"flex", flexDirection:"column", gap:12 }}>
           {msgs.length===0 && (
-            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
-              <div style={{ fontSize:28, marginBottom:10 }}>✨</div>
-              <div style={{ fontSize:13, lineHeight:1.7 }}>
-                你好！我能讀取所有專案資料，<br/>請問有什麼可以幫到你的嗎？
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"28px 0 8px" }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"var(--accent-light,var(--blue-light,#eff6ff))",
+                display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12 }}>
+                <Ico name="msgSquare" size={22} color="var(--accent)"/>
+              </div>
+              <div style={{ fontSize:13, color:"var(--text-subtle)", lineHeight:1.7, textAlign:"center", marginBottom:20 }}>
+                你好！我能讀取所有專案資料，<br/>有什麼可以幫到你的嗎？
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:7, width:"100%" }}>
+                {["有哪些專案快要到期？","完成度最低的是哪個？","現在有哪些事待完成？"].map(p => (
+                  <button key={p} onClick={()=>sendText(p)}
+                    style={{ padding:"9px 14px", borderRadius:10,
+                      border:"1px solid var(--border)", background:"var(--surface-raised)",
+                      cursor:"pointer", fontFamily:"inherit", fontSize:13,
+                      color:"var(--text)", textAlign:"left", transition:"all 0.12s",
+                      display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:11, color:"var(--text-subtle)", flexShrink:0 }}>→</span>
+                    {p}
+                  </button>
+                ))}
               </div>
             </div>
           )}
           {msgs.map((m, i) => (
-            <div key={i} style={{ display:"flex", flexDirection:m.role==="user"?"row-reverse":"row", gap:8 }}>
-              <div style={{ width:28, height:28, borderRadius:8, flexShrink:0,
-                background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
-                border:"1px solid var(--border)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:12, fontWeight:700, color:m.role==="user"?"#fff":"var(--text-subtle)" }}>
-                {m.role==="user" ? "我" : "AI"}
-              </div>
-              <div style={{ maxWidth:"80%",
-                padding:"9px 13px", borderRadius:12,
+            <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start" }}>
+              <div style={{ maxWidth:"82%", padding:"9px 13px", borderRadius:14,
+                borderBottomRightRadius:m.role==="user"?4:14,
+                borderBottomLeftRadius:m.role==="user"?14:4,
                 background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
                 border:m.role==="user"?"none":"1px solid var(--border)" }}>
                 {m.role==="user" ? (
@@ -1623,16 +1635,13 @@ const AiPanel = ({ projects, onClose }) => {
             </div>
           ))}
           {busy && (
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              <div style={{ width:28, height:28, borderRadius:8, background:"var(--surface-raised)",
-                border:"1px solid var(--border)", display:"flex", alignItems:"center",
-                justifyContent:"center", fontSize:12, color:"var(--text-subtle)" }}>AI</div>
-              <div style={{ padding:"9px 13px", borderRadius:12, background:"var(--surface-raised)",
-                border:"1px solid var(--border)", display:"flex", gap:5 }}>
+            <div style={{ display:"flex", justifyContent:"flex-start" }}>
+              <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4,
+                background:"var(--surface-raised)", border:"1px solid var(--border)",
+                display:"flex", gap:5, alignItems:"center" }}>
                 {[0,1,2].map(i=>(
                   <div key={i} style={{ width:6, height:6, borderRadius:"50%", background:"var(--text-subtle)",
-                    animation:"spin 1s linear infinite", animationDelay:`${i*0.2}s`,
-                    opacity:0.6 }}/>
+                    animation:"spin 1s linear infinite", animationDelay:`${i*0.2}s`, opacity:0.6 }}/>
                 ))}
               </div>
             </div>
@@ -1647,21 +1656,30 @@ const AiPanel = ({ projects, onClose }) => {
             ⚠️ 未設定 VITE_GEMINI_API_KEY，AI 功能停用
           </div>
         )}
-        <div style={{ padding:"12px 20px", borderTop:"1px solid var(--border)", flexShrink:0,
-          display:"flex", gap:8 }}>
-          <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
-            onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={2}
-            disabled={!GEMINI_API_KEY}
-            style={{ ...baseInput, flex:1, resize:"none", fontSize:13, lineHeight:1.5 }}
-            onFocus={e=>e.target.style.borderColor="var(--accent)"}
-            onBlur={e=>e.target.style.borderColor="var(--border)"}/>
-          <button onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
-            style={{ width:40, height:40, borderRadius:10, border:"none", flexShrink:0, alignSelf:"flex-end",
-              background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
-              cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
-              display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
-            <Ico name="send" size={16} color="#fff"/>
-          </button>
+        <div style={{ padding:"12px 16px", borderTop:"1px solid var(--border)", flexShrink:0 }}>
+          <div style={{ position:"relative", border:"1.5px solid var(--border)", borderRadius:14,
+            background:"var(--surface)", transition:"border-color 0.15s" }}
+            onFocusCapture={e=>e.currentTarget.style.borderColor="var(--accent)"}
+            onBlurCapture={e=>e.currentTarget.style.borderColor="var(--border)"}>
+            <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={2}
+              disabled={!GEMINI_API_KEY}
+              style={{ display:"block", width:"100%", border:"none", background:"transparent",
+                resize:"none", fontSize:13, lineHeight:1.6, outline:"none",
+                color:"var(--text)", fontFamily:"inherit",
+                padding:"10px 48px 10px 14px", boxSizing:"border-box" }}/>
+            <button onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
+              style={{ position:"absolute", right:8, bottom:8, width:32, height:32,
+                borderRadius:9, border:"none",
+                background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
+                cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
+                display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
+              <Ico name="send" size={14} color="#fff"/>
+            </button>
+          </div>
+          <div style={{ marginTop:6, fontSize:11, color:"var(--text-subtle)", textAlign:"center" }}>
+            Enter 送出 · Shift+Enter 換行
+          </div>
         </div>
       </div>
     </>
@@ -3305,7 +3323,7 @@ export default function App() {
                 onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}}
                 onMouseLeave={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}}
                 title="AI 助理">
-                <Ico name="sparkle" size={16} color="currentColor" fill={showAi?"currentColor":"none"} strokeWidth={showAi?0:1.6}/>
+                <Ico name="msgSquare" size={16} color="currentColor"/>
               </button>
               <button onClick={()=>setShowSettings(true)}
                 style={{ height:36, display:"flex", alignItems:"center", gap:9,
