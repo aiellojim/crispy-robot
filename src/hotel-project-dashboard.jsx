@@ -355,6 +355,7 @@ const ICONS = {
   monitor:    "M2 3h20a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M8 21h8 M12 17v4",
   send:       "M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z",
   msgSquare:  "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  pencil:     "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z",
   sparkle:    "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
 };
 
@@ -705,7 +706,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
             <div style={{ fontSize:16, fontWeight:700, color:C.text }}>通知設定</div>
-            <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>瀏覽器推播提醒</div>
+            <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>Email 提醒</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit" }}>✕</button>
         </div>
@@ -713,7 +714,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {status==="unsupported" && (
             <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
-              此瀏覽器不支援推播通知，建議改用 Chrome 或 Edge。
+              此瀏覽器不支援 Email 提醒，建議改用 Chrome 或 Edge。
             </div>
           )}
           {status==="denied" && (
@@ -724,7 +725,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
           {status===""&&!sub&&(
             <div>
               <div style={{ fontSize:13, color:C.textMid, marginBottom:14, lineHeight:1.6 }}>
-                點擊下方按鈕啟用推播通知，首次使用時瀏覽器會詢問通知授權。
+                點擊下方按鈕啟用 Email 提醒，首次使用時瀏覽器會詢問通知授權。
               </div>
               <div style={{ padding:"10px 14px", background:"var(--surface-raised)",
                 border:"1px solid var(--border)", borderRadius:8, marginBottom:14,
@@ -735,7 +736,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                 style={{ width:"100%", padding:"10px 0", background:C.blue, color:"#fff",
                   border:"none", borderRadius:8, fontSize:14, fontWeight:700,
                   cursor:"pointer", fontFamily:"inherit" }}>
-                {loading?"啟用中…":"啟用推播通知"}
+                {loading?"啟用中…":"啟用 Email 提醒"}
               </button>
             </div>
           )}
@@ -744,7 +745,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
               <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:10,
                 padding:"10px 14px", fontSize:13, color:C.green, marginBottom:20,
                 display:"flex", alignItems:"center", gap:8 }}>
-                ✓ 已啟用推播通知・{sub.pic_name}
+                ✓ 已啟用 Email 提醒・{sub.pic_name}
               </div>
 
               {/* 提醒時機 */}
@@ -796,7 +797,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                   style={{ width:"100%", padding:"8px 0", background:"none",
                     border:`1px solid ${C.red}66`, borderRadius:10, color:C.red,
                     fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>
-                  {loading?"處理中…":"取消所有推播通知"}
+                  {loading?"處理中…":"取消所有 Email 提醒"}
                 </button>
               </div>
             </div>
@@ -1167,24 +1168,30 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
           <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden" }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
               <div key={i}
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 14px",
+                style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px",
                   borderBottom:i<arr.length-1?"1px solid var(--border)":"none",
                   borderLeft:`3px solid ${ev.border}`, background:"var(--surface)" }}>
+                {/* 日期 */}
                 <span style={{ fontSize:12, fontWeight:700, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace", flexShrink:0, minWidth:80 }}>{fmtDate(ev.date)}</span>
-                <span style={{ fontSize:12, fontWeight:600, color:"var(--text)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</span>
-                <span style={{ fontSize:11, color:"var(--text-subtle)", flexShrink:0, maxWidth:200, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.sub}</span>
+                {/* 專案名稱 + 任務/類型名稱 */}
+                <div style={{ flex:1, minWidth:0, display:"flex", alignItems:"baseline", gap:6, overflow:"hidden" }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:"var(--text)", flexShrink:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"55%" }}>{ev.label}</span>
+                  <span style={{ fontSize:12, color:"var(--text-subtle)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.sub}</span>
+                </div>
+                {/* 任務操作按鈕 */}
                 {ev.taskId && (
-                  <>
-                    <span onClick={()=>openEditModal(ev.taskObj)}
-                      style={{ flexShrink:0, fontSize:11, color:"var(--text-subtle)", cursor:"pointer" }}
-                      onMouseEnter={e=>e.currentTarget.style.color="var(--accent)"}
-                      onMouseLeave={e=>e.currentTarget.style.color="var(--text-subtle)"}>編輯 ✎</span>
+                  <div style={{ display:"flex", gap:2, flexShrink:0 }}>
+                    <button onClick={()=>openEditModal(ev.taskObj)}
+                      style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
+                      onMouseEnter={e=>{ e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--surface-raised)"; }}
+                      onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
+                      title="編輯任務"><Ico name="pencil" size={13} color="currentColor"/></button>
                     <button onClick={()=>deleteTask(ev.taskId)}
-                      style={{ background:"none", border:"none", cursor:"pointer", padding:"2px 4px", color:"var(--text-subtle)", flexShrink:0 }}
-                      onMouseEnter={e=>e.currentTarget.style.color="var(--red)"}
-                      onMouseLeave={e=>e.currentTarget.style.color="var(--text-subtle)"}
+                      style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
+                      onMouseEnter={e=>{ e.currentTarget.style.color="var(--red)"; e.currentTarget.style.background="var(--surface-raised)"; }}
+                      onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
                       title="刪除任務"><Ico name="trash" size={13} color="currentColor"/></button>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
@@ -2770,7 +2777,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {/* Subscribe toggle */}
                 <button disabled={subLoading} onClick={async()=>{
                   setSubLoading(true);
-                  if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用推播，再回來訂閱此專案。"); setSubLoading(false); return; }
+                  if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用 Email 提醒，再回來訂閱此專案。"); setSubLoading(false); return; }
                   const isSubscribed=(projSub.subscribed_projects||[]).includes(project.id);
                   const curr=projSub.subscribed_projects||[];
                   const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
