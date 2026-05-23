@@ -356,7 +356,15 @@ const ICONS = {
   send:       "M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z",
   msgSquare:  "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   pencil:     "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z",
-  sparkle:    "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
+  sparkle:     "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
+  building:    "M3 21h18 M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16 M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4 M9 7h1 M14 7h1 M9 11h1 M14 11h1",
+  package:     "M16.5 9.4l-9-5.19 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96L12 12.01l8.73-5.05 M12 22.08V12",
+  fileText:    "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+  bellOff:     "M13.73 21a2 2 0 0 1-3.46 0 M18.63 13A17.89 17.89 0 0 1 18 8 M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14 M18 8a6 6 0 0 0-9.33-5 M1 1l22 22",
+  clipboardList:"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z M9 12h6 M9 16h4",
+  repeat:      "M17 2l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 22l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3",
+  lock:        "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4",
+  refresh:     "M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15",
 };
 
 // 語意化 icon 元件
@@ -380,7 +388,7 @@ const Card = ({ children, style={} }) => (
 const SectionLabel = ({ title, icon, color="var(--accent)" }) => (
   <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12,
     display:"flex", alignItems:"center", gap:6, fontWeight:600 }}>
-    {icon && <span>{icon}</span>}{title}
+    {icon && <Ico name={icon} size={12} color="currentColor"/>}{title}
   </div>
 );
 
@@ -466,7 +474,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>🔗 檔案連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }} style={{display:"inline-flex",alignItems:"center",gap:5}}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -516,7 +524,7 @@ const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
           fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:600,
           background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
           borderRadius:6, padding:"4px 10px" }}>
-        🔗 開啟資料表
+        <Ico name="link" size={12} color="currentColor"/> 開啟資料表
       </a>
     )}
   </div>
@@ -538,7 +546,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
           style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:600,
             background:"var(--purple-subtle)", border:"1px solid var(--purple)",
-            borderRadius:5, padding:"2px 9px", display:"inline-block" }}>🔗 連結</a>
+            borderRadius:5, padding:"2px 9px", display:"inline-block" }} style={{display:"inline-flex",alignItems:"center",gap:4}}><Ico name="link" size={11} color="currentColor"/>連結</a>
       </div>}
     </div>
   );
@@ -784,7 +792,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                           <div style={{ fontSize:13, color:C.text, fontWeight:active?600:400 }}>{proj.info?.name||"未命名專案"}</div>
                           {proj.info?.pic&&<div style={{ fontSize:11, color:C.textLight, marginTop:1 }}>👤 {proj.info.pic}</div>}
                         </div>
-                        <span style={{ fontSize:18 }}>{active?"🔔":"🔕"}</span>
+                        {active?<Ico name="bell" size={16} color="currentColor"/>:<Ico name="bellOff" size={16} color="currentColor"/>}
                       </div>
                     );
                   })}
@@ -984,9 +992,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         <div style={{ marginBottom:16 }}>
           <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
           <div style={{ display:"flex", gap:8 }}>
-            {[{ v:"deadline", label:"📌 期限" },{ v:"period", label:"📅 週期" }].map(({ v, label })=>(
+            {[{ v:"deadline", ico:"pin", text:"期限" },{ v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text })=>(
               <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.blue:C.border}`, background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid }}>{label}</button>
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.blue:C.border}`, background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
             ))}
           </div>
         </div>
@@ -1429,7 +1437,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                         background:nd.days<=7?"var(--red-subtle)":"var(--green-light)",
                         border:`1px solid ${nd.days<=7?C.red+"33":C.green+"33"}`,
                         borderRadius:9, padding:"7px 12px" }}>
-                        <span style={{ fontSize:12 }}>🗓️</span>
+                        <Ico name="calendar" size={13} color={ev.text}/>
                         <span style={{ fontSize:12, color:nd.days<=7?C.red:C.green }}>{nd.label}</span>
                         <span style={{ fontSize:11, color:C.text, fontWeight:700, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
                         <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
@@ -1858,13 +1866,13 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                 border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:descLoading?"wait":"pointer", fontSize:13,
                 color:descSuccess?C.green:C.textMid, fontFamily:"inherit", transition:"all 0.2s" }}>
-              {descLoading?"更新中…":descSuccess?"✓ 已更新":"📝 更新 Epic Description"}
+              {descLoading?"更新中…":descSuccess?"✓ 已更新":<><Ico name="fileText" size={13} color="currentColor"/> 更新 Epic Description</>}
             </button>
             <button onClick={fetchIssues} disabled={loading}
               style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
                 border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
-              {loading ? "同步中…" : "🔄 同步 Jira"}
+              {loading ? "同步中…" : <><Ico name="refresh" size={13} color="currentColor"/> 同步 Jira</>}
             </button>
           </div>
         )}
@@ -1885,7 +1893,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
 
       {!loading && epicId && issues.length===0 && !error && (
         <div style={{ textAlign:"center", padding:"48px 0", color:C.textLight }}>
-          <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
+          <div style={{ marginBottom:10 }}><Ico name="clipboardList" size={32} color="var(--text-subtle)"/></div>
           <div style={{ fontSize:14 }}>此 Epic 底下尚無子任務</div>
         </div>
       )}
@@ -2066,14 +2074,14 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
           <button onClick={removeSelected}
             style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"#fff", border:"none",
               borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-            🗑 刪除選取（{selectedIds.size}）
+            <><Ico name="trash" size={13} color="currentColor"/> 刪除選取（{selectedIds.size}）</>
           </button>
         </div>
       )}
 
       {tasks.length===0 ? (
         <div style={{ textAlign:"center", padding:"50px 0", color:C.textLight }}>
-          <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
+          <div style={{ marginBottom:10 }}><Ico name="clipboardList" size={32} color="var(--text-subtle)"/></div>
           <div style={{ fontSize:14, fontWeight:500 }}>尚無任務，點擊右上角「新增任務」開始</div>
         </div>
       ) : (
@@ -2101,7 +2109,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
                     cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
                   onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}>🗑</button>
+                  onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}><Ico name="trash" size={14} color="currentColor"/></button>
               </div>
 
               <div style={{ marginBottom:14 }}>
@@ -2116,7 +2124,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
                 <div style={{ display:"flex", gap:8 }}>
-                  {[{ v:"deadline", label:"📌 期限" }, { v:"period", label:"📅 週期" }].map(({ v, label }) => (
+                  {[{ v:"deadline", ico:"pin", text:"期限" }, { v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text }) => (
                     <button key={v} onClick={()=>updateTask(task.id,"type",v)}
                       style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600,
                         cursor:"pointer", transition:"all 0.15s",
@@ -2302,7 +2310,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   const LockScreen = ({ msg }) => (
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
-      <div style={{ fontSize:36, marginBottom:14 }}>🔒</div>
+      <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
       <div style={{ fontSize:15, fontWeight:600, color:C.textMid, marginBottom:20 }}>{msg}</div>
       <button onClick={()=>setStep(0)} style={{ background:C.blue, color:"#fff", border:"none",
         borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:700,
@@ -2362,7 +2370,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 background:locked?C.bg:step===i?C.blueLight:C.bg,
                 border:`1.5px solid ${locked?C.border:step===i?C.blue:C.border}`,
                 color:locked?C.border:step===i?C.blue:C.textLight }}>
-                {locked?"🔒":i+1}
+                {locked?<Ico name="lock" size={11} color="currentColor"/>:i+1}
               </span>
               {s}
             </button>
@@ -2380,7 +2388,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               <p style={{ fontSize:13, color:C.textMid, margin:0 }}>填寫飯店基本資料與購置設備</p>
             </div>
             <Card>
-              <SectionLabel title="飯店資訊" icon="🏨"/>
+              <SectionLabel title="飯店資訊" icon="building"/>
               <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:16 }}>
                 <FInput label="飯店名稱" value={info.name} onChange={v=>setInfo(p=>({ ...p, name:v }))} placeholder="例：台北大飯店"/>
                 <FInput label="Hotel ID" value={info.hotelId} onChange={v=>setInfo(p=>({ ...p, hotelId:v }))} placeholder="例：TPE-001"/>
@@ -2421,7 +2429,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
                         background:"#0052cc", color:"#fff", border:"none", borderRadius:8,
                         fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
-                      🚀 建立 Jira Epic 與任務
+                      <><Ico name="rocket" size={13} color="currentColor"/> 建立 Jira Epic 與任務</>
                     </button>
                   </div>
                 )}
@@ -2571,7 +2579,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
             </Card>
             <Card>
-              <SectionLabel title="購置產品" icon="📦"/>
+              <SectionLabel title="購置產品" icon="package"/>
               <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:14 }}>
                 {PRODUCTS.map(p=><Chip key={p} label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.blue} onClick={()=>toggleArr("products",p)}/>)}
               </div>
@@ -2586,7 +2594,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               )}
             </Card>
             <Card>
-              <SectionLabel title="串接功能" icon="🔗" color={C.purple}/>
+              <SectionLabel title="串接功能" icon="link" color={C.purple}/>
               <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:14 }}>
                 {INTEGRATIONS.map(i=><Chip key={i} label={i} active={info.integrations.includes(i)} color={C.purple} onClick={()=>toggleArr("integrations",i)}/>)}
               </div>
@@ -2604,7 +2612,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 </div>
               )}
               <div style={{ marginTop:24 }}>
-                <SectionLabel title="日期設定" icon="📅"/>
+                <SectionLabel title="日期設定" icon="calendar"/>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>上線日期</label>
@@ -2631,7 +2639,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 )}
               </div>
               <div style={{ marginTop:24 }}>
-                <SectionLabel title="其餘功能需求或備注" icon="📝"/>
+                <SectionLabel title="其餘功能需求或備注" icon="fileText"/>
                 <textarea value={info.notes} onChange={e=>setInfo(p=>({ ...p, notes:e.target.value }))}
                   placeholder="說明是否有額外功能開發需求…" style={{ ...baseInput, minHeight:90, resize:"vertical" }}
                   onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
@@ -2823,7 +2831,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blueLight:C.bg,
                   color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.blue:C.textMid,
                   fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
-                  {projSub&&(projSub.subscribed_projects||[]).includes(project.id)?"🔔 已訂閱提醒":"🔕 訂閱此專案提醒"}
+                  {projSub&&(projSub.subscribed_projects||[]).includes(project.id)
+                  ?<><Ico name="bell" size={13} color="currentColor"/> 已訂閱提醒</>
+                  :<><Ico name="bellOff" size={13} color="currentColor"/> 訂閱此專案提醒</>}
                 </button>
               </div>
             </div>
@@ -2844,7 +2854,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   { label:"第二批資料期限", date:info.batch2Deadline, sub:"Showcase ＋ 廣告 ＋ QR", color:C.purple, bg:C.purpleLight },
                 ].map(({ label, date, sub, color, bg })=>(
                   <div key={label} style={{ background:bg, border:`1px solid ${color}33`, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
-                    <span style={{ fontSize:24 }}>🗓️</span>
+                    <Ico name="calendar" size={22} color={color}/>
                     <div>
                       <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:700 }}>{label}</div>
                       <div style={{ fontSize:15, fontWeight:700, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
@@ -2862,7 +2872,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             </div>
             {info.name&&(
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700 }}>📋 專案資訊</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
                   {[
                     ["飯店名稱",info.name],["Hotel ID",info.hotelId||"—"],
@@ -2963,10 +2973,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         <span style={{ marginLeft:"auto", fontSize:10, background:task.type==="deadline"?C.amberLight:C.greenLight,
                           color:task.type==="deadline"?C.amber:C.green,
                           border:`1px solid ${task.type==="deadline"?C.amber+"44":C.green+"44"}`,
-                          borderRadius:5, padding:"2px 8px", fontWeight:600, whiteSpace:"nowrap" }}>
+                          borderRadius:5, padding:"2px 8px", fontWeight:600, whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:4 }}>
                           {task.type==="deadline"
-                            ? `📌 ${task.deadline||"—"}`
-                            : `📅 ${task.period_start||"—"} → ${task.period_end||"—"}`}
+                            ? <><Ico name="pin" size={10} color="currentColor"/> {task.deadline||"—"}</>
+                            : <><Ico name="repeat" size={10} color="currentColor"/> {task.period_start||"—"} → {task.period_end||"—"}</>}
                         </span>
                       </div>
                       {task.description&&<div style={{ fontSize:12, color:C.textMid, lineHeight:1.6, marginLeft:34 }}>{task.description}</div>}
