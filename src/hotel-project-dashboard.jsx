@@ -236,6 +236,7 @@ const newTask = () => ({
   id: crypto.randomUUID(), project_id: null,
   name:"", description:"", type:"deadline",
   deadline:"", period_start:"", period_end:"", url:"",
+  is_internal: true,
 });
 
 // ─── DB ↔ UI ──────────────────────────────────────────────────
@@ -2040,7 +2041,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       await sb.from("tasks").upsert({
         id:t.id, project_id:t.project_id, name:t.name, description:t.description,
         type:t.type, deadline:t.deadline||null, period_start:t.period_start||null, period_end:t.period_end||null,
-        url:t.url||"",
+        url:t.url||"", is_internal:t.is_internal??true,
       });
     }, 800);
   };
@@ -3225,7 +3226,7 @@ export default function App() {
         const tasksByProject = {};
         (taskRows??[]).forEach(t => {
           if (!tasksByProject[t.project_id]) tasksByProject[t.project_id]=[];
-          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"" });
+          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"", is_internal:t.is_internal??true });
         });
         const projs = (rows??[]).map(r=>({ ...dbToUi(r,progMap[r.id]), tasks:tasksByProject[r.id]||[] }));
         setProjects(projs);
