@@ -1848,7 +1848,7 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
           <div>
             <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>客戶存取管理</div>
             <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>
-              Hotel ID：<span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
+              Hotel ID: <span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
             </div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
@@ -1922,17 +1922,18 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
               onChange={e=>{ setNewEmail(e.target.value); setError(""); }}
               onKeyDown={e=>e.key==="Enter" && handleAdd()}
               placeholder="client@hotel.com"
-              style={{ flex:1, border:"1.5px solid var(--border)", borderRadius:10,
+              style={{ flex:1, minWidth:0, border:"1.5px solid var(--border)", borderRadius:10,
                 padding:"9px 12px", fontSize:13, background:"var(--surface)",
                 color:"var(--text)", fontFamily:"inherit", outline:"none" }}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
               onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
             <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
-              style={{ padding:"0 16px", borderRadius:10, border:"none",
+              style={{ padding:"0 16px", borderRadius:10, border:"none", flexShrink:0,
                 background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
                 color:"#fff", fontFamily:"inherit", fontSize:13, fontWeight:700,
                 cursor:newEmail.trim()&&!adding?"pointer":"default",
-                display:"flex", alignItems:"center", gap:6, transition:"background 0.15s" }}>
+                display:"flex", alignItems:"center", gap:6, transition:"background 0.15s",
+                whiteSpace:"nowrap" }}>
               {adding
                 ? <div style={{ width:13, height:13, border:"2px solid rgba(255,255,255,0.4)",
                     borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
