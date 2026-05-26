@@ -1782,8 +1782,173 @@ const AiPanel = ({ projects, onClose }) => {
   );
 };
 
+
+// ─── CustomerAccessPanel ──────────────────────────────────────
+const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
+  const [emails,   setEmails]   = useState([]);
+  const [newEmail, setNewEmail] = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [adding,   setAdding]   = useState(false);
+  const [removing, setRemoving] = useState(null); // email being removed
+  const [error,    setError]    = useState("");
+
+  const authHeader = { Authorization: `Bearer ${session?.access_token ?? ""}` };
+
+  const fetchEmails = async () => {
+    setLoading(true);
+    const { data } = await sb
+      .from("customer_access")
+      .select("email, created_at")
+      .eq("hotel_id", hotelId)
+      .order("created_at", { ascending: true });
+    setEmails(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (hotelId) fetchEmails(); }, [hotelId]); // eslint-disable-line
+
+  const handleAdd = async () => {
+    const email = newEmail.trim().toLowerCase();
+    if (!email || adding) return;
+    if (!email.includes("@")) { setError("請輸入有效的 email 格式"); return; }
+    setAdding(true); setError("");
+    const res = await fetch(CUSTOMER_ACCESS_MANAGE, {
+      method: "POST",
+      headers: { ...authHeader, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", hotel_id: hotelId, email }),
+    });
+    if (res.ok) { setNewEmail(""); await fetchEmails(); }
+    else setError("新增失敗，請確認 email 格式後再試");
+    setAdding(false);
+  };
+
+  const handleRemove = async (email) => {
+    if (removing) return;
+    setRemoving(email);
+    const res = await fetch(CUSTOMER_ACCESS_MANAGE, {
+      method: "POST",
+      headers: { ...authHeader, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", hotel_id: hotelId, email }),
+    });
+    if (res.ok) await fetchEmails();
+    else setError("移除失敗，請稍後再試");
+    setRemoving(null);
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--surface)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+        zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+
+        {/* Header */}
+        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
+          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>客戶存取管理</div>
+            <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>
+              Hotel ID：<span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
+            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
+            color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+        </div>
+
+        {/* Email list */}
+        <div style={{ flex:1, overflowY:"auto", padding:20 }}>
+          {loading ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
+              <div style={{ width:24, height:24, border:"2.5px solid var(--border)",
+                borderTopColor:"var(--accent)", borderRadius:"50%",
+                animation:"spin 0.7s linear infinite", margin:"0 auto 10px" }}/>
+              載入中…
+            </div>
+          ) : emails.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)", fontSize:13 }}>
+              <Ico name="user" size={28} color="var(--border-mid)"/>
+              <div style={{ marginTop:10 }}>尚未指定任何客戶存取權限</div>
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {emails.map(({ email, created_at }) => (
+                <div key={email} style={{ display:"flex", alignItems:"center", gap:10,
+                  padding:"10px 14px", borderRadius:10, background:"var(--surface-raised)",
+                  border:"1px solid var(--border)" }}>
+                  <Ico name="user" size={14} color="var(--text-subtle)"/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, color:"var(--text)", overflow:"hidden",
+                      textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{email}</div>
+                    <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:1 }}>
+                      {new Date(created_at).toLocaleDateString("zh-TW")} 新增
+                    </div>
+                  </div>
+                  <button onClick={() => handleRemove(email)}
+                    disabled={removing === email}
+                    style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
+                      padding:"4px 8px", cursor:"pointer", color:"var(--text-subtle)",
+                      fontFamily:"inherit", transition:"all 0.12s", flexShrink:0 }}
+                    onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+                    {removing === email
+                      ? <div style={{ width:12, height:12, border:"2px solid var(--border-mid)",
+                          borderTopColor:"var(--red)", borderRadius:"50%",
+                          animation:"spin 0.7s linear infinite" }}/>
+                      : <Ico name="trash" size={13} color="currentColor"/>}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div style={{ marginTop:14, padding:"9px 14px", background:"var(--red-light)",
+              border:"1px solid rgba(220,38,38,0.25)", borderRadius:9,
+              fontSize:12, color:"var(--red)" }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Add email */}
+        <div style={{ padding:"16px 20px", borderTop:"1px solid var(--border)", flexShrink:0 }}>
+          <label style={{ display:"block", fontSize:11, fontWeight:600, letterSpacing:"0.08em",
+            textTransform:"uppercase", color:"var(--text-mid)", marginBottom:8 }}>
+            新增客戶 Email
+          </label>
+          <div style={{ display:"flex", gap:8 }}>
+            <input type="email" value={newEmail}
+              onChange={e=>{ setNewEmail(e.target.value); setError(""); }}
+              onKeyDown={e=>e.key==="Enter" && handleAdd()}
+              placeholder="client@hotel.com"
+              style={{ flex:1, border:"1.5px solid var(--border)", borderRadius:10,
+                padding:"9px 12px", fontSize:13, background:"var(--surface)",
+                color:"var(--text)", fontFamily:"inherit", outline:"none" }}
+              onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+              onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+            <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
+              style={{ padding:"0 16px", borderRadius:10, border:"none",
+                background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
+                color:"#fff", fontFamily:"inherit", fontSize:13, fontWeight:700,
+                cursor:newEmail.trim()&&!adding?"pointer":"default",
+                display:"flex", alignItems:"center", gap:6, transition:"background 0.15s" }}>
+              {adding
+                ? <div style={{ width:13, height:13, border:"2px solid rgba(255,255,255,0.4)",
+                    borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+                : <Ico name="user" size={13} color="#fff"/>}
+              新增
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── JiraTab ──────────────────────────────────────────────────
-const JIRA_PROXY = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
+const JIRA_PROXY              = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
+const CUSTOMER_ACCESS_MANAGE  = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-access-manage`;
 const JIRA_ANON  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VERIFICATION","INIT","INIT_DONE","LINK TO RD JIRA","PROCESSING","TEST","TEST_DONE","完成"];
@@ -2248,7 +2413,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [batch2Notes,   setBatch2Notes]   = useState(project.batch2Notes  || {});
   const [sheetLinks,    setSheetLinks]    = useState(project.sheetLinks);
   const [tasks,         setTasks]         = useState(project.tasks || []);
-  const [saveStatus,    setSaveStatus]    = useState("idle");
+  const [saveStatus,       setSaveStatus]       = useState("idle");
+  const [showCustomerAccess, setShowCustomerAccess] = useState(false);
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
   const [copiedHotelId, setCopiedHotelId] = useState(false);
@@ -2431,9 +2597,21 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         {/* Step 0: 專案資訊 */}
         {step===0 && (
           <div style={{ animation:"fadeIn 0.25s ease" }}>
-            <div style={{ marginBottom:24 }}>
-              <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案基本資訊</h2>
-              <p style={{ fontSize:13, color:C.textMid, margin:0 }}>填寫飯店基本資料與購置設備</p>
+            <div style={{ marginBottom:24, display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+              <div>
+                <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案基本資訊</h2>
+                <p style={{ fontSize:13, color:C.textMid, margin:0 }}>填寫飯店基本資料與購置設備</p>
+              </div>
+              <button onClick={()=>setShowCustomerAccess(true)}
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", flexShrink:0,
+                  background:"var(--surface)", border:"1px solid var(--border)", borderRadius:9,
+                  cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
+                  transition:"all 0.15s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
+                <Ico name="user" size={13} color="currentColor"/>
+                客戶存取
+              </button>
             </div>
             <Card>
               <SectionLabel title="飯店資訊" icon="building"/>
@@ -3034,6 +3212,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
             )}
             <NavRow onBack={()=>setStep(4)}/>
+        {/* CustomerAccessPanel */}
+        {showCustomerAccess && (
+          <CustomerAccessPanel
+            hotelId={info.hotelId}
+            projectId={project.id}
+            session={session}
+            onClose={()=>setShowCustomerAccess(false)}/>
+        )}
           </div>
         )}
       </div>
