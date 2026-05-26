@@ -819,54 +819,100 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
 
 // ─── InAppNotifModal ──────────────────────────────────────────
-const InAppNotifModal = ({ urgentNotifs, onClose, onProjectOpen }) => (
+const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen }) => {
+  const totalBadge = urgentNotifs.length + customerNotifs.length;
+  return (
   <>
     <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9997 }}/>
-    <div style={{ position:"fixed", top:58, right:40, width:340, maxHeight:440,
+    <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
       background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
       boxShadow:"0 8px 30px rgba(0,0,0,0.15)", zIndex:9998,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      {/* Header */}
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>即將到期</div>
-        {urgentNotifs.length>0 && (
+        <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>通知</div>
+        {totalBadge>0 && (
           <span style={{ fontSize:11, background:"var(--red-light)", color:"var(--red)",
             borderRadius:20, padding:"2px 9px", fontWeight:600 }}>
-            {urgentNotifs.length} 筆
+            {totalBadge} 筆
           </span>
         )}
       </div>
       <div style={{ overflowY:"auto", flex:1 }}>
-        {urgentNotifs.length===0 ? (
+        {/* 客戶更新 */}
+        {customerNotifs.length>0 && (<>
+          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, letterSpacing:"0.08em",
+            textTransform:"uppercase", color:"var(--accent)" }}>客戶更新</div>
+          {customerNotifs.map((n, i) => {
+            const p = n.payload ?? {};
+            const checked = p.checked;
+            return (
+              <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.project_id); }}
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
+                  borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s" }}
+                onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
+                  background:checked?"var(--green-light)":"var(--amber-light)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:16 }}>
+                  {checked ? <Ico name="check" size={16} color="var(--green)" strokeWidth={2.5}/> : <Ico name="warning" size={15} color="var(--amber)"/>}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {n.projects?.name ?? p.hotel_id}
+                  </div>
+                  <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {p.email} · {checked?"已勾選":"已取消"} {p.item_key}
+                  </div>
+                </div>
+                <div style={{ fontSize:10, color:"var(--text-subtle)", flexShrink:0 }}>
+                  {new Date(n.created_at).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}
+                </div>
+              </div>
+            );
+          })}
+        </>)}
+        {/* 即將到期 */}
+        {urgentNotifs.length>0 && (<>
+          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, letterSpacing:"0.08em",
+            textTransform:"uppercase", color:"var(--red)" }}>即將到期</div>
+          {urgentNotifs.map((n, i) => (
+            <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
+              style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
+                borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s" }}
+              onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
+                background:n.days===0?"var(--red-light)":n.days<=2?"var(--amber-light)":"var(--green-light)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700,
+                color:n.days===0?"var(--red)":n.days<=2?"var(--amber)":"var(--green)" }}>
+                {n.days===0?"今天":`${n.days}天`}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
+                  overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.name}</div>
+                <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
+                  overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.label} · {n.date}</div>
+              </div>
+            </div>
+          ))}
+        </>)}
+        {/* Empty */}
+        {totalBadge===0 && (
           <div style={{ padding:"32px 16px", textAlign:"center", color:"var(--text-subtle)", fontSize:13 }}>
-            ✓ 7 天內無到期事件
+            ✓ 目前無未讀通知
           </div>
-        ) : urgentNotifs.map((n, i) => (
-          <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
-            style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
-              borderBottom:"1px solid var(--border)", cursor:"pointer",
-              transition:"background 0.1s" }}
-            onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
-            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-            <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
-              background:n.days===0?"var(--red-light)":n.days<=2?"var(--amber-light)":"var(--green-light)",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700,
-              color:n.days===0?"var(--red)":n.days<=2?"var(--amber)":"var(--green)" }}>
-              {n.days===0?"今天":`${n.days}天`}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
-                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.name}</div>
-              <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
-                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.label} · {n.date}</div>
-            </div>
-          </div>
-        ))}
+        )}
       </div>
     </div>
   </>
-);
+  );
+};
 
 // ─── Calendar Page ─────────────────────────────────────────────
 const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
@@ -3173,6 +3219,7 @@ export default function App() {
   const [theme,    setTheme]    = useState(() => localStorage.getItem("hotel-dash-theme") || "system");
   const [showInAppNotif, setShowInAppNotif] = useState(false);
   const [showAi,         setShowAi]         = useState(false);
+  const [customerNotifs, setCustomerNotifs] = useState([]);
   // Auth
   const [session,      setSession]      = useState(null);
   const [profile,      setProfile]      = useState(null);
@@ -3301,6 +3348,23 @@ export default function App() {
     return list.sort((a, b) => a.days - b.days);
   }, [projects]);
 
+  // Customer notifications from notifications table
+  const fetchCustomerNotifs = useCallback(async () => {
+    const { data } = await sb
+      .from("notifications")
+      .select("*, projects(name, hotel_id)")
+      .eq("read", false)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setCustomerNotifs(data ?? []);
+  }, []);
+
+  useEffect(() => {
+    fetchCustomerNotifs();
+    const timer = setInterval(fetchCustomerNotifs, 30000);
+    return () => clearInterval(timer);
+  }, [fetchCustomerNotifs]);
+
   if (authLoading) return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center",
       justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
@@ -3347,7 +3411,13 @@ export default function App() {
               </div>
               {/* Bell: in-app notifications */}
               <div style={{ position:"relative" }}>
-                <button onClick={()=>setShowInAppNotif(v=>!v)}
+                <button onClick={async ()=>{
+                    setShowInAppNotif(v=>!v);
+                    if (customerNotifs.length>0) {
+                      await sb.from("notifications").update({ read:true }).eq("read", false);
+                      setCustomerNotifs([]);
+                    }
+                  }}
                   style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                     background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:9,
                     cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
@@ -3355,7 +3425,7 @@ export default function App() {
                   onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
                   <Ico name="bell" size={16} color="currentColor"/>
                 </button>
-                {urgentNotifs.length>0 && (
+                {(urgentNotifs.length>0 || customerNotifs.length>0) && (
                   <div style={{ position:"absolute", top:4, right:4, width:8, height:8,
                     borderRadius:"50%", background:"var(--red)",
                     border:"2px solid var(--surface)", pointerEvents:"none" }}/>
@@ -3363,6 +3433,7 @@ export default function App() {
                 {showInAppNotif && (
                   <InAppNotifModal
                     urgentNotifs={urgentNotifs}
+                    customerNotifs={customerNotifs}
                     onClose={()=>setShowInAppNotif(false)}
                     onProjectOpen={id=>{ setShowInAppNotif(false); handleOpen(id); }}/>
                 )}
