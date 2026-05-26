@@ -828,7 +828,6 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
       background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
       boxShadow:"0 8px 30px rgba(0,0,0,0.15)", zIndex:9998,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
-      {/* Header */}
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>通知</div>
@@ -846,18 +845,19 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
             textTransform:"uppercase", color:"var(--accent)" }}>客戶更新</div>
           {customerNotifs.map((n, i) => {
             const p = n.payload ?? {};
-            const checked = p.checked;
             return (
               <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.project_id); }}
                 style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
-                  borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s" }}
+                  borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s",
+                  background:n.read?"transparent":"var(--accent-subtle)" }}
                 onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                onMouseLeave={e=>e.currentTarget.style.background=n.read?"transparent":"var(--accent-subtle)"}>
                 <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
-                  background:checked?"var(--green-light)":"var(--amber-light)",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:16 }}>
-                  {checked ? <Ico name="check" size={16} color="var(--green)" strokeWidth={2.5}/> : <Ico name="warning" size={15} color="var(--amber)"/>}
+                  background:p.checked?"var(--green-light)":"var(--amber-light)",
+                  display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {p.checked
+                    ? <Ico name="check" size={16} color="var(--green)" strokeWidth={2.5}/>
+                    : <Ico name="warning" size={15} color="var(--amber)"/>}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
@@ -866,11 +866,11 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
                   </div>
                   <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
                     overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {p.email} · {checked?"已勾選":"已取消"} {p.item_key}
+                    {p.email} · {p.checked?"已勾選":"已取消"} {p.item_key}
                   </div>
                 </div>
                 <div style={{ fontSize:10, color:"var(--text-subtle)", flexShrink:0 }}>
-                  {new Date(n.created_at).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}
+                  {new Date(n.created_at).toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}
                 </div>
               </div>
             );
@@ -3348,14 +3348,12 @@ export default function App() {
     return list.sort((a, b) => a.days - b.days);
   }, [projects]);
 
-  // Customer notifications from notifications table
   const fetchCustomerNotifs = useCallback(async () => {
     const { data } = await sb
       .from("notifications")
       .select("*, projects(name, hotel_id)")
-      .eq("read", false)
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(3);
     setCustomerNotifs(data ?? []);
   }, []);
 
@@ -3411,13 +3409,7 @@ export default function App() {
               </div>
               {/* Bell: in-app notifications */}
               <div style={{ position:"relative" }}>
-                <button onClick={async ()=>{
-                    setShowInAppNotif(v=>!v);
-                    if (customerNotifs.length>0) {
-                      await sb.from("notifications").update({ read:true }).eq("read", false);
-                      setCustomerNotifs([]);
-                    }
-                  }}
+                <button onClick={()=>setShowInAppNotif(v=>!v)}
                   style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                     background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:9,
                     cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
@@ -3425,7 +3417,7 @@ export default function App() {
                   onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
                   <Ico name="bell" size={16} color="currentColor"/>
                 </button>
-                {(urgentNotifs.length>0 || customerNotifs.length>0) && (
+                {(urgentNotifs.length>0 || customerNotifs.some(n=>!n.read)) && (
                   <div style={{ position:"absolute", top:4, right:4, width:8, height:8,
                     borderRadius:"50%", background:"var(--red)",
                     border:"2px solid var(--surface)", pointerEvents:"none" }}/>
@@ -3434,7 +3426,14 @@ export default function App() {
                   <InAppNotifModal
                     urgentNotifs={urgentNotifs}
                     customerNotifs={customerNotifs}
-                    onClose={()=>setShowInAppNotif(false)}
+                    onClose={async ()=>{
+                      setShowInAppNotif(false);
+                      const unreadIds = customerNotifs.filter(n=>!n.read).map(n=>n.id);
+                      if (unreadIds.length>0) {
+                        await sb.from("notifications").update({ read:true }).in("id", unreadIds);
+                        setCustomerNotifs(prev => prev.map(n => ({ ...n, read:true })));
+                      }
+                    }}
                     onProjectOpen={id=>{ setShowInAppNotif(false); handleOpen(id); }}/>
                 )}
               </div>
