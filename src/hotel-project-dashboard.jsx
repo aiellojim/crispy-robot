@@ -3212,17 +3212,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
             )}
             <NavRow onBack={()=>setStep(4)}/>
-        {/* CustomerAccessPanel */}
-        {showCustomerAccess && (
-          <CustomerAccessPanel
-            hotelId={info.hotelId}
-            projectId={project.id}
-            session={session}
-            onClose={()=>setShowCustomerAccess(false)}/>
-        )}
           </div>
         )}
       </div>
+      {/* CustomerAccessPanel - content div 後、root div 內 */}
+      {showCustomerAccess && (
+        <CustomerAccessPanel
+          hotelId={info.hotelId}
+          projectId={project.id}
+          session={session}
+          onClose={()=>setShowCustomerAccess(false)}/>
+      )}
     </div>
   );
 };
