@@ -1083,13 +1083,13 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
             <div>
               <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
-              <input type="date" value={draft.period_start} onChange={e=>setDraft(d=>({ ...d, period_start:e.target.value }))} style={{ ...baseInput, borderColor:`${C.green}44`, background:C.greenLight }}
-                onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=`${C.green}44`)}/>
+              <input type="date" value={draft.period_start} onChange={e=>setDraft(d=>({ ...d, period_start:e.target.value }))} style={{ ...baseInput, borderColor:C.border, background:C.greenLight }}
+                onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
             </div>
             <div>
               <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
-              <input type="date" value={draft.period_end} onChange={e=>setDraft(d=>({ ...d, period_end:e.target.value }))} style={{ ...baseInput, borderColor:`${C.purple}44`, background:C.purpleLight }}
-                onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=`${C.purple}44`)}/>
+              <input type="date" value={draft.period_end} onChange={e=>setDraft(d=>({ ...d, period_end:e.target.value }))} style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
+                onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
             </div>
           </div>
         )}
@@ -2394,8 +2394,8 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
                     <input type="date" value={task.period_start||""} onChange={e=>updateTask(task.id,"period_start",e.target.value)}
-                      style={{ ...baseInput, borderColor:`${C.green}44`, background:C.greenLight }}
-                      onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=`${C.green}44`)}/>
+                      style={{ ...baseInput, borderColor:C.border, background:C.greenLight }}
+                      onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                   </div>
                   <div>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
