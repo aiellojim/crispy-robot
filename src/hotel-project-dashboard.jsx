@@ -2424,6 +2424,30 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       fontSize:12, color:C.blue, textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>
                 )}
               </div>
+
+              {/* 客戶可見度 toggle */}
+              <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.border}`,
+                display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600, color:C.text }}>對客戶公開</div>
+                  <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
+                    {task.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => updateTask(task.id, "is_internal", !task.is_internal)}
+                  style={{
+                    position:"relative", width:44, height:24, borderRadius:12, border:"none",
+                    background: task.is_internal ? C.borderMid : C.green,
+                    cursor:"pointer", transition:"background 0.2s", flexShrink:0,
+                  }}>
+                  <div style={{
+                    position:"absolute", top:3, left: task.is_internal ? 3 : 23,
+                    width:18, height:18, borderRadius:"50%", background:"#fff",
+                    transition:"left 0.2s", boxShadow:"0 1px 3px rgba(0,0,0,0.2)",
+                  }}/>
+                </button>
+              </div>
             </Card>
             );
           })}
