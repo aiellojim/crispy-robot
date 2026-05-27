@@ -403,24 +403,51 @@ const SectionCount = ({ title, checked, total, color }) => (
   </div>
 );
 
+// RichText: 支援 markdown 列表（- / 1.）、粗體、斜體、行內代碼、超連結
+function renderRichText(text) {
+  if (!text) return "";
+  // HTML escape
+  let h = text
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  // Markdown links [label](url) → <a>
+  h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+    "<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;font-weight:500">$1</a>");
+  // Headers
+  h = h.replace(/^### (.+)$/gm,"<div style='font-size:13px;font-weight:700;margin:8px 0 3px;color:var(--text)'>$1</div>");
+  h = h.replace(/^## (.+)$/gm, "<div style='font-size:14px;font-weight:700;margin:10px 0 4px;color:var(--text)'>$1</div>");
+  // Lists
+  const lines = h.split("\n"), out = [];
+  let inUL=false, inOL=false;
+  for (const raw of lines) {
+    const ul=raw.match(/^[-•]\s+(.+)$/), ol=raw.match(/^(\d+)\.\s+(.+)$/);
+    if (ul) {
+      if (inOL){out.push("</ol>");inOL=false;}
+      if (!inUL){out.push("<ul style='margin:5px 0;padding-left:0;list-style:none'>");inUL=true;}
+      out.push(`<li style='display:flex;gap:6px;margin:2px 0'><span style='color:var(--text-subtle);flex-shrink:0'>·</span><span>${ul[1]}</span></li>`);
+    } else if (ol) {
+      if (inUL){out.push("</ul>");inUL=false;}
+      if (!inOL){out.push("<ol style='margin:5px 0;padding-left:18px'>");inOL=true;}
+      out.push(`<li style='margin:2px 0'>${ol[2]}</li>`);
+    } else {
+      if (inUL){out.push("</ul>");inUL=false;}
+      if (inOL){out.push("</ol>");inOL=false;}
+      out.push(raw===""?"<br/>":raw);
+    }
+  }
+  if (inUL) out.push("</ul>");
+  if (inOL) out.push("</ol>");
+  h = out.join("\n");
+  // Inline
+  h = h.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+  h = h.replace(/\*([^*\n]+?)\*/g,"<em>$1</em>");
+  h = h.replace(/`([^`\n]+)`/g,"<code style='background:var(--surface-raised);padding:1px 5px;border-radius:4px;font-family:DM Mono,monospace;font-size:0.88em'>$1</code>");
+  h = h.replace(/([^\n])\n([^\n<])/g,"$1<br/>$2");
+  return h;
+}
+
 const RichText = ({ text, style:s={} }) => {
   if (!text) return null;
-  const parts=[], re=/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
-  let last=0, m;
-  while ((m=re.exec(text))!==null) {
-    if (m.index>last) parts.push({ t:"text", v:text.slice(last,m.index) });
-    parts.push({ t:"link", label:m[1], href:m[2] });
-    last=m.index+m[0].length;
-  }
-  if (last<text.length) parts.push({ t:"text", v:text.slice(last) });
-  return (
-    <div style={{ whiteSpace:"pre-wrap", lineHeight:1.7, ...s }}>
-      {parts.map((p,i) => p.t==="link"
-        ? <a key={i} href={p.href} target="_blank" rel="noreferrer" style={{ color:"var(--accent)", textDecoration:"underline", fontWeight:500 }}>{p.label}</a>
-        : <span key={i}>{p.v}</span>
-      )}
-    </div>
-  );
+  return <div style={{ lineHeight:1.7, ...s }} dangerouslySetInnerHTML={{ __html: renderRichText(text) }}/>;
 };
 
 const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="var(--accent)" }) => (
@@ -1641,7 +1668,7 @@ const AiPanel = ({ projects, onClose }) => {
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents,
             generationConfig: {
-            maxOutputTokens: 1024,
+            maxOutputTokens: 8192,
             temperature: 0.4,
             thinkingConfig: { thinkingBudget: 1024 },
           },
@@ -3142,7 +3169,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     {info.integrations.filter(k=>info.integrationNotes[k]).map(k=>(
                       <div key={k} style={{ marginBottom:10, paddingBottom:10, borderBottom:`1px solid ${C.purple}22` }}>
                         <div style={{ fontSize:11, fontWeight:700, color:C.purple, marginBottom:4 }}>{k}</div>
-                        <div style={{ fontSize:13, color:C.textMid, lineHeight:1.6, whiteSpace:"pre-wrap" }}>{info.integrationNotes[k]}</div>
+                        <RichText text={info.integrationNotes[k]} style={{ fontSize:13, color:C.textMid }}/>
                       </div>
                     ))}
                   </div>
@@ -3206,7 +3233,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                             : <><Ico name="repeat" size={10} color="currentColor"/> {task.period_start||"—"} → {task.period_end||"—"}</>}
                         </span>
                       </div>
-                      {task.description&&<div style={{ fontSize:12, color:C.textMid, lineHeight:1.6, marginLeft:34 }}>{task.description}</div>}
+                      {task.description&&<RichText text={task.description} style={{ fontSize:12, color:C.textMid, marginLeft:34 }}/>}
                     </div>
                   ))}
                 </div>
