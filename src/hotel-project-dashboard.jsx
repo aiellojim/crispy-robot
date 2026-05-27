@@ -2502,7 +2502,18 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   const setInfo     = useCallback(fn => setInfoLocal(p=>fn(p)), []);
   const toggleArr   = useCallback((key,val) => setInfo(p=>({ ...p, [key]:p[key].includes(val)?p[key].filter(x=>x!==val):[...p[key],val] })), [setInfo]);
-  const toggleCheck = useCallback((setter,key) => setter(p=>({ ...p, [key]:!p[key] })), []);
+  const toggleCheck = useCallback((setter, key, field) => {
+    setter(p => {
+      const newVal = !p[key];
+      sb.rpc("update_check_item", {
+        p_project_id: project.id,
+        p_field: field,
+        p_key: key,
+        p_value: newVal,
+      }).then(({ error }) => { if (error) console.error("[toggleCheck] RPC error:", error.message); });
+      return { ...p, [key]: newVal };
+    });
+  }, [project.id]); // eslint-disable-line
 
   const bootstrapJira = async () => {
     const hotelName = info.name.trim();
@@ -2952,7 +2963,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <SectionCount title="基礎設定資料表" checked={basicCount} total={BASIC_ITEMS.length} color={C.green}/>
                     {BASIC_ITEMS.map(item=>(
                       <div key={item} style={{ marginBottom:8 }}>
-                        <CheckRow label={item} checked={!!basicChecked[item]} onChange={()=>toggleCheck(setBasicChecked,item)} color={C.green}/>
+                        <CheckRow label={item} checked={!!basicChecked[item]} onChange={()=>toggleCheck(setBasicChecked, item, "basic_checked")} color={C.green}/>
                         <NoteArea value={basicNotes[item]||""} onChange={v=>setBasicNotes(p=>({ ...p, [item]:v }))} focusColor={C.green}/>
                       </div>
                     ))}
@@ -2963,7 +2974,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <Card>
                     <SectionCount title="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA}/>
                     <div style={{ marginBottom:8 }}>
-                      <CheckRow label={ACA_ITEM} checked={!!basicChecked[ACA_ITEM]} onChange={()=>toggleCheck(setBasicChecked,ACA_ITEM)} color={PRODUCT_COLORS.ACA}/>
+                      <CheckRow label={ACA_ITEM} checked={!!basicChecked[ACA_ITEM]} onChange={()=>toggleCheck(setBasicChecked, ACA_ITEM, "basic_checked")} color={PRODUCT_COLORS.ACA}/>
                       <NoteArea value={basicNotes[ACA_ITEM]||""} onChange={v=>setBasicNotes(p=>({ ...p, [ACA_ITEM]:v }))} focusColor={PRODUCT_COLORS.ACA}/>
                     </div>
                     <SheetLink value={sheetLinks[ACA_LINK_KEY]||""} onChange={v=>setSheetLinks(p=>({ ...p, [ACA_LINK_KEY]:v }))} color={PRODUCT_COLORS.ACA}/>
@@ -2974,7 +2985,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <SectionCount title="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>
                     {activeFaq.map(item=>(
                       <div key={item} style={{ marginBottom:8 }}>
-                        <CheckRow label={item} checked={!!faqChecked[item]} onChange={()=>toggleCheck(setFaqChecked,item)} color={C.amber}/>
+                        <CheckRow label={item} checked={!!faqChecked[item]} onChange={()=>toggleCheck(setFaqChecked, item, "faq_checked")} color={C.amber}/>
                         <NoteArea value={faqNotes[item]||""} onChange={v=>setFaqNotes(p=>({ ...p, [item]:v }))} focusColor={C.amber}/>
                       </div>
                     ))}
@@ -3019,7 +3030,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
                       borderRadius:12, marginBottom:12, overflow:"hidden" }}>
                       {/* 卡片 header：點擊切換勾選 */}
-                      <div onClick={()=>toggleCheck(setBatch2Checked,item)}
+                      <div onClick={()=>toggleCheck(setBatch2Checked, item, "batch2_checked")}
                         style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
                         <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
                           border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
@@ -3044,7 +3055,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <div style={{ background:isDone?"var(--purple-subtle)":"var(--surface)",
                       border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
                       borderRadius:12, marginBottom:12, overflow:"hidden" }}>
-                      <div onClick={()=>toggleCheck(setBatch2Checked,GW_ITEM)}
+                      <div onClick={()=>toggleCheck(setBatch2Checked, GW_ITEM, "batch2_checked")}
                         style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
                         <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
                           border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
@@ -3556,7 +3567,13 @@ export default function App() {
       try {
         const { project, progress } = uiToDb(updated);
         const { error:e1 } = await sb.from("projects").upsert(project); if (e1) throw e1;
-        const { error:e2 } = await sb.from("project_progress").upsert(progress,{ onConflict:"project_id" }); if (e2) throw e2;
+        const { error:e2 } = await sb.from("project_progress").upsert({
+          project_id:    progress.project_id,
+          basic_notes:   progress.basic_notes,
+          faq_notes:     progress.faq_notes,
+          batch2_notes:  progress.batch2_notes,
+          sheet_links:   progress.sheet_links,
+        }, { onConflict:"project_id" }); if (e2) throw e2;
       } catch(err) { setError("儲存失敗："+(err.message??err)); }
     }, 800);
   }, []);
