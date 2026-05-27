@@ -1664,7 +1664,7 @@ const AiPanel = ({ projects, onClose }) => {
 
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1674,14 +1674,13 @@ const AiPanel = ({ projects, onClose }) => {
             generationConfig: {
             maxOutputTokens: 8192,
             temperature: 0.4,
-            thinkingConfig: { thinkingBudget: 8192 },
+            thinkingConfig: { thinkingBudget: 1024 },
           },
           }),
         }
       );
       const data = await res.json();
-      const parts = data?.candidates?.[0]?.content?.parts ?? [];
-      const reply = parts.find(p => !p.thought)?.text ?? parts[0]?.text ?? "（AI 無回應，請確認 API Key）";
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "（AI 無回應，請確認 API Key）";
       setMsgs(prev => [...prev, { role:"model", text: reply }]);
     } catch(e) {
       setMsgs(prev => [...prev, { role:"model", text: "⚠️ 呼叫 AI 失敗：" + e.message }]);
@@ -1712,7 +1711,7 @@ const AiPanel = ({ projects, onClose }) => {
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>AI 助理</div>
-              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 2.5 Flash</div>
+              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.1 Flash Lite</div>
             </div>
           </div>
           <button onClick={onClose}
