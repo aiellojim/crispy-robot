@@ -2480,6 +2480,19 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   useEffect(() => {
     (async()=>{
+      // ── 進入頁面時從 DB 拉最新 progress（確保看到客戶最新勾選狀態）──
+      const { data: prog } = await sb
+        .from("project_progress")
+        .select("basic_checked, faq_checked, batch2_checked")
+        .eq("project_id", project.id)
+        .maybeSingle();
+      if (prog) {
+        if (prog.basic_checked)  setBasicChecked(prev  => ({ ...prev,  ...prog.basic_checked  }));
+        if (prog.faq_checked)    setFaqChecked(prev    => ({ ...prev,  ...prog.faq_checked    }));
+        if (prog.batch2_checked) setBatch2Checked(prev => ({ ...prev,  ...prog.batch2_checked }));
+      }
+
+      // ── Push subscription 恢復 ──────────────────────────────────────
       if (!("serviceWorker" in navigator)) return;
       const reg = await navigator.serviceWorker.getRegistration("/sw.js");
       if (!reg) return;
@@ -2488,7 +2501,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
       const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
       if (data) setProjSub(data);
     })();
-  }, [project.id]);
+  }, [project.id]); // eslint-disable-line
 
   useEffect(() => {
     setSaveStatus("saving");
