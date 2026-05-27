@@ -1674,13 +1674,14 @@ const AiPanel = ({ projects, onClose }) => {
             generationConfig: {
             maxOutputTokens: 8192,
             temperature: 0.4,
-            thinkingConfig: { thinkingBudget: 1024 },
+            thinkingConfig: { thinkingBudget: 8192 },
           },
           }),
         }
       );
       const data = await res.json();
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "（AI 無回應，請確認 API Key）";
+      const parts = data?.candidates?.[0]?.content?.parts ?? [];
+      const reply = parts.find(p => !p.thought)?.text ?? parts[0]?.text ?? "（AI 無回應，請確認 API Key）";
       setMsgs(prev => [...prev, { role:"model", text: reply }]);
     } catch(e) {
       setMsgs(prev => [...prev, { role:"model", text: "⚠️ 呼叫 AI 失敗：" + e.message }]);
