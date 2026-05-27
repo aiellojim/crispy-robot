@@ -411,7 +411,7 @@ function renderRichText(text) {
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   // Markdown links [label](url) → <a>
   h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    "<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;font-weight:500">$1</a>");
+    '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;font-weight:500">$1</a>');
   // Headers
   h = h.replace(/^### (.+)$/gm,"<div style='font-size:13px;font-weight:700;margin:8px 0 3px;color:var(--text)'>$1</div>");
   h = h.replace(/^## (.+)$/gm, "<div style='font-size:14px;font-weight:700;margin:10px 0 4px;color:var(--text)'>$1</div>");
