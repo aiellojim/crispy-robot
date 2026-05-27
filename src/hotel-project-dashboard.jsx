@@ -359,6 +359,7 @@ const ICONS = {
   pencil:     "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z",
   sparkle:     "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
   building:    "M3 21h18 M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16 M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4 M9 7h1 M14 7h1 M9 11h1 M14 11h1",
+  mail:         "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6",
   package:     "M16.5 9.4l-9-5.19 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96L12 12.01l8.73-5.05 M12 22.08V12",
   fileText:    "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
   bellOff:     "M13.73 21a2 2 0 0 1-3.46 0 M18.63 13A17.89 17.89 0 0 1 18 8 M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14 M18 8a6 6 0 0 0-9.33-5 M1 1l22 22",
@@ -1410,7 +1411,10 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
       {/* Project grid */}
       {filtered.length===0 ? (
         <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
-          <div style={{ fontSize:40, marginBottom:12 }}>🏨</div>
+          <div style={{ width:52, height:52, borderRadius:14, background:"var(--accent-subtle)",
+            display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px" }}>
+            <Ico name="building" size={26} color="var(--accent)"/>
+          </div>
           <div style={{ fontSize:15, fontWeight:500 }}>
             {projects.length===0 ? "尚無專案，點擊右上角「新增專案」開始" : "找不到符合條件的專案"}
           </div>
@@ -3289,7 +3293,10 @@ const LoginPage = ({ theme, setTheme }) => {
       <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
         padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
         boxShadow:"0 4px 24px rgba(0,0,0,0.08)" }}>
-        <div style={{ fontSize:36, marginBottom:14 }}>🏨</div>
+        <div style={{ width:56, height:56, borderRadius:14, background:"var(--accent)",
+          display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+          <Ico name="building" size={26} color="#fff"/>
+        </div>
         <h1 style={{ fontSize:20, fontWeight:700, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
         <p style={{ fontSize:13, color:"var(--text-mid)", margin:"0 0 28px" }}>輸入公司 email 以收取登入連結</p>
         {!sent ? (<>
@@ -3308,7 +3315,11 @@ const LoginPage = ({ theme, setTheme }) => {
           </button>
         </>) : (
           <div style={{ animation:"fadeIn 0.3s ease" }}>
-            <div style={{ fontSize:40, marginBottom:14 }}>📬</div>
+            <div style={{ width:56, height:56, borderRadius:14, background:"var(--green-light)",
+              border:"2px solid var(--green)", display:"flex", alignItems:"center",
+              justifyContent:"center", margin:"0 auto 14px" }}>
+              <Ico name="mail" size={24} color="var(--green)"/>
+            </div>
             <p style={{ fontSize:14, color:"var(--text-mid)", lineHeight:1.8 }}>
               登入連結已寄至<br/>
               <strong style={{ color:"var(--text)" }}>{email}</strong><br/>
