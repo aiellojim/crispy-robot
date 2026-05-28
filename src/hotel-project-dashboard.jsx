@@ -246,7 +246,7 @@ const dbToUi = (row, prog) => ({
   info: {
     name: row.name ?? "", hotelId: row.hotel_id ?? "",
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
-    products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "",
+    products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -268,7 +268,7 @@ const uiToDb = (p) => ({
   project: {
     id: p.id, name: p.info.name, hotel_id: p.info.hotelId,
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
-    products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare,
+    products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -285,7 +285,7 @@ const newProject = () => ({
   id: crypto.randomUUID(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -2102,6 +2102,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
       integrations: projectInfo?.integrations ?? [],
       avaUnits:     projectInfo?.avaUnits     ?? "",
       avaSpare:     projectInfo?.avaSpare     ?? "",
+      avtUnits:     projectInfo?.avtUnits     ?? "",
     }, accessToken);
     if (data.success) setDescSuccess(true);
     else setError("更新 Epic Description 失敗，請稍後再試。");
@@ -2938,12 +2939,32 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:14 }}>
                 {PRODUCTS.map(p=><Chip key={p} label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.blue} onClick={()=>toggleArr("products",p)}/>)}
               </div>
-              {info.products.includes("AVA")&&(
+              {/* AVA only → blue box */}
+              {info.products.includes("AVA")&&!info.products.includes("AVT")&&(
                 <div style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, padding:16 }}>
                   <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVA 機台數量</div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                     <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                     <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
+                  </div>
+                </div>
+              )}
+              {/* AVT（含 AVA+AVT）→ orange box */}
+              {info.products.includes("AVT")&&(
+                <div style={{ background:C.amberLight, border:`1px solid ${C.amber}44`, borderRadius:12, padding:16 }}>
+                  {info.products.includes("AVA")&&(
+                    <>
+                      <div style={{ fontSize:11, color:C.amber, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVA 機台數量</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+                        <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
+                        <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
+                      </div>
+                      <div style={{ borderTop:`1px solid ${C.amber}33`, marginBottom:16 }}/>
+                    </>
+                  )}
+                  <div style={{ fontSize:11, color:C.amber, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVT 機台數量</div>
+                  <div style={{ maxWidth:"50%" }}>
+                    <FInput label="裝機數量" value={info.avtUnits} onChange={v=>setInfo(p=>({ ...p, avtUnits:v }))} placeholder="例：30" type="number"/>
                   </div>
                 </div>
               )}
@@ -3237,6 +3258,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ["購置產品",info.products.join("、")||"—"],
                     ["串接功能",info.integrations.join("、")||"無"],
                     info.products.includes("AVA")&&["AVA 裝機 / 備品",`${info.avaUnits||"—"} / ${info.avaSpare||"—"} 台`],
+                    info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
                     ["第一批資料期限",info.batch1Deadline||"—"],
                     ["第二批資料期限",info.batch2Deadline||"—"],
                   ].filter(Boolean).map(([k,v])=>(
