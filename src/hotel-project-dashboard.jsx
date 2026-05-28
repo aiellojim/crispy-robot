@@ -952,11 +952,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
   const [expandedPos, setExpandedPos] = useState(null);
   const gridRef = useRef(null);
   const [modal,       setModal]       = useState(null);
-  const [draft,       setDraft]       = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"", url:"" });
+  const [draft,       setDraft]       = useState({ projectId:"", name:"", description:"", type:"deadline", deadline:"", period_start:"", period_end:"", url:"", is_internal:true });
   const [saving,      setSaving]      = useState(false);
 
-  const openAddModal  = (dateStr) => { setDraft({ projectId:projects[0]?.id||"", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"" }); setModal({ mode:"add", date:dateStr }); };
-  const openEditModal = (task)    => { setDraft({ projectId:task.project_id, name:task.name, description:task.description||"", type:task.type, deadline:task.deadline||"", period_start:task.period_start||"", period_end:task.period_end||"", url:task.url||"", taskId:task.id }); setModal({ mode:"edit", date:task.deadline||task.period_start||task.period_end||"" }); };
+  const openAddModal  = (dateStr) => { setDraft({ projectId:projects[0]?.id||"", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"", is_internal:true }); setModal({ mode:"add", date:dateStr }); };
+  const openEditModal = (task)    => { setDraft({ projectId:task.project_id, name:task.name, description:task.description||"", type:task.type, deadline:task.deadline||"", period_start:task.period_start||"", period_end:task.period_end||"", url:task.url||"", is_internal:task.is_internal??true, taskId:task.id }); setModal({ mode:"edit", date:task.deadline||task.period_start||task.period_end||"" }); };
   const closeModal    = ()        => { setModal(null); setSaving(false); };
 
   const deleteTask = async (taskId) => {
@@ -970,11 +970,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
     if (!draft.projectId || !draft.name.trim()) return;
     setSaving(true);
     if (modal.mode==="add") {
-      const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
+      const task = { id:crypto.randomUUID(), project_id:draft.projectId, name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"", is_internal:draft.is_internal??true };
       const { error } = await sb.from("tasks").insert(task);
       if (!error) onTaskAdded(task, false);
     } else {
-      const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"" };
+      const updates = { name:draft.name.trim(), description:draft.description, type:draft.type, deadline:draft.type==="deadline"?(draft.deadline||null):null, period_start:draft.type==="period"?(draft.period_start||null):null, period_end:draft.type==="period"?(draft.period_end||null):null, url:draft.url||"", is_internal:draft.is_internal??true };
       await sb.from("tasks").update(updates).eq("id", draft.taskId);
       onTaskAdded({ ...updates, id:draft.taskId, project_id:draft.projectId }, true);
     }
@@ -1093,6 +1093,24 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
             </div>
           </div>
         )}
+        {/* is_internal toggle */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"14px 0", borderTop:`1px solid ${C.border}`, marginBottom:4 }}>
+          <div>
+            <div style={{ fontSize:12, fontWeight:600, color:C.text }}>對客戶公開</div>
+            <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
+              {draft.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
+            </div>
+          </div>
+          <button onClick={()=>setDraft(d=>({ ...d, is_internal:!d.is_internal }))}
+            style={{ position:"relative", width:44, height:24, borderRadius:12, border:"none",
+              background:draft.is_internal?C.borderMid:C.green, cursor:"pointer",
+              transition:"background 0.2s", flexShrink:0 }}>
+            <div style={{ position:"absolute", top:3, left:draft.is_internal?3:23, width:18, height:18,
+              borderRadius:"50%", background:"#fff", transition:"left 0.2s",
+              boxShadow:"0 1px 3px rgba(0,0,0,0.2)" }}/>
+          </button>
+        </div>
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
           <button onClick={closeModal} style={{ background:C.white, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving}
@@ -1622,25 +1640,55 @@ function renderMarkdown(md) {
   return h;
 }
 
-const AiPanel = ({ projects, onClose }) => {
+const AiPanel = ({ projects, allTasks, onClose }) => {
   const [msgs,   setMsgs]   = useState([]);
   const [input,  setInput]  = useState("");
   const [busy,   setBusy]   = useState(false);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
-  // Build project context summary once
+  // Build project context summary — projects + progress + tasks
   const projectCtx = useMemo(() => {
     if (!projects.length) return "（目前無專案資料）";
     return projects.map(p => {
-      const pct  = calcPct(p);
-      const tags = [...p.info.products, ...p.info.integrations].join(",") || "無";
-      const dl1  = p.info.batch1Deadline ? `第一批期限:${p.info.batch1Deadline}` : "";
-      const dl2  = p.info.batch2Deadline ? `第二批期限:${p.info.batch2Deadline}` : "";
-      const launch = p.info.launchDate ? `上線:${p.info.launchDate}` : "";
-      return `[${p.info.name||"未命名"}] ID:${p.info.hotelId||"-"} PIC:${p.info.pic||"-"} ${tags} 完成度:${pct}% ${[launch,dl1,dl2].filter(Boolean).join(" ")}`;
-    }).join("\n");
-  }, [projects]);
+      const pct    = calcPct(p);
+      const prods  = p.info.products.join(",") || "無";
+      const intgs  = p.info.integrations.join(",") || "無";
+      const launch = p.info.launchDate    ? `上線:${p.info.launchDate}`          : "";
+      const dl1    = p.info.batch1Deadline? `第一批期限:${p.info.batch1Deadline}` : "";
+      const dl2    = p.info.batch2Deadline? `第二批期限:${p.info.batch2Deadline}` : "";
+
+      // Checklist progress
+      const bc = p.basicChecked  ?? {};
+      const fc = p.faqChecked    ?? {};
+      const b2 = p.batch2Checked ?? {};
+      const uncheckedBasic  = BASIC_ITEMS.filter(k => !bc[k]);
+      const uncheckedFaq    = FAQ_ITEMS.filter(k => !fc[k]);
+      const uncheckedBatch2 = [...BATCH2_ITEMS, GW_ITEM].filter(k => !b2[k]);
+
+      // Tasks for this project
+      const projTasks = (allTasks ?? []).filter(t => t.project_id === p.id);
+      const taskSummary = projTasks.length
+        ? projTasks.map(t => {
+            const dateStr = t.type === "deadline"
+              ? (t.deadline ? `截止:${t.deadline}` : "")
+              : [t.period_start && `開始:${t.period_start}`, t.period_end && `結束:${t.period_end}`].filter(Boolean).join(" ");
+            const vis = t.is_internal ? "內部" : "客戶可見";
+            return `  任務[${t.name||"未命名"}] ${dateStr} ${vis}${t.description ? ` 說明:${t.description}` : ""}`;
+          }).join("\n")
+        : "  （無任務）";
+
+      return [
+        `【${p.info.name||"未命名"}】 ID:${p.info.hotelId||"-"} PIC:${p.info.pic||"-"}`,
+        `  產品:${prods} 串接:${intgs} 完成度:${pct}%`,
+        `  ${[launch,dl1,dl2].filter(Boolean).join(" ")}`,
+        uncheckedBasic.length  ? `  基礎設定未完成(${uncheckedBasic.length}):${uncheckedBasic.join("、")}` : "  基礎設定:全部完成",
+        uncheckedFaq.length    ? `  FAQ未完成(${uncheckedFaq.length}):${uncheckedFaq.join("、")}` : "  FAQ:全部完成",
+        uncheckedBatch2.length ? `  第二批未完成(${uncheckedBatch2.length}):${uncheckedBatch2.join("、")}` : "  第二批:全部完成",
+        `  任務列表:\n${taskSummary}`,
+      ].join("\n");
+    }).join("\n\n");
+  }, [projects, allTasks]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior:"smooth" });
@@ -3798,7 +3846,7 @@ export default function App() {
       )}
 
       {/* AI Panel */}
-      {showAi && <AiPanel projects={projects} onClose={()=>setShowAi(false)}/>}
+      {showAi && <AiPanel projects={projects} allTasks={allTasks} onClose={()=>setShowAi(false)}/>}
 
       {/* Content */}
       {isDetailView
