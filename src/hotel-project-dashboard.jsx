@@ -2081,6 +2081,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
   const [updating,    setUpdating]    = useState({});
   const [descLoading, setDescLoading] = useState(false);
   const [descSuccess, setDescSuccess] = useState(false);
+  const [hotelIdCopied, setHotelIdCopied] = useState(false);
 
   const fetchIssues = async () => {
     if (!epicId) return;
@@ -3250,8 +3251,26 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               <Card>
                 <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
+                  {/* Hotel ID 獨立格：帶複製按鈕 */}
+                  {info.hotelId&&(
+                    <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Hotel ID</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                        <div style={{ fontSize:14, color:C.text, fontWeight:500 }}>{info.hotelId}</div>
+                        <button
+                          onClick={()=>{ navigator.clipboard.writeText(info.hotelId); setHotelIdCopied(true); setTimeout(()=>setHotelIdCopied(false),1500); }}
+                          title="複製 Hotel ID"
+                          style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:hotelIdCopied?C.green:C.textLight, transition:"color 0.2s" }}>
+                          {hotelIdCopied
+                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {[
-                    ["飯店名稱",info.name],["Hotel ID",info.hotelId||"—"],
+                    ["飯店名稱",info.name],
                     ["負責人（PIC）",info.pic||"—"],["地址",info.address],
                     ["所在國家",info.region==="其他"?(info.regionOther||"其他"):info.region],
                     ["上線日期",info.launchDate||"—"],
