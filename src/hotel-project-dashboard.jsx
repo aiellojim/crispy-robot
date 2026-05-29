@@ -2081,7 +2081,6 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
   const [updating,    setUpdating]    = useState({});
   const [descLoading, setDescLoading] = useState(false);
   const [descSuccess, setDescSuccess] = useState(false);
-  const [hotelIdCopied, setHotelIdCopied] = useState(false);
 
   const fetchIssues = async () => {
     if (!epicId) return;
@@ -3258,18 +3257,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                         <div style={{ fontSize:14, color:C.text, fontWeight:500 }}>{info.hotelId}</div>
                         <button
-                          onClick={()=>{
+                          onClick={(e)=>{
                             navigator.clipboard.writeText(info.hotelId);
-                            setHotelIdCopied(true);
-                            setTimeout(()=>setHotelIdCopied(false), 1500);
+                            const btn = e.currentTarget;
+                            btn.style.color = "var(--green)";
+                            setTimeout(()=>{ btn.style.color = ""; }, 1500);
                           }}
                           title="複製 Hotel ID"
-                          style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:hotelIdCopied ? "var(--green)" : C.textLight, transition:"color 0.2s" }}>
+                          style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            {hotelIdCopied
-                              ? <polyline points="20 6 9 17 4 12"/>
-                              : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>
-                            }
+                            <rect x="9" y="9" width="13" height="13" rx="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                           </svg>
                         </button>
                       </div>
