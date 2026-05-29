@@ -3258,13 +3258,19 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                         <div style={{ fontSize:14, color:C.text, fontWeight:500 }}>{info.hotelId}</div>
                         <button
-                          onClick={()=>{ navigator.clipboard.writeText(info.hotelId); setHotelIdCopied(true); setTimeout(()=>setHotelIdCopied(false),1500); }}
+                          onClick={()=>{
+                            navigator.clipboard.writeText(info.hotelId);
+                            setHotelIdCopied(true);
+                            setTimeout(()=>setHotelIdCopied(false), 1500);
+                          }}
                           title="複製 Hotel ID"
-                          style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:hotelIdCopied?C.green:C.textLight, transition:"color 0.2s" }}>
-                          {hotelIdCopied
-                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                          }
+                          style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:hotelIdCopied ? "var(--green)" : C.textLight, transition:"color 0.2s" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            {hotelIdCopied
+                              ? <polyline points="20 6 9 17 4 12"/>
+                              : <><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>
+                            }
+                          </svg>
                         </button>
                       </div>
                     </div>
