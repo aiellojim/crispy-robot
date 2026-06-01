@@ -1312,6 +1312,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
   const [picFilter,     setPicFilter]     = useState("all");
   const [sortBy,        setSortBy]        = useState("created_desc");
   const [showNotif,     setShowNotif]     = useState(false);
+  const [overdueFilter, setOverdueFilter] = useState(false);
+  const [soonFilter,    setSoonFilter]    = useState(false);
+  const [doneFilter,    setDoneFilter]    = useState(false);
 
   const regionOptions = useMemo(() => {
     const s = new Set(projects.map(p => p.info.region==="其他"?(p.info.regionOther||"其他"):p.info.region).filter(Boolean));
@@ -1328,6 +1331,12 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
     ...PRODUCTS.map(p=>({ value:p, label:p })),
   ];
 
+  const isOverdue = (p) => {
+    if (calcPct(p)===100) return false;
+    const d1=daysUntil(p.info.batch1Deadline), d2=daysUntil(p.info.batch2Deadline);
+    return (d1!==null&&d1<0)||(d2!==null&&d2<0);
+  };
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     const list = projects.filter(p => {
@@ -1335,7 +1344,10 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
       return p.info.name.toLowerCase().includes(q)
         && (regionFilter==="all"  || rd===regionFilter)
         && (productFilter==="all" || p.info.products.includes(productFilter))
-        && (picFilter==="all"     || p.info.pic===picFilter);
+        && (picFilter==="all"     || p.info.pic===picFilter)
+        && (!overdueFilter        || isOverdue(p))
+        && (!soonFilter           || (() => { const d=daysUntil(p.info.launchDate); return d!==null&&d>=0&&d<=30; })())
+        && (!doneFilter           || calcPct(p)===100);
     });
     return [...list].sort((a,b) => {
       if (sortBy==="created_desc") return b.id>a.id?1:-1;
@@ -1345,7 +1357,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
       if (sortBy==="launch_desc") return !al?1:!bl?-1:bl.localeCompare(al);
       return 0;
     });
-  }, [projects, search, regionFilter, productFilter, picFilter, sortBy]);
+  }, [projects, search, regionFilter, productFilter, picFilter, sortBy, overdueFilter, soonFilter, doneFilter]);
 
   const overdueCount = projects.filter(p => {
     if (calcPct(p)===100) return false;
@@ -1357,18 +1369,23 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
 
   const stats = [
     { label:"專案總數",         value:projects.length, icon:"folder",  color:"var(--accent)",  sub:"所有專案" },
-    { label:"逾期未完成",       value:overdueCount,    icon:"warning", color:overdueCount>0?"var(--red)":"var(--green)", sub:overdueCount>0?"需立即處理":"目前正常" },
-    { label:"即將上線", value:soonCount,       icon:"rocket",  color:"var(--amber)",   sub:"預計 30 天內上線" },
-    { label:"已完成資料",       value:doneCount,       icon:"check",   color:"var(--purple)",  sub:"資料已搜集完成" },
+    { label:"逾期未完成",       value:overdueCount,    icon:"warning", color:overdueCount>0?"var(--red)":"var(--green)", sub:overdueCount>0?"需立即處理":"目前正常", onClick:overdueCount>0?()=>setOverdueFilter(v=>!v):undefined, isActive:overdueFilter },
+    { label:"即將上線", value:soonCount,       icon:"rocket",  color:"var(--amber)",   sub:"預計 30 天內上線", onClick:soonCount>0?()=>setSoonFilter(v=>!v):undefined, isActive:soonFilter },
+    { label:"已完成資料",       value:doneCount,       icon:"check",   color:"var(--purple)",  sub:"資料已搜集完成", onClick:doneCount>0?()=>setDoneFilter(v=>!v):undefined, isActive:doneFilter },
   ];
 
   return (
     <div style={{ padding:"28px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
       {/* Stat cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
-        {stats.map(({ label, value, icon, color, sub }) => (
-          <div key={label} style={{ background:"var(--surface)", border:"1px solid var(--border)",
-            borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease" }}>
+        {stats.map(({ label, value, icon, color, sub, onClick, isActive }) => (
+          <div key={label} onClick={onClick}
+            style={{ background:"var(--surface)",
+              border:`1px solid ${isActive ? color : "var(--border)"}`,
+              borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease",
+              cursor:onClick?"pointer":"default",
+              boxShadow:isActive?`0 0 0 3px ${color}22`:"none",
+              transition:"border-color 0.2s, box-shadow 0.2s" }}>
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
               <span style={{ fontSize:12, color:"var(--text-mid)", fontWeight:500, lineHeight:1.4 }}>{label}</span>
               <div style={{ width:32, height:32, borderRadius:8, background:color+"15",
@@ -1378,7 +1395,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
             </div>
             <div style={{ fontSize:32, fontWeight:700, color, fontFamily:"'DM Mono',monospace",
               letterSpacing:-1, marginBottom:4 }}>{value}</div>
-            <div style={{ fontSize:11, color:"var(--text-subtle)" }}>{sub}</div>
+            <div style={{ fontSize:11, color:"var(--text-subtle)" }}>
+              {isActive ? "點擊取消篩選" : sub}
+            </div>
           </div>
         ))}
       </div>
