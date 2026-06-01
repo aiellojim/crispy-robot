@@ -1357,7 +1357,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
       if (sortBy==="launch_desc") return !al?1:!bl?-1:bl.localeCompare(al);
       return 0;
     });
-  }, [projects, search, regionFilter, productFilter, picFilter, sortBy]);
+  }, [projects, search, regionFilter, productFilter, picFilter, sortBy, overdueFilter, soonFilter, doneFilter]);
 
   const overdueCount = projects.filter(p => {
     if (calcPct(p)===100) return false;
