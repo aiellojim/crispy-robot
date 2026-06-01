@@ -1698,6 +1698,15 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
           }).join("\n")
         : "  （無任務）";
 
+      // 備注（只帶有內容的）
+      const notesLines = [
+        p.info.notes && `  專案備注:${p.info.notes}`,
+        ...p.info.integrations.filter(k=>p.info.integrationNotes?.[k]).map(k=>`  串接備注[${k}]:${p.info.integrationNotes[k]}`),
+        ...Object.entries(p.basicNotes??{}).filter(([,v])=>v).map(([k,v])=>`  基礎設定備注[${k}]:${v}`),
+        ...Object.entries(p.faqNotes??{}).filter(([,v])=>v).map(([k,v])=>`  FAQ備注[${k}]:${v}`),
+        ...Object.entries(p.batch2Notes??{}).filter(([,v])=>v).map(([k,v])=>`  第二批備注[${k}]:${v}`),
+      ].filter(Boolean);
+
       return [
         `【${p.info.name||"未命名"}】 ID:${p.info.hotelId||"-"} PIC:${p.info.pic||"-"}`,
         `  產品:${prods} 串接:${intgs} 完成度:${pct}%`,
@@ -1705,8 +1714,9 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
         uncheckedBasic.length  ? `  基礎設定未完成(${uncheckedBasic.length}):${uncheckedBasic.join("、")}` : "  基礎設定:全部完成",
         uncheckedFaq.length    ? `  FAQ未完成(${uncheckedFaq.length}):${uncheckedFaq.join("、")}` : "  FAQ:全部完成",
         uncheckedBatch2.length ? `  第二批未完成(${uncheckedBatch2.length}):${uncheckedBatch2.join("、")}` : "  第二批:全部完成",
+        notesLines.length ? notesLines.join("\n") : "",
         `  任務列表:\n${taskSummary}`,
-      ].join("\n");
+      ].filter(l=>l!=="").join("\n");
     }).join("\n\n");
   }, [projects, allTasks]);
 
