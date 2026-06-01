@@ -1664,7 +1664,8 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   const [input,  setInput]  = useState("");
   const [busy,   setBusy]   = useState(false);
   const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  const inputRef    = useRef(null);
+  const composingRef = useRef(false);
 
   // Build project context summary — projects + progress + tasks
   const projectCtx = useMemo(() => {
@@ -1759,7 +1760,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   const send = () => sendText(input);
 
   const handleKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
+    if (e.key === "Enter" && !e.shiftKey && !composingRef.current) { e.preventDefault(); send(); }
   };
 
   return (
@@ -1857,6 +1858,8 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
             onFocusCapture={e=>e.currentTarget.style.borderColor="var(--accent)"}
             onBlurCapture={e=>e.currentTarget.style.borderColor="var(--border)"}>
             <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+              onCompositionStart={()=>{ composingRef.current = true; }}
+              onCompositionEnd={()=>{ composingRef.current = false; }}
               onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={2}
               disabled={!GEMINI_API_KEY}
               style={{ display:"block", width:"100%", border:"none", background:"transparent",
