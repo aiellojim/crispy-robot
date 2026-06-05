@@ -141,8 +141,7 @@ const GLOBAL_CSS = `
 
   *, *::before, *::after { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
-    font-family: 'Inter', 'Noto Sans TC', sans-serif; font-weight: 400; }
-  :lang(zh), :lang(zh-TW) { font-family: 'Noto Sans TC', 'Inter', sans-serif; font-weight: 300; }
+    font-family: 'Noto Sans TC', 'Inter', sans-serif; font-weight: 300; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
