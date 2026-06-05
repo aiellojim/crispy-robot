@@ -308,8 +308,8 @@ const ProgressCard = ({ label, checked, total, color }) => {
     <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
       padding:"16px 20px", flex:1, minWidth:150 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-        <span style={{ fontSize:11, letterSpacing:1.2, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:600 }}>{label}</span>
-        <span style={{ fontSize:13, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{pct}%</span>
+        <span style={{ fontSize:11, letterSpacing:1.2, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:500 }}>{label}</span>
+        <span style={{ fontSize:13, fontWeight:600, color, fontFamily:"'DM Mono',monospace" }}>{pct}%</span>
       </div>
       <LinearProgress pct={pct} color={color}/>
       <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
@@ -388,16 +388,16 @@ const Card = ({ children, style={} }) => (
 
 const SectionLabel = ({ title, icon, color="var(--accent)" }) => (
   <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12,
-    display:"flex", alignItems:"center", gap:6, fontWeight:600 }}>
+    display:"flex", alignItems:"center", gap:6, fontWeight:500 }}>
     {icon && <Ico name={icon} size={12} color="currentColor"/>}{title}
   </div>
 );
 
 const SectionCount = ({ title, checked, total, color }) => (
   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-    <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>{title}</div>
+    <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>{title}</div>
     <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"4px 12px", background:"var(--surface-raised)" }}>
-      <span style={{ fontSize:16, fontWeight:700, color, fontFamily:"'DM Mono',monospace" }}>{checked}</span>
+      <span style={{ fontSize:16, fontWeight:600, color, fontFamily:"'DM Mono',monospace" }}>{checked}</span>
       <span style={{ fontSize:12, color:"var(--text-subtle)" }}>/{total}</span>
     </div>
   </div>
@@ -413,8 +413,8 @@ function renderRichText(text) {
   h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;font-weight:500">$1</a>');
   // Headers
-  h = h.replace(/^### (.+)$/gm,"<div style='font-size:13px;font-weight:700;margin:8px 0 3px;color:var(--text)'>$1</div>");
-  h = h.replace(/^## (.+)$/gm, "<div style='font-size:14px;font-weight:700;margin:10px 0 4px;color:var(--text)'>$1</div>");
+  h = h.replace(/^### (.+)$/gm,"<div style='font-size:13px;font-weight:600;margin:8px 0 3px;color:var(--text)'>$1</div>");
+  h = h.replace(/^## (.+)$/gm, "<div style='font-size:14px;font-weight:600;margin:10px 0 4px;color:var(--text)'>$1</div>");
   // Lists
   const lines = h.split("\n"), out = [];
   let inUL=false, inOL=false;
@@ -453,7 +453,7 @@ const RichText = ({ text, style:s={} }) => {
 const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="var(--accent)" }) => (
   <div style={{ marginBottom:16 }}>
     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
-      textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>{label}</label>
+      textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>{label}</label>
     <input type={type} value={value} onChange={e=>onChange(e.target.value)}
       placeholder={placeholder} style={baseInput}
       onFocus={e=>(e.target.style.borderColor=focusColor)}
@@ -480,7 +480,7 @@ const CheckRow = ({ label, checked, onChange, color="var(--green)" }) => (
       border:`1.5px solid ${checked ? "var(--green)" : "var(--border-mid)"}`,
       background: checked ? "var(--green)" : "transparent",
       display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-      {checked && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+      {checked && <span style={{ color:"#fff", fontSize:10, fontWeight:600 }}>✓</span>}
     </div>
     <span style={{ fontSize:13, color: checked ? "var(--text)" : "var(--text-mid)", flex:1 }}>{label}</span>
     {!checked && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500 }}>待完成</span>}
@@ -502,7 +502,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:600 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
+        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:500 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -511,7 +511,7 @@ const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
       {invalid && <div style={{ marginTop:5, fontSize:11, color:"var(--red)" }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
       {!invalid && value && <a href={value} target="_blank" rel="noreferrer"
         style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:7,
-          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>}
+          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:500 }}>↗ 開啟連結</a>}
     </div>
   );
 };
@@ -522,7 +522,7 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
       border:"1px solid var(--border)", borderRadius:8, padding:"9px 20px",
       fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
     {onNext && <button onClick={onNext} style={{ background:nextColor, color:"#fff", border:"none",
-      borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:600,
+      borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:500,
       cursor:"pointer", fontFamily:"inherit" }}>{nextLabel}</button>}
   </div>
 );
@@ -531,7 +531,7 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
 const OvCheckRow = ({ label, checked, note, color }) => (
   <div style={{ borderBottom:"1px solid var(--border)" }}>
     <div style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"7px 0" }}>
-      <span style={{ fontSize:12, color:checked?color:"var(--border-mid)", flexShrink:0, marginTop:2, fontWeight:700 }}>{checked?"✓":"○"}</span>
+      <span style={{ fontSize:12, color:checked?color:"var(--border-mid)", flexShrink:0, marginTop:2, fontWeight:600 }}>{checked?"✓":"○"}</span>
       <div style={{ flex:1, minWidth:0 }}>
         <span style={{ fontSize:12, color:checked?"var(--text)":"var(--text-subtle)", lineHeight:1.5 }}>{label}</span>
         {note && <div style={{ marginTop:4, padding:"5px 9px", background:"var(--bg)",
@@ -544,12 +544,12 @@ const OvCheckRow = ({ label, checked, note, color }) => (
 
 const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
   <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, padding:16 }}>
-    <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:600 }}>{title}</div>
+    <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>{title}</div>
     {children}
     {linkKey && sheetLinks[linkKey] && (
       <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
         style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:12,
-          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:600,
+          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:500,
           background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
           borderRadius:6, padding:"4px 10px" }}>
         <Ico name="link" size={12} color="currentColor"/> 開啟資料表
@@ -564,7 +564,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
     <div style={{ background:done?"var(--purple-subtle)":"transparent",
       border:`1px solid ${done?"var(--purple)":"var(--border)"}`, borderRadius:10, padding:"11px 13px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:(hasNote||sheetLinks[linkKey])?7:0 }}>
-        <span style={{ fontSize:12, color:done?"var(--purple)":"var(--border-mid)", fontWeight:700 }}>{done?"✓":"○"}</span>
+        <span style={{ fontSize:12, color:done?"var(--purple)":"var(--border-mid)", fontWeight:600 }}>{done?"✓":"○"}</span>
         <span style={{ fontSize:13, color:done?"var(--text)":"var(--text-subtle)", fontWeight:done?600:400 }}>{item}</span>
       </div>
       {hasNote && <div style={{ margin:"5px 0 7px 20px", padding:"5px 9px", background:"var(--bg)",
@@ -572,7 +572,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
         lineHeight:1.6, whiteSpace:"pre-wrap" }}>{note}</div>}
       {sheetLinks[linkKey] && <div style={{ marginLeft:20 }}>
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-          style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:600,
+          style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:500,
             background:"var(--purple-subtle)", border:"1px solid var(--purple)",
             borderRadius:5, padding:"2px 9px", display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="link" size={11} color="currentColor"/> 連結</a>
       </div>}
@@ -583,7 +583,7 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
 // Dropdown filter
 const FilterSelect = ({ label, value, onChange, options }) => (
   <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-    {label && <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:600, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>}
+    {label && <label style={{ fontSize:11, color:"var(--text-subtle)", fontWeight:500, letterSpacing:1, textTransform:"uppercase" }}>{label}</label>}
     <select value={value} onChange={e=>onChange(e.target.value)}
       style={{ ...baseInput, width:"auto", minWidth:110, padding:"7px 28px 7px 10px", fontSize:13,
         borderRadius:8, cursor:"pointer", appearance:"none",
@@ -741,7 +741,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
         {/* Header */}
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:16, fontWeight:700, color:C.text }}>通知設定</div>
+            <div style={{ fontSize:16, fontWeight:600, color:C.text }}>通知設定</div>
             <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>Email 提醒</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit" }}>✕</button>
@@ -770,7 +770,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
               </div>
               <button onClick={handleSubscribe} disabled={loading}
                 style={{ width:"100%", padding:"10px 0", background:C.blue, color:"#fff",
-                  border:"none", borderRadius:8, fontSize:14, fontWeight:700,
+                  border:"none", borderRadius:8, fontSize:14, fontWeight:600,
                   cursor:"pointer", fontFamily:"inherit" }}>
                 {loading?"啟用中…":"啟用 Email 提醒"}
               </button>
@@ -786,7 +786,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
               {/* 提醒時機 */}
               <div style={{ marginBottom:20 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>提醒時機</div>
+                <div style={{ fontSize:11, fontWeight:600, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>提醒時機</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {NOTIFY_OPTIONS.map(({ label, value })=>(
                     <button key={value} onClick={()=>handleNotifyDays(value)}
@@ -803,7 +803,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
               {/* 訂閱專案 */}
               <div>
-                <div style={{ fontSize:11, fontWeight:700, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:600, color:C.textMid, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
                   訂閱專案（{(sub.subscribed_projects||[]).length} / {projects.length}）
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
@@ -857,10 +857,10 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>通知</div>
+        <div style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>通知</div>
         {totalBadge>0 && (
           <span style={{ fontSize:11, background:"var(--red-light)", color:"var(--red)",
-            borderRadius:20, padding:"2px 9px", fontWeight:600 }}>
+            borderRadius:20, padding:"2px 9px", fontWeight:500 }}>
             {totalBadge} 筆
           </span>
         )}
@@ -868,7 +868,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
       <div style={{ overflowY:"auto", flex:1 }}>
         {/* 客戶更新 */}
         {customerNotifs.length>0 && (<>
-          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, letterSpacing:"0.08em",
+          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:600, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--accent)" }}>客戶更新</div>
           {customerNotifs.map((n, i) => {
             const p = n.payload ?? {};
@@ -887,7 +887,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
                     : <Ico name="warning" size={15} color="var(--amber)"/>}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
+                  <div style={{ fontSize:13, fontWeight:500, color:"var(--text)",
                     overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {n.projects?.name ?? p.hotel_id}
                   </div>
@@ -905,7 +905,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
         </>)}
         {/* 即將到期 */}
         {urgentNotifs.length>0 && (<>
-          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, letterSpacing:"0.08em",
+          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:600, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--red)" }}>即將到期</div>
           {urgentNotifs.map((n, i) => (
             <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
@@ -916,12 +916,12 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
               <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
                 background:n.days===0?"var(--red-light)":n.days<=2?"var(--amber-light)":"var(--green-light)",
                 display:"flex", alignItems:"center", justifyContent:"center",
-                fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700,
+                fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:600,
                 color:n.days===0?"var(--red)":n.days<=2?"var(--amber)":"var(--green)" }}>
                 {n.days===0?"今天":`${n.days}天`}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)",
+                <div style={{ fontSize:13, fontWeight:500, color:"var(--text)",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.name}</div>
                 <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.label} · {n.date}</div>
@@ -1031,14 +1031,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       <div style={{ background:C.white, borderRadius:14, padding:28, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
-            <h3 style={{ fontSize:18, fontWeight:700, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
+            <h3 style={{ fontSize:18, fontWeight:600, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
             <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
           </div>
           <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit" }}>✕</button>
         </div>
         {modal.mode==="add" && (
           <div style={{ marginBottom:16 }}>
-            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>歸屬專案</label>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>歸屬專案</label>
             <select value={draft.projectId} onChange={e=>setDraft(d=>({ ...d, projectId:e.target.value }))}
               style={{ ...baseInput, padding:"10px 32px 10px 14px", appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", cursor:"pointer" }}
               onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}>
@@ -1047,46 +1047,46 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
           </div>
         )}
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>任務名稱 *</label>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>任務名稱 *</label>
           <input value={draft.name} onChange={e=>setDraft(d=>({ ...d, name:e.target.value }))} placeholder="輸入任務名稱" style={baseInput}
             onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
         </div>
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>內容概述</label>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>內容概述</label>
           <textarea value={draft.description} onChange={e=>setDraft(d=>({ ...d, description:e.target.value }))} placeholder="描述任務目標或相關說明…" rows={3}
             style={{ ...baseInput, resize:"vertical", minHeight:72 }}
             onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
         </div>
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>相關連結（選填）</label>
           <input type="url" value={draft.url} onChange={e=>setDraft(d=>({ ...d, url:e.target.value }))} placeholder="https://…" style={baseInput}
             onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
           {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
         </div>
         <div style={{ marginBottom:16 }}>
-          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
+          <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:500 }}>類型</label>
           <div style={{ display:"flex", gap:8 }}>
             {[{ v:"deadline", ico:"pin", text:"期限" },{ v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text })=>(
               <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.blue:C.border}`, background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:500, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.blue:C.border}`, background:draft.type===v?C.blue:C.white, color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
             ))}
           </div>
         </div>
         {draft.type==="deadline" ? (
           <div style={{ marginBottom:20 }}>
-            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>截止日期</label>
+            <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>截止日期</label>
             <input type="date" value={draft.deadline} onChange={e=>setDraft(d=>({ ...d, deadline:e.target.value }))} style={{ ...baseInput, width:"auto" }}
               onFocus={e=>(e.target.style.borderColor=C.amber)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
           </div>
         ) : (
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
             <div>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
+              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>開始日期</label>
               <input type="date" value={draft.period_start} onChange={e=>setDraft(d=>({ ...d, period_start:e.target.value }))} style={{ ...baseInput, borderColor:C.border, background:C.greenLight }}
                 onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
             </div>
             <div>
-              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
+              <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>結束日期</label>
               <input type="date" value={draft.period_end} onChange={e=>setDraft(d=>({ ...d, period_end:e.target.value }))} style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
                 onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
             </div>
@@ -1096,7 +1096,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
           padding:"14px 0", borderTop:`1px solid ${C.border}`, marginBottom:4 }}>
           <div>
-            <div style={{ fontSize:12, fontWeight:600, color:C.text }}>對客戶公開</div>
+            <div style={{ fontSize:12, fontWeight:500, color:C.text }}>對客戶公開</div>
             <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
               {draft.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
             </div>
@@ -1113,7 +1113,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
           <button onClick={closeModal} style={{ background:C.white, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving}
-            style={{ background:!draft.name.trim()||saving?C.borderMid:C.blue, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:700, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.blue}40`:"none", transition:"all 0.15s" }}>
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.blue, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:600, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.blue}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
           </button>
         </div>
@@ -1129,14 +1129,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
           <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
-          <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
+          <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
           <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
-          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.blue, fontWeight:600 }}>今天</button>
+          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.blue, fontWeight:500 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
           {[{ k:"launch", label:"上線日", ...CAL_COLORS.launch },{ k:"batch", label:"資料期限", ...CAL_COLORS.batch1 },{ k:"task", label:"任務", ...CAL_COLORS.taskDL }].map(({ k, label, bg, text, border })=>(
             <button key={k} onClick={()=>toggleFilter(k)}
-              style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:600, transition:"all 0.15s", background:filters[k]?bg:C.bg, border:`1.5px solid ${filters[k]?border:C.border}`, color:filters[k]?text:C.textLight, opacity:filters[k]?1:0.6 }}>
+              style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:500, transition:"all 0.15s", background:filters[k]?bg:C.bg, border:`1.5px solid ${filters[k]?border:C.border}`, color:filters[k]?text:C.textLight, opacity:filters[k]?1:0.6 }}>
               <span style={{ width:8, height:8, borderRadius:"50%", background:filters[k]?text:C.borderMid, flexShrink:0 }}/>{label}
             </button>
           ))}
@@ -1148,7 +1148,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}>
         <div style={{ background:C.white, borderRadius:12, overflow:"hidden" }}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
-          {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:700, color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>)}
+          {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:600, color:d==="日"?C.red:d==="六"?C.blue:C.textMid }}>{d}</div>)}
         </div>
         {Array.from({ length:cells.length/7 }).map((_,wi)=>(
           <div key={wi} style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:wi<cells.length/7-1?`1px solid ${C.border}`:"none" }}>
@@ -1181,7 +1181,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                       {/* Date + add button */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4, flexShrink:0 }}>
                         {isToday
-                          ? <span style={{ background:C.blue, color:"#fff", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700 }}>{d}</span>
+                          ? <span style={{ background:C.blue, color:"#fff", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:600 }}>{d}</span>
                           : <span style={{ fontSize:13, color:col }}>{d}</span>}
                         {projects.length>0 && (
                           <button onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
@@ -1199,14 +1199,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                             style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", transition:"opacity 0.15s" }}
                             onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
                             onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
-                            <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            <div style={{ fontSize:10, fontWeight:600, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                               {ev.sub}{ev.taskId?" ✎":""}
                             </div>
                             <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>+{dayEvents.length-2} 更多 ↓</div>}
-                        {isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:600 }}>▲ 收起</div>}
+                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:500 }}>+{dayEvents.length-2} 更多 ↓</div>}
+                        {isExpanded && <div style={{ fontSize:10, color:C.blue, padding:"1px 4px", fontWeight:500 }}>▲ 收起</div>}
                       </div>
                     </>
                   )}
@@ -1237,7 +1237,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                       onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
                       onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
                       onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
-                      <div style={{ fontSize:10, fontWeight:700, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {ev.sub}{ev.taskId?" ✎":""}
                       </div>
                       <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
@@ -1264,7 +1264,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
       {/* Event list */}
       {events.length>0 && (
         <div style={{ marginTop:24 }}>
-          <h3 style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:12 }}>本月事件</h3>
+          <h3 style={{ fontSize:15, fontWeight:600, color:C.text, marginBottom:12 }}>本月事件</h3>
           <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden" }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
               <div key={i}
@@ -1272,10 +1272,10 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                   borderBottom:i<arr.length-1?"1px solid var(--border)":"none",
                   borderLeft:`3px solid ${ev.border}`, background:"var(--surface)" }}>
                 {/* 日期 */}
-                <span style={{ fontSize:12, fontWeight:700, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace", flexShrink:0, minWidth:80 }}>{fmtDate(ev.date)}</span>
+                <span style={{ fontSize:12, fontWeight:600, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace", flexShrink:0, minWidth:80 }}>{fmtDate(ev.date)}</span>
                 {/* 專案名稱 + 任務/類型名稱 */}
                 <div style={{ flex:1, minWidth:0, display:"flex", alignItems:"baseline", gap:6, overflow:"hidden" }}>
-                  <span style={{ fontSize:13, fontWeight:700, color:"var(--text)", flexShrink:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"55%" }}>{ev.label}</span>
+                  <span style={{ fontSize:13, fontWeight:600, color:"var(--text)", flexShrink:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:"55%" }}>{ev.label}</span>
                   <span style={{ fontSize:12, color:"var(--text-subtle)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.sub}</span>
                 </div>
                 {/* 任務操作按鈕 */}
@@ -1392,7 +1392,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                 <Ico name={icon} size={16} color={color} strokeWidth={1.8}/>
               </div>
             </div>
-            <div style={{ fontSize:32, fontWeight:700, color, fontFamily:"'DM Mono',monospace",
+            <div style={{ fontSize:32, fontWeight:600, color, fontFamily:"'DM Mono',monospace",
               letterSpacing:-1, marginBottom:4 }}>{value}</div>
             <div style={{ fontSize:11, color:"var(--text-subtle)" }}>
               {isActive ? "點擊取消篩選" : sub}
@@ -1488,11 +1488,11 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
-                      <span style={{ fontSize:16, fontWeight:700, color:C.text }}>{proj.info.name||"（未命名）"}</span>
+                      <span style={{ fontSize:16, fontWeight:600, color:C.text }}>{proj.info.name||"（未命名）"}</span>
                       {proj.info.hotelId && <span style={{ fontSize:11, color:C.textLight, fontFamily:"'DM Mono',monospace", background:C.bg, padding:"2px 7px", borderRadius:5 }}>#{proj.info.hotelId}</span>}
-                      {rd && <span style={{ fontSize:11, background:C.blueLight, color:C.blue, border:`1px solid ${C.blueBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:600 }}>{rd}</span>}
-                      {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:700 }}>✓ 完成</span>}
-                      {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:700, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
+                      {rd && <span style={{ fontSize:11, background:C.blueLight, color:C.blue, border:`1px solid ${C.blueBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:500 }}>{rd}</span>}
+                      {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:600 }}>✓ 完成</span>}
+                      {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
                     </div>
                     {proj.info.address && <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:C.textLight, marginTop:2 }}>
                       <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
@@ -1511,9 +1511,9 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                 {(proj.info.products.length>0||proj.info.pic) && (
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6, flexWrap:"wrap" }}>
                     {proj.info.products.map(p=>(
-                      <span key={p} style={{ fontSize:12, fontWeight:700, color:"#fff", background:PRODUCT_COLORS[p]||C.blue, borderRadius:7, padding:"3px 11px" }}>{p}</span>
+                      <span key={p} style={{ fontSize:12, fontWeight:600, color:"#fff", background:PRODUCT_COLORS[p]||C.blue, borderRadius:7, padding:"3px 11px" }}>{p}</span>
                     ))}
-                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
+                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:500, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
                   </div>
                 )}
 
@@ -1526,7 +1526,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                     {proj.info.jiraEpic && (
                       <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
                         style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:4, fontSize:11,
-                          color:"#0052cc", textDecoration:"none", fontWeight:600, background:"#e9f0ff",
+                          color:"#0052cc", textDecoration:"none", fontWeight:500, background:"#e9f0ff",
                           border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 9px", whiteSpace:"nowrap", flexShrink:0 }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
                         Jira Epic
@@ -1542,8 +1542,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                       <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:9, padding:"7px 12px" }}>
                         <Ico name="calendar" size={13} color="var(--text-subtle)"/>
                         <span style={{ fontSize:12, color:C.textMid }}>上線日</span>
-                        <span style={{ fontSize:12, color:C.text, fontWeight:700, fontFamily:"'DM Mono',monospace" }}>{proj.info.launchDate}</span>
-                        {d!==null&&d>=0 && <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600, color:d<=7?C.red:d<=30?C.amber:C.textLight }}>{d===0?"今天":`${d}天後`}</span>}
+                        <span style={{ fontSize:12, color:C.text, fontWeight:600, fontFamily:"'DM Mono',monospace" }}>{proj.info.launchDate}</span>
+                        {d!==null&&d>=0 && <span style={{ marginLeft:"auto", fontSize:11, fontWeight:500, color:d<=7?C.red:d<=30?C.amber:C.textLight }}>{d===0?"今天":`${d}天後`}</span>}
                       </div>
                     )}
                     {nd && (
@@ -1553,8 +1553,8 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                         borderRadius:9, padding:"7px 12px" }}>
                         <Ico name="calendar" size={13} color={nd.days<=7?C.red:C.green}/>
                         <span style={{ fontSize:12, color:nd.days<=7?C.red:C.green }}>{nd.label}</span>
-                        <span style={{ fontSize:11, color:C.text, fontWeight:700, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
-                        <span style={{ marginLeft:"auto", fontSize:11, fontWeight:600, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
+                        <span style={{ fontSize:11, color:C.text, fontWeight:600, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
+                        <span style={{ marginLeft:"auto", fontSize:11, fontWeight:500, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
                       </div>
                     )}
                   </div>
@@ -1564,7 +1564,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                   <span style={{ fontSize:12, color:C.textMid, whiteSpace:"nowrap" }}>完成度</span>
                   <MiniBar pct={pct} color={isComplete?C.green:C.blue}/>
-                  <span style={{ fontSize:13, fontWeight:700, fontFamily:"'DM Mono',monospace", whiteSpace:"nowrap", color:isComplete?C.green:C.blue }}>{pct}%</span>
+                  <span style={{ fontSize:13, fontWeight:600, fontFamily:"'DM Mono',monospace", whiteSpace:"nowrap", color:isComplete?C.green:C.blue }}>{pct}%</span>
                 </div>
 
                 {/* Row 5: Sub-counts */}
@@ -1574,23 +1574,23 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.green,flexShrink:0 }}/>
                         <span style={{ fontSize:11,color:C.textLight }}>基礎設定</span>
-                        <span style={{ fontSize:11,color:C.green,fontWeight:600,fontFamily:"'DM Mono',monospace" }}>{basicDone}/{BASIC_ITEMS.length}</span>
+                        <span style={{ fontSize:11,color:C.green,fontWeight:500,fontFamily:"'DM Mono',monospace" }}>{basicDone}/{BASIC_ITEMS.length}</span>
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.amber,flexShrink:0 }}/>
                         <span style={{ fontSize:11,color:C.textLight }}>FAQ</span>
-                        <span style={{ fontSize:11,color:C.amber,fontWeight:600,fontFamily:"'DM Mono',monospace" }}>{faqDone}/{hasIptv?FAQ_ITEMS.length:FAQ_ITEMS.length-1}</span>
+                        <span style={{ fontSize:11,color:C.amber,fontWeight:500,fontFamily:"'DM Mono',monospace" }}>{faqDone}/{hasIptv?FAQ_ITEMS.length:FAQ_ITEMS.length-1}</span>
                       </div>
                     </>}
                     {hasAca && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:PRODUCT_COLORS.ACA,flexShrink:0 }}/>
                       <span style={{ fontSize:11,color:C.textLight }}>ACA</span>
-                      <span style={{ fontSize:11,color:PRODUCT_COLORS.ACA,fontWeight:600,fontFamily:"'DM Mono',monospace" }}>{acaDone}/1</span>
+                      <span style={{ fontSize:11,color:PRODUCT_COLORS.ACA,fontWeight:500,fontFamily:"'DM Mono',monospace" }}>{acaDone}/1</span>
                     </div>}
                     {(hasAva||hasGw) && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:C.purple,flexShrink:0 }}/>
                       <span style={{ fontSize:11,color:C.textLight }}>第二批</span>
-                      <span style={{ fontSize:11,color:C.purple,fontWeight:600,fontFamily:"'DM Mono',monospace" }}>{b2done}/{b2total}</span>
+                      <span style={{ fontSize:11,color:C.purple,fontWeight:500,fontFamily:"'DM Mono',monospace" }}>{b2done}/{b2total}</span>
                     </div>}
                   </div>
                 ) : (
@@ -1617,8 +1617,8 @@ function renderMarkdown(md) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // 2. Headers (must run before bold so ## text isn't mangled)
-  h = h.replace(/^### (.+)$/gm, "<div style='font-size:13px;font-weight:700;margin:10px 0 3px;color:var(--text)'>$1</div>");
-  h = h.replace(/^## (.+)$/gm,  "<div style='font-size:14px;font-weight:700;margin:12px 0 4px;color:var(--text)'>$1</div>");
+  h = h.replace(/^### (.+)$/gm, "<div style='font-size:13px;font-weight:600;margin:10px 0 3px;color:var(--text)'>$1</div>");
+  h = h.replace(/^## (.+)$/gm,  "<div style='font-size:14px;font-weight:600;margin:12px 0 4px;color:var(--text)'>$1</div>");
 
   // 3. Process line-by-line so list items don't bleed into each other
   const lines = h.split("\n");
@@ -1788,7 +1788,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
               <Ico name="msgSquare" size={15} color="#fff"/>
             </div>
             <div>
-              <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>AI 助理</div>
+              <div style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>AI 助理</div>
               <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.1 Flash Lite</div>
             </div>
           </div>
@@ -1957,7 +1957,7 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>客戶存取管理</div>
+            <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>客戶存取管理</div>
             <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>
               Hotel ID: <span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
             </div>
@@ -2024,7 +2024,7 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
 
         {/* Add email */}
         <div style={{ padding:"16px 20px", borderTop:"1px solid var(--border)", flexShrink:0 }}>
-          <label style={{ display:"block", fontSize:11, fontWeight:600, letterSpacing:"0.08em",
+          <label style={{ display:"block", fontSize:11, fontWeight:500, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--text-mid)", marginBottom:8 }}>
             新增客戶 Email
           </label>
@@ -2041,7 +2041,7 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
             <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
               style={{ padding:"0 16px", borderRadius:10, border:"none", flexShrink:0,
                 background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
-                color:"#fff", fontFamily:"inherit", fontSize:13, fontWeight:700,
+                color:"#fff", fontFamily:"inherit", fontSize:13, fontWeight:600,
                 cursor:newEmail.trim()&&!adding?"pointer":"default",
                 display:"flex", alignItems:"center", gap:6, transition:"background 0.15s",
                 whiteSpace:"nowrap" }}>
@@ -2178,7 +2178,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
         <div>
-          <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 4px" }}>Jira 子任務</h2>
+          <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:"0 0 4px" }}>Jira 子任務</h2>
           {epicId
             ? <p style={{ fontSize:13, color:C.textMid, margin:0 }}>Epic：<span style={{ fontFamily:"'DM Mono',monospace", color:C.blue }}>{epicId}</span></p>
             : <p style={{ fontSize:13, color:C.red, margin:0 }}>尚未填寫 Jira Epic 連結，請至「專案資訊」tab 填寫。</p>}
@@ -2227,7 +2227,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:8 }}>
           {/* Header */}
           <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px",
-            gap:12, padding:"6px 16px", fontSize:11, fontWeight:700,
+            gap:12, padding:"6px 16px", fontSize:11, fontWeight:600,
             color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase" }}>
             <span>Issue</span><span>名稱</span><span>負責人</span><span>狀態</span>
           </div>
@@ -2244,7 +2244,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                   {/* Key */}
                   <a href={`https://aiello-eng.atlassian.net/browse/${issue.key}`}
                     target="_blank" rel="noreferrer"
-                    style={{ fontSize:12, fontWeight:700, color:"#0052cc", textDecoration:"none",
+                    style={{ fontSize:12, fontWeight:600, color:"#0052cc", textDecoration:"none",
                       fontFamily:"'DM Mono',monospace", background:"#e9f0ff",
                       border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 8px",
                       display:"inline-block", whiteSpace:"nowrap" }}>
@@ -2262,7 +2262,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                     <button onClick={()=>openDropdown(issue.key)} disabled={isUpdating}
                       style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 10px",
                         borderRadius:8, border:`1px solid ${s.color}44`,
-                        background:s.bg, color:s.color, fontSize:12, fontWeight:700,
+                        background:s.bg, color:s.color, fontSize:12, fontWeight:600,
                         cursor:isUpdating?"wait":"pointer", fontFamily:"inherit",
                         width:"100%", justifyContent:"space-between" }}>
                       <span>{isUpdating ? "更新中…" : issue.status}</span>
@@ -2284,7 +2284,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                               onMouseEnter={e=>e.currentTarget.style.background=C.bg}
                               onMouseLeave={e=>e.currentTarget.style.background="none"}>
                               <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11,
-                                fontWeight:700, background:ts.bg, color:ts.color,
+                                fontWeight:600, background:ts.bg, color:ts.color,
                                 whiteSpace:"nowrap" }}>{t.name}</span>
                             </button>
                           );
@@ -2374,7 +2374,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
     <div style={{ animation:"fadeIn 0.25s ease" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:selectedIds.size>0?12:24 }}>
         <div>
-          <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 4px" }}>任務紀錄</h2>
+          <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:"0 0 4px" }}>任務紀錄</h2>
           <p style={{ fontSize:13, color:C.textMid, margin:0 }}>記錄與此專案相關的任務與期限</p>
         </div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
@@ -2386,7 +2386,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
             </button>
           )}
           <button onClick={addTask} style={{ background:C.blue, color:"#fff", border:"none",
-            borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:700,
+            borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:600,
             cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.blue}40` }}>+ 新增任務</button>
         </div>
       </div>
@@ -2395,10 +2395,10 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       {selectedIds.size > 0 && (
         <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
           background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, marginBottom:16 }}>
-          <span style={{ fontSize:13, color:C.blue, fontWeight:600 }}>已選取 {selectedIds.size} 筆</span>
+          <span style={{ fontSize:13, color:C.blue, fontWeight:500 }}>已選取 {selectedIds.size} 筆</span>
           <button onClick={removeSelected}
             style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"#fff", border:"none",
-              borderRadius:8, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+              borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
             <><Ico name="trash" size={13} color="currentColor"/> 刪除選取（{selectedIds.size}）</>
           </button>
         </div>
@@ -2425,9 +2425,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
                     {isSelected && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
                   </div>
-                  <span style={{ fontSize:11, fontWeight:700, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
+                  <span style={{ fontSize:11, fontWeight:600, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
-                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:600, padding:"8px 12px" }}
+                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:500, padding:"8px 12px" }}
                     onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
                 <button onClick={()=>removeTask(task.id)}
@@ -2438,7 +2438,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               </div>
 
               <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>內容概述</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>內容概述</label>
                 <textarea value={task.description} onChange={e=>updateTask(task.id,"description",e.target.value)}
                   placeholder="描述任務的目標、範圍或相關說明…" rows={3}
                   style={{ ...baseInput, resize:"vertical", minHeight:80 }}
@@ -2447,11 +2447,11 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
               {/* Type toggle */}
               <div style={{ marginBottom:14 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:600 }}>類型</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:500 }}>類型</label>
                 <div style={{ display:"flex", gap:8 }}>
                   {[{ v:"deadline", ico:"pin", text:"期限" }, { v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text }) => (
                     <button key={v} onClick={()=>updateTask(task.id,"type",v)}
-                      style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:600,
+                      style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:500,
                         cursor:"pointer", transition:"all 0.15s",
                         border:`1.5px solid ${task.type===v?C.blue:C.border}`,
                         background:task.type===v?C.blue:C.white, color:task.type===v?"#fff":C.textMid,
@@ -2465,7 +2465,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               {/* Date fields */}
               {task.type==="deadline" ? (
                 <div style={{ marginBottom:14 }}>
-                  <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>截止日期</label>
+                  <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>截止日期</label>
                   <input type="date" value={task.deadline||""} onChange={e=>updateTask(task.id,"deadline",e.target.value)}
                     style={{ ...baseInput, width:"auto" }}
                     onFocus={e=>(e.target.style.borderColor=C.amber)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
@@ -2473,13 +2473,13 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               ) : (
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:14 }}>
                   <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>開始日期</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>開始日期</label>
                     <input type="date" value={task.period_start||""} onChange={e=>updateTask(task.id,"period_start",e.target.value)}
                       style={{ ...baseInput, borderColor:C.border, background:C.greenLight }}
                       onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                   </div>
                   <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>結束日期</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>結束日期</label>
                     <input type="date" value={task.period_end||""} onChange={e=>updateTask(task.id,"period_end",e.target.value)}
                       style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
                       onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
@@ -2494,7 +2494,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
               {/* URL */}
               <div>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>相關連結（選填）</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>相關連結（選填）</label>
                 <input type="url" value={task.url||""} onChange={e=>updateTask(task.id,"url",e.target.value)}
                   placeholder="https://…" style={baseInput}
                   onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
@@ -2502,7 +2502,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 {task.url && task.url.startsWith("http") && (
                   <a href={task.url} target="_blank" rel="noreferrer"
                     style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:8,
-                      fontSize:12, color:C.blue, textDecoration:"none", fontWeight:600 }}>↗ 開啟連結</a>
+                      fontSize:12, color:C.blue, textDecoration:"none", fontWeight:500 }}>↗ 開啟連結</a>
                 )}
               </div>
 
@@ -2510,7 +2510,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               <div style={{ marginTop:18, paddingTop:16, borderTop:`1px solid ${C.border}`,
                 display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 <div>
-                  <div style={{ fontSize:12, fontWeight:600, color:C.text }}>對客戶公開</div>
+                  <div style={{ fontSize:12, fontWeight:500, color:C.text }}>對客戶公開</div>
                   <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
                     {task.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
                   </div>
@@ -2686,9 +2686,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const LockScreen = ({ msg }) => (
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
       <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
-      <div style={{ fontSize:15, fontWeight:600, color:C.textMid, marginBottom:20 }}>{msg}</div>
+      <div style={{ fontSize:15, fontWeight:500, color:C.textMid, marginBottom:20 }}>{msg}</div>
       <button onClick={()=>setStep(0)} style={{ background:C.blue, color:"#fff", border:"none",
-        borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:700,
+        borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:600,
         cursor:"pointer", fontFamily:"inherit" }}>前往專案資訊</button>
     </div>
   );
@@ -2713,11 +2713,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
           <span style={{ color:C.border }}>│</span>
           <div style={{ width:26, height:26, borderRadius:7, background:C.blue,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>🏨</div>
-          <span style={{ fontSize:15, fontWeight:700, color:C.text }}>{info.name||"新專案"}</span>
+          <span style={{ fontSize:15, fontWeight:600, color:C.text }}>{info.name||"新專案"}</span>
           {info.hotelId && <span style={{ fontSize:12, color:C.textLight, fontFamily:"'DM Mono',monospace" }}>#{info.hotelId}</span>}
         </div>
         <div style={{ fontSize:13, color:C.textMid, background:C.bg, border:`1px solid ${C.border}`,
-          borderRadius:8, padding:"5px 14px", fontFamily:"'DM Mono',monospace", fontWeight:600,
+          borderRadius:8, padding:"5px 14px", fontFamily:"'DM Mono',monospace", fontWeight:500,
           display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ color:totalPct===100?C.green:C.blue }}>{totalPct}%</span> 完成
           <span style={{ fontSize:11, fontWeight:400, minWidth:60, transition:"color 0.3s",
@@ -2741,7 +2741,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 fontWeight:step===i?700:500, transition:"all 0.15s",
                 display:"flex", alignItems:"center", gap:7 }}>
               <span style={{ width:20, height:20, borderRadius:"50%", display:"inline-flex",
-                alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700,
+                alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600,
                 background:locked?C.bg:step===i?C.blueLight:C.bg,
                 border:`1.5px solid ${locked?C.border:step===i?C.blue:C.border}`,
                 color:locked?C.border:step===i?C.blue:C.textLight }}>
@@ -2760,7 +2760,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
           <div style={{ animation:"fadeIn 0.25s ease" }}>
             <div style={{ marginBottom:24, display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
               <div>
-                <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案基本資訊</h2>
+                <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:"0 0 5px" }}>專案基本資訊</h2>
                 <p style={{ fontSize:13, color:C.textMid, margin:0 }}>填寫飯店基本資料與購置設備</p>
               </div>
               <button onClick={()=>setShowCustomerAccess(true)}
@@ -2781,7 +2781,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <FInput label="Hotel ID" value={info.hotelId} onChange={v=>setInfo(p=>({ ...p, hotelId:v }))} placeholder="例：TPE-001"/>
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>負責人（PIC）</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>負責人（PIC）</label>
                 <datalist id="pic-list">{allPics.map(p=><option key={p} value={p}/>)}</datalist>
                 <input list="pic-list" value={info.pic} onChange={e=>setInfo(p=>({ ...p, pic:e.target.value }))}
                   placeholder="輸入負責人姓名，若不在清單內將自動新增" style={baseInput}
@@ -2790,7 +2790,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
               <FInput label="地址" value={info.address} onChange={v=>setInfo(p=>({ ...p, address:v }))} placeholder="例：台北市中山區南京東路一段"/>
               <div style={{ marginBottom:18 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>所在國家</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>所在國家</label>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:10 }}>
                   {COUNTRIES.map(c=><Chip key={c} label={c} active={info.region===c} color={C.blue} onClick={()=>setInfo(p=>({ ...p, region:c, regionOther:c!=="其他"?"":p.regionOther }))}/>)}
                 </div>
@@ -2798,12 +2798,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   placeholder="請輸入國家／地區名稱" style={{ ...baseInput, borderColor:C.blue }}/>}
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>Jira Epic 連結</label>
+                <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>Jira Epic 連結</label>
                 <input type="url" value={info.jiraEpic} onChange={e=>setInfo(p=>({ ...p, jiraEpic:e.target.value }))}
                   placeholder="https://your-domain.atlassian.net/browse/EPIC-123" style={baseInput}
                   onFocus={e=>(e.target.style.borderColor="#0052cc")} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 {info.jiraEpic&&!info.jiraEpic.startsWith("http")&&<div style={{ marginTop:6, fontSize:12, color:C.red }}>⚠️ 連結格式不正確</div>}
-                {info.jiraEpic&&info.jiraEpic.startsWith("http")&&<a href={info.jiraEpic} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:12, color:"#0052cc", textDecoration:"none", fontWeight:600 }}>↗ 開啟 Jira Epic</a>}
+                {info.jiraEpic&&info.jiraEpic.startsWith("http")&&<a href={info.jiraEpic} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:6, fontSize:12, color:"#0052cc", textDecoration:"none", fontWeight:500 }}>↗ 開啟 Jira Epic</a>}
 
                 {/* Bootstrap 按鈕：僅在 jiraEpic 為空且有飯店名稱時顯示 */}
                 {!info.jiraEpic && info.name.trim() && (
@@ -2815,7 +2815,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <button onClick={()=>setJiraBoot(p=>({ ...p, open:true, step:"idle" }))}
                       style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
                         background:"#0052cc", color:"#fff", border:"none", borderRadius:8,
-                        fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+                        fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}>
                       <><Ico name="rocket" size={13} color="currentColor"/> 建立 Jira Epic 與任務</>
                     </button>
                   </div>
@@ -2832,7 +2832,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
                       {/* Header 含 X 關閉按鈕 */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-                        <h3 style={{ fontSize:17, fontWeight:700, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
+                        <h3 style={{ fontSize:17, fontWeight:600, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
                         {!["creating_epic","creating_tasks"].includes(jiraBoot.step) && (
                           <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
                             style={{ background:"none", border:"1px solid var(--border)", borderRadius:6,
@@ -2861,7 +2861,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                               borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit", color:"var(--text-mid)" }}>取消</button>
                           <button onClick={bootstrapJira}
                             style={{ padding:"8px 20px", background:"#0052cc", color:"#fff", border:"none",
-                              borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>確認建立</button>
+                              borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}>確認建立</button>
                         </div>
                       </>)}
 
@@ -2877,10 +2877,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       {/* Step 2：建立子任務中 */}
                       {jiraBoot.step==="creating_tasks" && (
                         <div style={{ textAlign:"center", padding:"16px 0" }}>
-                          <div style={{ fontSize:13, fontWeight:600, color:"var(--green)", marginBottom:12 }}>
+                          <div style={{ fontSize:13, fontWeight:500, color:"var(--green)", marginBottom:12 }}>
                             ✓ Epic&nbsp;
                             <a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
-                              style={{ color:"#0052cc", textDecoration:"none", fontWeight:700 }}>{jiraBoot.epicKey}</a>&nbsp;已建立
+                              style={{ color:"#0052cc", textDecoration:"none", fontWeight:600 }}>{jiraBoot.epicKey}</a>&nbsp;已建立
                           </div>
                           <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
                             borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
@@ -2899,17 +2899,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         <div>
                           <div style={{ padding:"12px 14px", background:"var(--green-subtle)",
                             border:"1px solid var(--green)", borderRadius:8, marginBottom:14 }}>
-                            <div style={{ fontSize:14, fontWeight:600, color:"var(--green)", marginBottom:4 }}>✓ 建立完成</div>
+                            <div style={{ fontSize:14, fontWeight:500, color:"var(--green)", marginBottom:4 }}>✓ 建立完成</div>
                             <div style={{ fontSize:12, color:"var(--text-mid)" }}>
                               Epic：<a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
-                                style={{ color:"#0052cc", fontWeight:700, textDecoration:"none" }}>{jiraBoot.epicKey}</a>
+                                style={{ color:"#0052cc", fontWeight:600, textDecoration:"none" }}>{jiraBoot.epicKey}</a>
                               　子任務：{jiraBoot.created} 筆已建立
                             </div>
                           </div>
                           {jiraBoot.failed.length>0 && (
                             <div style={{ padding:"10px 12px", background:"var(--red-subtle)",
                               border:"1px solid var(--red)", borderRadius:8, marginBottom:14 }}>
-                              <div style={{ fontSize:12, fontWeight:600, color:"var(--red)", marginBottom:8 }}>
+                              <div style={{ fontSize:12, fontWeight:500, color:"var(--red)", marginBottom:8 }}>
                                 ⚠️ {jiraBoot.failed.length} 筆建立失敗
                               </div>
                               {jiraBoot.failed[0]?.msg && (
@@ -2917,7 +2917,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                                   border:"1px solid var(--border)", borderRadius:6,
                                   fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
                                   wordBreak:"break-all", lineHeight:1.6 }}>
-                                  <span style={{ color:"var(--red)", fontWeight:600 }}>Jira 錯誤：</span>
+                                  <span style={{ color:"var(--red)", fontWeight:500 }}>Jira 錯誤：</span>
                                   {typeof jiraBoot.failed[0].msg === "string"
                                     ? jiraBoot.failed[0].msg
                                     : JSON.stringify(jiraBoot.failed[0].msg)}
@@ -2933,7 +2933,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
                             <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
                               style={{ padding:"8px 20px", background:"var(--accent)", color:"#fff", border:"none",
-                                borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
+                                borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
                           </div>
                         </div>
                       )}
@@ -2950,7 +2950,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                               border:"1px solid var(--border)", borderRadius:7, marginBottom:14,
                               fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
                               wordBreak:"break-all", lineHeight:1.6 }}>
-                              <span style={{ color:"var(--red)", fontWeight:600 }}>錯誤詳情：</span>{jiraBoot.errorMsg}
+                              <span style={{ color:"var(--red)", fontWeight:500 }}>錯誤詳情：</span>{jiraBoot.errorMsg}
                             </div>
                           )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
@@ -2973,7 +2973,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {/* AVA only → blue box */}
               {info.products.includes("AVA")&&!info.products.includes("AVT")&&(
                 <div style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, padding:16 }}>
-                  <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVA 機台數量</div>
+                  <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:600 }}>AVA 機台數量</div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
                     <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                     <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
@@ -2985,7 +2985,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, padding:16 }}>
                   {info.products.includes("AVA")&&(
                     <>
-                      <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVA 機台數量</div>
+                      <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:600 }}>AVA 機台數量</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
                         <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                         <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
@@ -2993,7 +2993,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ borderTop:`1px solid ${C.blueBorder}`, marginBottom:16 }}/>
                     </>
                   )}
-                  <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:700 }}>AVT 機台數量</div>
+                  <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:600 }}>AVT 機台數量</div>
                   <div style={{ maxWidth:"50%" }}>
                     <FInput label="裝機數量" value={info.avtUnits} onChange={v=>setInfo(p=>({ ...p, avtUnits:v }))} placeholder="例：30" type="number"/>
                   </div>
@@ -3009,7 +3009,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {info.integrations.map(intg=>(
                     <div key={intg}>
-                      <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>{intg} 備註說明</label>
+                      <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>{intg} 備註說明</label>
                       <textarea value={info.integrationNotes[intg]||""} onChange={e=>setInfo(p=>({ ...p, integrationNotes:{ ...p.integrationNotes, [intg]:e.target.value } }))}
                         placeholder={`請說明 ${intg} 串接相關需求或細節`} rows={3}
                         style={{ ...baseInput, resize:"vertical", minHeight:72 }}
@@ -3022,18 +3022,18 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <SectionLabel title="日期設定" icon="calendar"/>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
                   <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>上線日期</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>上線日期</label>
                     <input type="date" value={info.launchDate} onChange={e=>setInfo(p=>({ ...p, launchDate:e.target.value }))}
                       style={baseInput} onFocus={e=>(e.target.style.borderColor=C.blue)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                   </div>
                   <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第一批資料期限</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.green, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>第一批資料期限</label>
                     <input type="date" value={info.batch1Deadline} onChange={e=>setInfo(p=>({ ...p, batch1Deadline:e.target.value }))}
                       style={{ ...baseInput, borderColor:info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:C.border, background:C.greenLight }}
                       onFocus={e=>(e.target.style.borderColor=C.green)} onBlur={e=>(e.target.style.borderColor=info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate?C.red:C.border)}/>
                   </div>
                   <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:600 }}>第二批資料期限</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:7, fontWeight:500 }}>第二批資料期限</label>
                     <input type="date" value={info.batch2Deadline} onChange={e=>setInfo(p=>({ ...p, batch2Deadline:e.target.value }))}
                       style={{ ...baseInput, borderColor:C.border, background:C.purpleLight }}
                       onFocus={e=>(e.target.style.borderColor=C.purple)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
@@ -3065,9 +3065,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {!canBatch1?<LockScreen msg="請先選購 AVA 或 ACA 以開啟第一批資料"/>:(
               <>
                 <div style={{ marginBottom:24 }}>
-                  <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 6px" }}>第一批資料</h2>
+                  <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:"0 0 6px" }}>第一批資料</h2>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:4 }}>
-                    <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}44`, borderRadius:6, padding:"2px 10px", fontWeight:700 }}>第一批</span>
+                    <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}44`, borderRadius:6, padding:"2px 10px", fontWeight:600 }}>第一批</span>
                     {info.batch1Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch1Deadline}</span>}
                   </div>
                 </div>
@@ -3125,14 +3125,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               <>
                 <div style={{ marginBottom:20 }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>第二批資料</h2>
+                    <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:0 }}>第二批資料</h2>
                     <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"4px 12px", background:"var(--surface-raised)" }}>
-                      <span style={{ fontSize:16, fontWeight:700, color:C.purple, fontFamily:"'DM Mono',monospace" }}>{b2Count+gwCount}</span>
+                      <span style={{ fontSize:16, fontWeight:600, color:C.purple, fontFamily:"'DM Mono',monospace" }}>{b2Count+gwCount}</span>
                       <span style={{ fontSize:12, color:"var(--text-subtle)" }}>/{(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)}</span>
                     </div>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:8 }}>
-                    <span style={{ fontSize:11, background:C.purpleLight, color:C.purple, border:`1px solid ${C.purple}44`, borderRadius:6, padding:"2px 10px", fontWeight:700 }}>第二批</span>
+                    <span style={{ fontSize:11, background:C.purpleLight, color:C.purple, border:`1px solid ${C.purple}44`, borderRadius:6, padding:"2px 10px", fontWeight:600 }}>第二批</span>
                     {info.batch2Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch2Deadline}</span>}
                   </div>
                 </div>
@@ -3149,9 +3149,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
                           background:isDone?"var(--purple)":"transparent",
                           display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:600 }}>✓</span>}
                         </div>
-                        <span style={{ fontSize:14, fontWeight:600, color:"var(--text)", flex:1 }}>{item}</span>
+                        <span style={{ fontSize:14, fontWeight:500, color:"var(--text)", flex:1 }}>{item}</span>
                         {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500 }}>待完成</span>}
                       </div>
                       {/* 卡片 body：備註 + 檔案連結 */}
@@ -3174,11 +3174,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
                           background:isDone?"var(--purple)":"transparent",
                           display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>✓</span>}
+                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:600 }}>✓</span>}
                         </div>
-                        <span style={{ fontSize:14, fontWeight:600, color:"var(--text)", flex:1 }}>{GW_ITEM}</span>
+                        <span style={{ fontSize:14, fontWeight:500, color:"var(--text)", flex:1 }}>{GW_ITEM}</span>
                         <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
-                          border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:600 }}>GW</span>
+                          border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:500 }}>GW</span>
                         {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:500, marginLeft:4 }}>待完成</span>}
                       </div>
                       <div style={{ padding:"0 16px 16px" }}>
@@ -3217,7 +3217,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <div style={{ marginBottom:24 }}>
               <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
                 <div>
-                  <h2 style={{ fontSize:20, fontWeight:700, color:C.text, margin:"0 0 5px" }}>專案總覽</h2>
+                  <h2 style={{ fontSize:20, fontWeight:600, color:C.text, margin:"0 0 5px" }}>專案總覽</h2>
                   <p style={{ fontSize:13, color:C.textMid, margin:0 }}>
                     所有資料的完成度一覽
                     {project.updatedAt&&<span style={{ marginLeft:12, color:C.textLight }}>· 最後更新：{new Date(project.updatedAt).toLocaleString("zh-TW",{ month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" })}</span>}
@@ -3247,7 +3247,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <span style={{ fontSize:13, color:C.textMid, fontWeight:500 }}>整體完成度</span>
-                <span style={{ fontSize:26, fontWeight:700, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.blue }}>{totalPct}%</span>
+                <span style={{ fontSize:26, fontWeight:600, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.blue }}>{totalPct}%</span>
               </div>
               <div style={{ height:10, background:C.bg, borderRadius:5, overflow:"hidden" }}>
                 <div style={{ height:"100%", borderRadius:5, width:`${totalPct}%`, transition:"width 0.8s ease",
@@ -3263,8 +3263,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div key={label} style={{ background:bg, border:`1px solid ${color}33`, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
                     <Ico name="calendar" size={22} color={color}/>
                     <div>
-                      <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:700 }}>{label}</div>
-                      <div style={{ fontSize:15, fontWeight:700, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
+                      <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:600 }}>{label}</div>
+                      <div style={{ fontSize:15, fontWeight:600, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
                       <div style={{ fontSize:11, color:C.textMid, marginTop:2 }}>{sub}</div>
                     </div>
                   </div>
@@ -3279,7 +3279,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             </div>
             {info.name&&(
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:700, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.blue, textTransform:"uppercase", marginBottom:16, fontWeight:600, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
                   {/* Hotel ID 獨立格：帶複製按鈕 */}
                   {info.hotelId&&(
@@ -3325,7 +3325,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:500 }}>Jira Epic</div>
                       <a href={info.jiraEpic} target="_blank" rel="noreferrer"
-                        style={{ fontSize:13, color:"#0052cc", textDecoration:"none", fontWeight:600,
+                        style={{ fontSize:13, color:"#0052cc", textDecoration:"none", fontWeight:500,
                           display:"inline-flex", alignItems:"center", gap:5,
                           background:"var(--accent-light)", border:"1px solid var(--accent-border)", borderRadius:7, padding:"4px 11px" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
@@ -3342,10 +3342,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 )}
                 {info.integrations.some(k=>info.integrationNotes[k])&&(
                   <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:10, border:`1px solid ${C.purple}33` }}>
-                    <div style={{ fontSize:11, color:C.purple, letterSpacing:1, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>串接功能備註</div>
+                    <div style={{ fontSize:11, color:C.purple, letterSpacing:1, textTransform:"uppercase", marginBottom:10, fontWeight:600 }}>串接功能備註</div>
                     {info.integrations.filter(k=>info.integrationNotes[k]).map(k=>(
                       <div key={k} style={{ marginBottom:10, paddingBottom:10, borderBottom:`1px solid ${C.purple}22` }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:C.purple, marginBottom:4 }}>{k}</div>
+                        <div style={{ fontSize:11, fontWeight:600, color:C.purple, marginBottom:4 }}>{k}</div>
                         <RichText text={info.integrationNotes[k]} style={{ fontSize:13, color:C.textMid }}/>
                       </div>
                     ))}
@@ -3379,7 +3379,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {/* Batch 2 */}
             {(hasAva||hasGw)&&(
               <div style={{ background:C.white, border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16 }}>
-                <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>第二批資料</div>
+                <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:600 }}>第二批資料</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {hasAva&&BATCH2_ITEMS.map((item,idx)=><OvBatch2Row key={item} item={item} checked={batch2Checked[item]} note={batch2Notes[item]} linkKey={BATCH2_LINK_KEYS[idx]} sheetLinks={sheetLinks}/>)}
                   {hasGw&&(
@@ -3394,17 +3394,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {/* Tasks overview */}
             {tasks.length>0&&(
               <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24, boxShadow:"var(--shadow)" }}>
-                <div style={{ fontSize:11, letterSpacing:1.5, color:C.blue, textTransform:"uppercase", marginBottom:14, fontWeight:700 }}>任務紀錄（{tasks.length} 項）</div>
+                <div style={{ fontSize:11, letterSpacing:1.5, color:C.blue, textTransform:"uppercase", marginBottom:14, fontWeight:600 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
                     <div key={task.id} style={{ padding:"12px 14px", background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
                       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:task.description?6:0 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:C.textLight }}>#{idx+1}</span>
-                        <span style={{ fontSize:13, fontWeight:600, color:C.text }}>{task.name||"（未命名任務）"}</span>
+                        <span style={{ fontSize:11, fontWeight:600, color:C.textLight }}>#{idx+1}</span>
+                        <span style={{ fontSize:13, fontWeight:500, color:C.text }}>{task.name||"（未命名任務）"}</span>
                         <span style={{ marginLeft:"auto", fontSize:10, background:task.type==="deadline"?C.amberLight:C.greenLight,
                           color:task.type==="deadline"?C.amber:C.green,
                           border:`1px solid ${task.type==="deadline"?C.amber+"44":C.green+"44"}`,
-                          borderRadius:5, padding:"2px 8px", fontWeight:600, whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:4 }}>
+                          borderRadius:5, padding:"2px 8px", fontWeight:500, whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:4 }}>
                           {task.type==="deadline"
                             ? <><Ico name="pin" size={10} color="currentColor"/> {task.deadline||"—"}</>
                             : <><Ico name="repeat" size={10} color="currentColor"/> {task.period_start||"—"} → {task.period_end||"—"}</>}
@@ -3470,7 +3470,7 @@ const LoginPage = ({ theme, setTheme }) => {
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
           <Ico name="building" size={26} color="#fff"/>
         </div>
-        <h1 style={{ fontSize:20, fontWeight:700, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
+        <h1 style={{ fontSize:20, fontWeight:600, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
         <p style={{ fontSize:13, color:"var(--text-mid)", margin:"0 0 28px" }}>輸入公司 email 以收取登入連結</p>
         {!sent ? (<>
           <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
@@ -3483,7 +3483,7 @@ const LoginPage = ({ theme, setTheme }) => {
           <button onClick={send} disabled={loading||!email.trim()}
             style={{ width:"100%", padding:"10px 0", background:email.trim()?"var(--accent)":"var(--border)",
               color:email.trim()?"#fff":"var(--text-subtle)", border:"none", borderRadius:8,
-              fontSize:14, fontWeight:600, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
+              fontSize:14, fontWeight:500, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
             {loading ? "寄送中…" : "寄送登入連結"}
           </button>
         </>) : (
@@ -3541,7 +3541,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:700, color:"var(--text)" }}>個人設定</div>
+            <div style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>個人設定</div>
             <div style={{ fontSize:12, color:"var(--text-mid)", marginTop:2 }}>Jira 連線與帳號管理</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
@@ -3551,7 +3551,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           <div style={{ marginBottom:18 }}>
             <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
-              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>顯示名稱</label>
+              textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>顯示名稱</label>
             <input value={displayName} onChange={e=>setDisplayName(e.target.value)}
               placeholder="與 Jira 顯示名稱一致" style={baseInput}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
@@ -3562,7 +3562,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
           </div>
           <div style={{ marginBottom:14 }}>
             <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
-              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>Jira Email</label>
+              textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>Jira Email</label>
             <input type="email" value={jiraEmail} onChange={e=>setJiraEmail(e.target.value)}
               placeholder="your@aiello.ai" style={baseInput}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
@@ -3570,7 +3570,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
           </div>
           <div style={{ marginBottom:24 }}>
             <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
-              textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>Jira API Token</label>
+              textTransform:"uppercase", marginBottom:6, fontWeight:500 }}>Jira API Token</label>
             <input type="password" value={jiraToken} onChange={e=>setJiraToken(e.target.value)}
               placeholder="ATATT3x…" style={baseInput}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
@@ -3586,7 +3586,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
           <button onClick={save} disabled={saving}
             style={{ width:"100%", padding:"10px 0",
               background:saved?"var(--green)":"var(--accent)", color:"#fff",
-              border:"none", borderRadius:8, fontSize:13, fontWeight:600,
+              border:"none", borderRadius:8, fontSize:13, fontWeight:500,
               cursor:"pointer", fontFamily:"inherit", transition:"background 0.2s" }}>
             {saving?"儲存中…":saved?"✓ 已儲存":"儲存設定"}
           </button>
@@ -3803,7 +3803,7 @@ export default function App() {
               <div style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏨</div>
               <div>
-                <div style={{ fontSize:15, fontWeight:700, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
+                <div style={{ fontSize:15, fontWeight:600, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
                 <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
               </div>
             </div>
@@ -3861,11 +3861,11 @@ export default function App() {
                 onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}>
                 <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
                   background:"var(--accent)", display:"flex", alignItems:"center",
-                  justifyContent:"center", fontSize:12, fontWeight:700, color:"#fff" }}>
+                  justifyContent:"center", fontSize:12, fontWeight:600, color:"#fff" }}>
                   {(profile?.display_name || session?.user?.email || "?")[0].toUpperCase()}
                 </div>
                 <div style={{ textAlign:"left" }}>
-                  <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", lineHeight:1.3 }}>
+                  <div style={{ fontSize:13, fontWeight:500, color:"var(--text)", lineHeight:1.3 }}>
                     {profile?.display_name || "設定名稱"}
                   </div>
                   {profile?.display_name && (
@@ -3877,7 +3877,7 @@ export default function App() {
               </button>
               <button onClick={handleNew}
                 style={{ height:36, background:"var(--accent)", color:"#fff", border:"none",
-                  borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:600,
+                  borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:500,
                   cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
                 + 新增專案
               </button>
@@ -3917,7 +3917,7 @@ export default function App() {
           gap:12, fontFamily:"inherit" }}>
           ⚠️ {error}
           <button onClick={()=>setError(null)} style={{ background:"none", border:"none",
-            cursor:"pointer", color:C.red, fontWeight:700, fontSize:16, padding:0, lineHeight:1 }}>×</button>
+            cursor:"pointer", color:C.red, fontWeight:600, fontSize:16, padding:0, lineHeight:1 }}>×</button>
         </div>
       )}
 
