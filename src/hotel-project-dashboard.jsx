@@ -2716,7 +2716,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
           )}
           <span style={{ color:C.border }}>│</span>
           <div style={{ width:26, height:26, borderRadius:7, background:C.blue,
-            display:"flex", alignItems:"center", justifyContent:"center" }><AielloLogo size={16}/></div>
+            display:"flex", alignItems:"center", justifyContent:"center" }}><AielloLogo size={16}/></div>
           <span style={{ fontSize:15, fontWeight:500, color:C.text }}>{info.name||"新專案"}</span>
           {info.hotelId && <span style={{ fontSize:12, color:C.textLight, fontFamily:"'DM Mono',monospace" }}>#{info.hotelId}</span>}
         </div>
@@ -3805,7 +3805,7 @@ export default function App() {
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <div style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
-                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }><AielloLogo size={22}/></div>
+                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><AielloLogo size={22}/></div>
               <div>
                 <div style={{ fontSize:15, fontWeight:500, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
                 <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
