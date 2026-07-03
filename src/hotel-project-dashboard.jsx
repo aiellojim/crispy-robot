@@ -2673,6 +2673,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   };
 
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
+  const jiraTaskCount = (hasAva ? 51 : 0) + (hasAca ? (hasAva ? 4 : 5) : 0) || 51;
   const canBatch1 = hasAva||hasAca, canBatch2 = hasAva||hasGw;
   const activeFaq = FAQ_ITEMS.filter(item => item!==FAQ_TV_ITEM||hasIptv);
 
@@ -2813,13 +2814,27 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {!info.jiraEpic && info.name.trim() && (
                   <div style={{ marginTop:12, padding:"13px 15px", background:"var(--accent-subtle)",
                     border:"1px solid var(--accent-border)", borderRadius:10 }}>
-                    <div style={{ fontSize:13, color:"var(--text-mid)", marginBottom:10, lineHeight:1.6 }}>
+                    <div style={{ fontSize:13, color:"var(--text-mid)", marginBottom:8, lineHeight:1.6 }}>
                       尚未建立 Jira Epic。點擊下方按鈕可自動建立 Epic 並依選擇的產品匯入標準子任務。
                     </div>
+                    {info.products.length === 0 ? (
+                      <div style={{ fontSize:12, color:"var(--amber)", marginBottom:10 }}>
+                        ⚠ 請先至「專案資訊」選擇購置產品，再建立 Jira Epic。
+                      </div>
+                    ) : (
+                      <div style={{ fontSize:12, color:"var(--text-subtle)", marginBottom:10 }}>
+                        將依選擇的產品建立 <strong style={{ color:"var(--text)" }}>{jiraTaskCount} 筆</strong> 子任務（{info.products.join(" / ")}）
+                      </div>
+                    )}
                     <button onClick={()=>setJiraBoot(p=>({ ...p, open:true, step:"idle" }))}
+                      disabled={info.products.length === 0}
                       style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
-                        background:"#0052cc", color:"#fff", border:"none", borderRadius:8,
-                        fontSize:13, fontWeight:400, cursor:"pointer", fontFamily:"inherit" }}>
+                        background:info.products.length === 0 ? "var(--border)" : "#0052cc",
+                        color: info.products.length === 0 ? "var(--text-subtle)" : "#fff",
+                        border:"none", borderRadius:8,
+                        fontSize:13, fontWeight:400,
+                        cursor: info.products.length === 0 ? "not-allowed" : "pointer",
+                        fontFamily:"inherit" }}>
                       <><Ico name="rocket" size={13} color="currentColor"/> 建立 Jira Epic 與任務</>
                     </button>
                   </div>
@@ -2851,7 +2866,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           border:"1px solid var(--border)", borderRadius:8, fontSize:13, marginBottom:18, lineHeight:1.7 }}>
                           Epic 名稱：<strong style={{ color:"var(--text)" }}>{info.name}</strong><br/>
                           專案：<strong style={{ color:"var(--text)" }}>AHP</strong>　
-                          子任務：<strong style={{ color:"var(--text)" }}>51 筆</strong>（含指定 assignee）<br/>
+                          子任務：<strong style={{ color:"var(--text)" }}>{jiraTaskCount} 筆</strong>（含指定 assignee）<br/>
                           {profile?.jira_email && profile?.jira_token ? (<>
                             Reporter：<strong style={{ color:"var(--text)" }}>{profile.display_name || profile.jira_email}</strong>
                             <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:6 }}>（使用個人 API Token）</span>
@@ -2888,7 +2903,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           </div>
                           <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
                             borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
-                          <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 51 筆子任務，請稍候（約 15 秒）…</div>
+                          <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 {jiraTaskCount} 筆子任務，請稍候（約 15 秒）…</div>
                           {jiraBoot.issueTypeName && (
                             <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
                               Issue type：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.issueTypeName}</code>
