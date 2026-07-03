@@ -241,6 +241,7 @@ const newTask = () => ({
 // ─── DB ↔ UI ──────────────────────────────────────────────────
 const dbToUi = (row, prog) => ({
   id: row.id,
+  createdAt: row.created_at ?? null,
   updatedAt: prog?.updated_at ?? row.updated_at ?? null,
   info: {
     name: row.name ?? "", hotelId: row.hotel_id ?? "",
@@ -1353,8 +1354,14 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
         && (!doneFilter           || calcPct(p)===100);
     });
     return [...list].sort((a,b) => {
-      if (sortBy==="created_desc") return b.id>a.id?1:-1;
-      if (sortBy==="created_asc")  return a.id>b.id?1:-1;
+      if (sortBy==="created_desc") {
+        const at = (a.createdAt ?? ""), bt = (b.createdAt ?? "");
+        return bt > at ? 1 : bt < at ? -1 : 0;
+      }
+      if (sortBy==="created_asc") {
+        const at = (a.createdAt ?? ""), bt = (b.createdAt ?? "");
+        return at > bt ? 1 : at < bt ? -1 : 0;
+      }
       const al=a.info.launchDate, bl=b.info.launchDate;
       if (sortBy==="launch_asc")  return !al?1:!bl?-1:al.localeCompare(bl);
       if (sortBy==="launch_desc") return !al?1:!bl?-1:bl.localeCompare(al);
