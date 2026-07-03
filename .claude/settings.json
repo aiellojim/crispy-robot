@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(supabase functions deploy:*)",
+      "Bash(supabase db push:*)",
+      "Bash(git tag:*)"
+    ]
+  }
+}
