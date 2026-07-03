@@ -2653,8 +2653,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
       setJiraBoot(p=>({ ...p, step:"creating_tasks", epicKey, epicUrl, issueTypeName, reporterName }));
 
-      // Step 4: 批次建立 51 筆子任務
-      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId }, session?.access_token);
+      // Step 4: 依選擇產品批次建立子任務（含去重）
+      const taskRes = await jiraFetch("createTasks", {}, { epicKey, hotelName, issueTypeName, reporterAccountId, products: info.products }, session?.access_token);
       if (taskRes.error) {
         setJiraBoot(p=>({ ...p, step:"error", errorMsg: typeof taskRes.error === "string" ? taskRes.error : JSON.stringify(taskRes.error) }));
         return;
@@ -2814,7 +2814,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div style={{ marginTop:12, padding:"13px 15px", background:"var(--accent-subtle)",
                     border:"1px solid var(--accent-border)", borderRadius:10 }}>
                     <div style={{ fontSize:13, color:"var(--text-mid)", marginBottom:10, lineHeight:1.6 }}>
-                      尚未建立 Jira Epic。點擊下方按鈕可自動建立 Epic 並匯入 51 筆標準子任務。
+                      尚未建立 Jira Epic。點擊下方按鈕可自動建立 Epic 並依選擇的產品匯入標準子任務。
                     </div>
                     <button onClick={()=>setJiraBoot(p=>({ ...p, open:true, step:"idle" }))}
                       style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
