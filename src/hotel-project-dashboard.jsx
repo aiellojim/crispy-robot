@@ -3335,6 +3335,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     </div>
                   )}
                   {/* 飯店填寫表單連結：複製 / 開啟，取代手動去 Supabase 複製 project id */}
+                  {/* 這份表單目前只涵蓋 AVA 產品線的欄位，所以只有選了 AVA 的專案才顯示連結 */}
+                  {info.products.includes("AVA") && (
                   <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
                     <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
@@ -3366,6 +3368,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       </a>
                     </div>
                   </div>
+                  )}
                   {[
                     ["飯店名稱",info.name],
                     ["負責人（PIC）",info.pic||"—"],["地址",info.address],
