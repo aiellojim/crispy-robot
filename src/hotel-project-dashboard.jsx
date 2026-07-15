@@ -26,6 +26,10 @@ const BATCH2_LINK_KEYS = ["showcase","ad","popupQR"];
 const GW_ITEM     = "GuestWeb 內容建置";
 const GW_LINK_KEY = "guestWeb";
 
+// AVA basic-settings 表單（Vercel 部署）— 飯店專屬填寫連結 = 這個網址 + ?p=<project.id>
+// project.id 本身就是連結權杖（無須登入，跟公開 Excel 連結同一個概念），詳見該專案 index.html 的 getProjectId()
+const AVA_FORM_BASE_URL = "https://ava-basic-settings.vercel.app/";
+
 // Calendar event type colours — CSS var based for dark mode
 const CAL_COLORS = {
   launch:    { bg:"var(--cal-launch-bg)",  text:"var(--cal-launch-text)",  border:"var(--cal-launch-border)" },
@@ -3330,6 +3334,38 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       </div>
                     </div>
                   )}
+                  {/* 飯店填寫表單連結：複製 / 開啟，取代手動去 Supabase 複製 project id */}
+                  <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
+                    <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                      <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                        {AVA_FORM_BASE_URL}?p={project.id}
+                      </div>
+                      <button
+                        onClick={(e)=>{
+                          navigator.clipboard.writeText(`${AVA_FORM_BASE_URL}?p=${project.id}`);
+                          const btn = e.currentTarget;
+                          btn.style.color = "var(--green)";
+                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
+                        }}
+                        title="複製表單連結"
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
+                      <a href={`${AVA_FORM_BASE_URL}?p=${project.id}`} target="_blank" rel="noreferrer"
+                        title="在新分頁開啟表單"
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
                   {[
                     ["飯店名稱",info.name],
                     ["負責人（PIC）",info.pic||"—"],["地址",info.address],
