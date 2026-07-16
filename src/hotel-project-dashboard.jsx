@@ -3335,8 +3335,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     </div>
                   )}
                   {/* 飯店填寫表單連結：複製 / 開啟，取代手動去 Supabase 複製 project id */}
-                  {/* 這份表單目前只涵蓋 AVA 產品線的欄位，所以只有選了 AVA 的專案才顯示連結 */}
-                  {info.products.includes("AVA") && (
+                  {/* 表單網址是同一把（project.id 當權杖），裡面的分頁會依 products 各自顯示/隱藏，
+                      所以只要有 AVA / GuestWeb / TMS Pro 任一項，就該顯示這把連結；複選時表單會
+                      自動同時顯示對應分頁，不需要額外處理。 */}
+                  {(info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP")) && (
                   <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
                     <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
