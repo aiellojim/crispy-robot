@@ -3391,16 +3391,30 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ["上線日期",info.launchDate||"—"],
                     ["購置產品",info.products.join("、")||"—"],
                     ["串接功能",info.integrations.join("、")||"無"],
-                    info.products.includes("AVA")&&["AVA 裝機 / 備品",`${info.avaUnits||"—"} / ${info.avaSpare||"—"} 台`],
+                    info.products.includes("AVA")&&["AVA 裝機 / 備品 / 房間數",`${info.avaUnits||"—"} 台 / ${info.avaSpare||"—"} 台 / ${info.installingRooms||"—"} 房`],
                     info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
-                    ["第一批資料期限",info.batch1Deadline||"—"],
-                    ["第二批資料期限",info.batch2Deadline||"—"],
+                    info.products.includes("TMSP")&&["TMSP 最大空間數",`${info.tmspMaxSpaces||"—"} 間`],
                   ].filter(Boolean).map(([k,v])=>(
                     <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>{k}</div>
                       <div style={{ fontSize:14, color:C.text, fontWeight:400 }}>{v||"—"}</div>
                     </div>
                   ))}
+                  {/* 第一批/第二批資料期限固定同一列：拉出主要 grid 之外、自己包一個 2 欄子
+                      grid 並用 gridColumn:"1 / -1" 佔滿整列寬度，這樣不管前面有幾個條件式欄位
+                      （AVA/AVT/TMSP 有無選擇會讓前面項目數量變動），這兩個永遠緊鄰同一列，
+                      不會被前面的奇偶數量意外拆到兩列。 */}
+                  <div style={{ gridColumn:"1 / -1", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
+                    {[
+                      ["第一批資料期限",info.batch1Deadline||"—"],
+                      ["第二批資料期限",info.batch2Deadline||"—"],
+                    ].map(([k,v])=>(
+                      <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                        <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>{k}</div>
+                        <div style={{ fontSize:14, color:C.text, fontWeight:400 }}>{v||"—"}</div>
+                      </div>
+                    ))}
+                  </div>
                   {info.jiraEpic&&(
                     <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>Jira Epic</div>
