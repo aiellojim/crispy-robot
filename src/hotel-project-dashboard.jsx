@@ -251,6 +251,7 @@ const dbToUi = (row, prog) => ({
     name: row.name ?? "", hotelId: row.hotel_id ?? "",
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
     products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
+    installingRooms: row.installing_rooms ?? "", tmspMaxSpaces: row.tmsp_max_spaces ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -273,6 +274,7 @@ const uiToDb = (p) => ({
     id: p.id, name: p.info.name, hotel_id: p.info.hotelId,
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
     products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
+    installing_rooms: p.info.installingRooms, tmsp_max_spaces: p.info.tmspMaxSpaces,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -289,7 +291,7 @@ const newProject = () => ({
   id: crypto.randomUUID(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", avtUnits:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -3004,9 +3006,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("AVA")&&!info.products.includes("AVT")&&(
                 <div style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, padding:16 }}>
                   <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
                     <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                     <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
+                    <FInput label="裝機房間數" value={info.installingRooms} onChange={v=>setInfo(p=>({ ...p, installingRooms:v }))} placeholder="例：50" type="number"/>
                   </div>
                 </div>
               )}
@@ -3016,9 +3019,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {info.products.includes("AVA")&&(
                     <>
                       <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginBottom:16 }}>
                         <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                         <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
+                        <FInput label="裝機房間數" value={info.installingRooms} onChange={v=>setInfo(p=>({ ...p, installingRooms:v }))} placeholder="例：50" type="number"/>
                       </div>
                       <div style={{ borderTop:`1px solid ${C.blueBorder}`, marginBottom:16 }}/>
                     </>
@@ -3026,6 +3030,15 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVT 機台數量</div>
                   <div style={{ maxWidth:"50%" }}>
                     <FInput label="裝機數量" value={info.avtUnits} onChange={v=>setInfo(p=>({ ...p, avtUnits:v }))} placeholder="例：30" type="number"/>
+                  </div>
+                </div>
+              )}
+              {/* TMSP → blue box, same style as AVA/AVT */}
+              {info.products.includes("TMSP")&&(
+                <div style={{ background:C.blueLight, border:`1px solid ${C.blueBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
+                  <div style={{ fontSize:11, color:C.blue, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>TMSP 空間數量</div>
+                  <div style={{ maxWidth:"50%" }}>
+                    <FInput label="最大空間數" value={info.tmspMaxSpaces} onChange={v=>setInfo(p=>({ ...p, tmspMaxSpaces:v }))} placeholder="例：20" type="number"/>
                   </div>
                 </div>
               )}
