@@ -11,6 +11,10 @@ const sb = createClient(
 const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS", "SiteChat"];
 const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV"];
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
+// PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
+// 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
+// picOptions（HomePage 篩選）跟 allPics（datalist）都會把這份清單併進去。
+const PIC_OPTIONS = ["MarkChen", "AlanFang"];
 const PRODUCT_COLORS = {
   AVA:"var(--prod-ava)", AVT:"var(--prod-avt)", ACA:"var(--prod-aca)",
   TMSP:"var(--prod-tmsp)", GW:"var(--prod-gw)", KMS:"var(--prod-kms)", SiteChat:"var(--prod-sitechat)"
@@ -1332,7 +1336,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
   }, [projects]);
 
   const picOptions = useMemo(() => {
-    const s = new Set(projects.map(p=>p.info.pic).filter(Boolean));
+    const s = new Set([...PIC_OPTIONS, ...projects.map(p=>p.info.pic).filter(Boolean)]);
     return [{ value:"all", label:"所有 PIC" }, ...Array.from(s).sort().map(p=>({ value:p, label:p }))];
   }, [projects]);
 
@@ -3819,7 +3823,7 @@ export default function App() {
 
   const handleOpen = (id) => { setActiveId(id); setIsNew(false); setView("detail"); };
   const activeProject = projects.find(p=>p.id===activeId);
-  const allPics = useMemo(()=>[...new Set(projects.map(p=>p.info.pic).filter(Boolean))].sort(),[projects]);
+  const allPics = useMemo(()=>[...new Set([...PIC_OPTIONS, ...projects.map(p=>p.info.pic).filter(Boolean)])].sort(),[projects]);
 
   // Urgent notifications: project dates + task deadlines within 7 days
   const urgentNotifs = useMemo(() => {
