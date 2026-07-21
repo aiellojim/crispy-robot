@@ -28,7 +28,7 @@ const GW_LINK_KEY = "guestWeb";
 
 // AVA basic-settings 表單（Vercel 部署）— 飯店專屬填寫連結 = 這個網址 + ?p=<project.id>
 // project.id 本身就是連結權杖（無須登入，跟公開 Excel 連結同一個概念），詳見該專案 index.html 的 getProjectId()
-const AVA_FORM_BASE_URL = "https://ava-basic-settings.vercel.app/";
+const AVA_FORM_BASE_URL = "https://basic-settings.aiello.dev/";
 
 // Calendar event type colours — CSS var based for dark mode
 const CAL_COLORS = {
