@@ -39,9 +39,13 @@
 | `push_subscriptions` | Web Push 訂閱資料（PIC 名稱、endpoint、訂閱專案、提醒天數） |
 | `user_profiles` | Magic Link 登入對應的使用者資料 |
 | `jira_action_log` | Jira 操作紀錄 |
-| `notifications` | 客戶通知（2026-07-03 掃描發現前端 `fetchCustomerNotifs` 有讀取；舊文件未記錄，欄位未確認） |
+| `notifications` | 客戶通知；`type='customer_check'` 由另一專案的 `customer-check` Edge Function 寫入（見下方「AVA 表單」節），`hotel-project-dashboard.jsx` 的 `fetchCustomerNotifs` 讀取顯示 |
 
 Migrations：`supabase/migrations/`（`20260515_auth_schema` / `20260519_full_schema` / `20260520_push_subscriptions_refactor`）。
+**注意（2026-07-21）**：這三個 migration 只涵蓋 hotel-dashboard 自己用的表。AVA 表單另外用到的表
+（`hotel_form_config`／`hotel_team_members`／`aiello_team_members`／`phone_buttons`／`web_portal_users`／
+`floor_wifi_rooms`／`tmsp_space_rows`／`room_types`／`room_type_images`／`welcome_messages`）不在這幾個
+migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo 沒有對應的 schema 歷史紀錄。
 
 ## Edge Functions（`supabase/functions/`）
 
@@ -67,11 +71,25 @@ Migrations：`supabase/migrations/`（`20260515_auth_schema` / `20260519_full_sc
 - `FROM = "Aiello <service@aiello.ai>"`，認證帳號 `alan.fang@aiello.ai`。
 - HTML 版型必須 icon-free（Outlook 相容性要求）。
 
-### customer-access-manage（進行中，尚未 commit）
-- 2026-07-03 觀察：只存在於 Jim 的主工作目錄（`/Users/jim.chao/hotel-dashboard`）且未進 git——
-  **worktree 或 fresh clone 裡沒有這個目錄**，找不到是正常的。
-- 前端 `CustomerAccessPanel`（位置見 jsx-map）已在呼叫其 endpoint。規格未確認。
-- **勿動**；若任務被迫觸及，先停下來問 Jim。建議 Jim 儘早 commit 該目錄。
+### customer-access-manage
+- **已 commit（2026-07-21 確認）**：`supabase/functions/customer-access-manage/index.ts`。
+- 用途：PM 新增／移除 `customer_access` 表裡的客戶 email 白名單（見下方「AVA 表單」節，這是另一個
+  獨立客戶系統用的表，不是 AVA 表單本身）。前端 `CustomerAccessPanel`（位置見 jsx-map）呼叫。
+
+## AVA 表單（另一個 repo：`/Users/jim.chao/AVA basic settings`，單檔 `index.html`）
+
+- 部署：Vercel，自訂網域 `https://basic-settings.aiello.dev/`（2026-07-21 換過網域，見下方連結產生規則）。
+- 跟 hotel-dashboard **共用同一個 Supabase 專案**（`yqoingcpcryrcpnhkjzu`），但是完全獨立的前端，本 repo 找不到它的原始碼。
+- 存取模式：**無登入**，飯店拿到連結 `AVA_FORM_BASE_URL + "?p=" + project.id`（`project.id` 本身就是權杖，
+  UI 由 `hotel-project-dashboard.jsx` 的 `ProjectDetail` 產生／複製，`AVA_FORM_BASE_URL` 常數定義在檔案開頭）就能直接編輯，
+  體驗要求跟線上 Excel 一樣（含多人即時同步，透過 Realtime `postgres_changes` 訂閱上面那 10 張表）。
+- **已知安全缺口（2026-07-21 發現，尚未修）**：上面那 10 張表 + `projects` 的 UPDATE，anon RLS policy
+  目前都是 `USING(true)`——`?p=` 連結只是前端過濾，資料庫層沒有真的限制只能讀寫該 project。
+  詳細分析、已測試過但不可行的方案（自訂 header）、以及推薦方案（自訂 JWT + `auth.jwt()->>'project_id'`，
+  需要 Jim 提供 JWT Secret）都記錄在 `docs/todo.md` 待辦 #6，動工前先讀那邊。
+- `form-submit-notify` Edge Function：飯店按「提交／更新」時觸發，寄信通知 `avapjm@aiello.ai`（Aiello 內部相關人員 email 群組，Jim 確認寄一次全員收到，不需要動態抓 PIC）。
+  這是刻意設計，PM 儀表板**不會**自動讀取表單填寫/完成狀態（`hotel_form_config` 未被 `hotel-project-dashboard.jsx` 讀取）——
+  Jim 不希望飯店端有機會自動寫入內部儀表板的完成狀態，目前靠人工檢查。
 
 ## Web Push 現況
 
@@ -81,11 +99,15 @@ Migrations：`supabase/migrations/`（`20260515_auth_schema` / `20260519_full_sc
 2. Safari：需要 RFC 8291（ECDH+HKDF）payload 加密，尚未實作。
 3. `NotificationPanel` 重開頁面後不會從瀏覽器 endpoint 恢復訂閱狀態，需在 `useEffect` 加自動查詢。
 
-## 客戶入口（customer-portal）
+## 客戶入口（customer-portal，`customer-auth` / `customer-check`）
 
-- Magic Link 認證（PKCE flow）；`hotel_id` 走 URL 參數 + `sessionStorage`。
-- RLS policies 啟用；Edge Functions 用 service_role key；白名單機制：客戶只能改 checklist 相關欄位。
-- **注意（2026-07-03 查證）**：舊文件寫的 `customer-portal/Dashboard.jsx` 不存在於本 repo，程式碼實際位置未確認（可能是獨立 repo）。要改客戶入口前先問 Jim 在哪裡。
+- **已釐清（2026-07-21，Jim 確認）**：這是 Magic Link 認證（`customer-auth` 發信）+ `customer-check`
+  （白名單驗證 `hotel_id` 歸屬、樂觀鎖、寫 `project_progress` + `customer_checklist_log` + `notifications`）
+  組成的另一個獨立在開發中的專案，跟 AVA 表單是兩回事。
+- 原始碼**不在本 repo、也不在 AVA 表單那個 repo**——屬於 Jim 另一個工作目錄，這個 session 沒有權限讀取。
+- **該服務尚未上線，目前是停用狀態**：遇到 `customer_access.hotel_id`（跟 `customer-access-manage` 用的
+  `customer_access` 是同一張表，但那是給另一件事用的白名單）、`customer_checklist_log`、`customer-auth`、
+  `customer-check` 這些東西，視為停用中的另一專案殘留，可以忽略，不用當本專案的缺口處理。
 
 ## 還原點（git tags，2026-07-03 實查）
 
