@@ -34,6 +34,16 @@
   - 方案 B 需要：(1) 新 Edge Function 簽發短效 JWT（給 project_id、驗證存在後簽發）；(2) Jim 手動把專案的 **JWT Secret**（Dashboard → Settings → API keys → JWT Secret）加進 Supabase Secrets 供該 function 簽章用——這把密鑰我這邊沒有工具能讀取，必須 Jim 手動處理；(3) 表單前端要在拿到 JWT 前先擋一下渲染（bootstrap 變非同步）。
 - **狀態：等 Jim 決定要不要做方案 B（有明確的額外成本：新 function + 新 secret + 前端 bootstrap 改非同步），再繼續動工。**
 
+### 7. AVA 表單「自訂分頁」功能（2026-07-22 討論，尚未動工）
+- 需求：PIN 解鎖後的人員可以像 Excel 加分頁一樣，自行在 AVA 表單新增分頁與欄位，不需要每次都改 code。
+- Jim 已確認方向：**在現有架構上長出子系統，不做框架重寫**——新增「分頁定義」「分頁欄位定義」兩張表（project 關聯、標題三語、排序、欄位型別、值），前端寫一個通用 `renderCustomTab()`，依欄位型別分派到既有樣板（`field`/`textarea`/`.note`/`plan-card`/`taggroup`/`imgwrap`，這幾個是目前盤點過可重用的既有 UI 積木，`renderRepeater()` 的「columns 設定即 schema」設計是這個做法的原型）。
+- 明確排除的做法：砍掉重練換 React 等框架 + 正規化 EAV/JSONB schema——評估為單一 HTML 檔案零依賴的維運模式會被打破，是週級工程，非必要不做。
+- **動工前必須一併處理，不能只加新表**（會被這個功能放大）：
+  1. 待辦 #6（anon RLS 12 張表全開放，無 project 隔離）——新增更多開放性表會讓缺口更嚴重，是解決它的好時機。
+  2. 待辦 #5（AVA 表單整包 diff-then-upsert 無真正並發保護）——自訂分頁允許多人同時加欄位/編輯，衝突機率比現在單純填固定欄位高，建議挪用 hotel-dashboard 這邊 `project_progress` 已經在用的「單一 key 原子更新」模式。
+  3. 圖片欄位目前是 base64 直接塞資料庫欄位（非 Supabase Storage）——分頁/欄位數量變成使用者可無限新增後，這個模式會讓存檔資料量隨之膨脹，建議一併改成存 Storage、資料庫只存網址。
+- **狀態：Jim 已選定方向，尚未排入 sprint，之後要主動提醒 Jim 排時間動工。**
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
