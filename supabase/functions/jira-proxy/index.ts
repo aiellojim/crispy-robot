@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
   // ── POST /updateDescription ────────────────────────────────────────────────
   // 在 Epic description 後附加儀表板專案資訊表格（ADF 格式）
   if (req.method === "POST" && action === "updateDescription") {
-    const { epicId, hotelName, hotelId, products, integrations, avaUnits, avaSpare } = await req.json();
+    const { epicId, hotelName, hotelId, products, integrations, avaUnits, avaSpare, avtUnits } = await req.json();
     if (!epicId) {
       return new Response(JSON.stringify({ error: "epicId required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -224,6 +224,9 @@ Deno.serve(async (req) => {
       rows.push(makeRow([makeCell("AVA 裝機台數"), makeCell(avaUnits ? `${avaUnits} 台` : "—")]));
       rows.push(makeRow([makeCell("AVA 備品台數"), makeCell(avaSpare ? `${avaSpare} 台` : "—")]));
     }
+    if ((products ?? []).includes("AVT")) {
+      rows.push(makeRow([makeCell("AVT 裝機台數"), makeCell(avtUnits ? `${avtUnits} 台` : "—")]));
+    }
 
     const table = {
       type: "table",
@@ -231,14 +234,49 @@ Deno.serve(async (req) => {
       content: rows,
     };
 
-    // 附加到現有 description 後面
-    const existingContent = existingDesc?.content ?? [];
-    const newContent = [
-      ...existingContent,
-      { type: "paragraph", content: [{ type: "text", text: " " }] }, // 空行分隔
-      { type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: "儀表板專案資訊" }] },
-      table,
-    ];
+    const ANCHOR_TEXT = "儀表板專案資訊";
+    const existingContent: any[] = existingDesc?.content ?? [];
+
+    // 找到錨點 heading 的位置
+    const anchorIndex = existingContent.findIndex(
+      (node: any) =>
+        node.type === "heading" &&
+        node.content?.some((c: any) => c.type === "text" && c.text === ANCHOR_TEXT)
+    );
+
+    let newContent: any[];
+
+    if (anchorIndex !== -1) {
+      // 錨點已存在 → 找 heading 後緊接的 table 節點並只替換它，其餘節點全部保留
+      const tableIndex = anchorIndex + 1 < existingContent.length &&
+        existingContent[anchorIndex + 1].type === "table"
+          ? anchorIndex + 1
+          : -1;
+
+      if (tableIndex !== -1) {
+        // 只換 table，heading 前後的內容完整保留
+        newContent = [
+          ...existingContent.slice(0, tableIndex),
+          table,
+          ...existingContent.slice(tableIndex + 1),
+        ];
+      } else {
+        // heading 後面沒有緊接 table（格式異常）→ 在 heading 後插入 table
+        newContent = [
+          ...existingContent.slice(0, anchorIndex + 1),
+          table,
+          ...existingContent.slice(anchorIndex + 1),
+        ];
+      }
+    } else {
+      // 錨點不存在 → 在現有內容後新增空行 + heading + table
+      newContent = [
+        ...existingContent,
+        { type: "paragraph", content: [{ type: "text", text: " " }] },
+        { type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: ANCHOR_TEXT }] },
+        table,
+      ];
+    }
 
     const putRes = await fetch(`${JIRA_BASE}/rest/api/3/issue/${epicId}`, {
       method: "PUT",
@@ -351,7 +389,7 @@ Deno.serve(async (req) => {
   // ── POST /createTasks ─────────────────────────────────────────────────────
   // issueTypeName：由前端查 getIssueTypes 後傳入正確名稱
   if (req.method === "POST" && action === "createTasks") {
-    const { epicKey, hotelName, issueTypeName, reporterAccountId } = await req.json();
+    const { epicKey, hotelName, issueTypeName, reporterAccountId, products } = await req.json();
     if (!epicKey || !hotelName || !issueTypeName) {
       return new Response(JSON.stringify({ error: "epicKey, hotelName and issueTypeName required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -361,8 +399,9 @@ Deno.serve(async (req) => {
     const MKT  = "712020:fa956668-e333-44c6-861f-bb0f050bccc7";
     const ALAN = "5d6e20bb8f0aa30dba0b02d7";
 
-    const TEMPLATES: { s: string; a?: string }[] = [
-      { s: "(TAC) {{N}} (Portal) Creation(建立)" },
+    const TEMPLATES: Record<string, { s: string; a?: string }[]> = {
+      AVA: [
+      { s: "(TAC)({{N}}) Portal Creation (建立)" },
       { s: "(TAC) {{N}} (Portal) Room number creation(房間建立)" },
       { s: "(BE) {{N}} (Portal) Amenity list import(備品匯入)" },
       { s: "(PJM) {{N}} (Portal) Account application(帳號申請)" },
@@ -380,7 +419,7 @@ Deno.serve(async (req) => {
       { s: "(PJM) {{N}} (AVA) Amenity list import(備品清單匯入)" },
       { s: "(PJM) {{N}} (AVA) Surrounding import(周邊匯入)" },
       { s: "(MKT) {{N}} (IC) Introduction Card Preparation(小卡準備) (Aiello)", a: MKT },
-      { s: "(CS) {{N}} (IC) Introduction Card Vioce Command Preparation(小卡語音指令準備) (Aiello)" },
+      { s: "(CS) {{N}} (IC) Introduction Card Voice Command Preparation(小卡語音指令準備) (Aiello)" },
       { s: "(PJM) {{N}} (AVA) Portal task support setting(後台任務支援設定)" },
       { s: "(PJM) {{N}} (AVA) DND/MUR.UI setting(DND/MUR.UI設定)" },
       { s: "(TAC) {{N}} (AVA) DND/MUR.Service setting(DND/MUR.Service setting)" },
@@ -408,17 +447,42 @@ Deno.serve(async (req) => {
       { s: "(TSC) {{N}} (AVA) RCU integration(RCU對接)" },
       { s: "(TAC) {{N}} (AVA) IOT Ctrl button language setting(IOT控制按鈕設定)" },
       { s: "(TSC) {{N}} (Portal) PMS integration(PMS對接)" },
-      { s: "(TSC) {{N}} (Portal) TMS integration(PMS對接) (Don't support)" },
+      { s: "(TSC) {{N}} (Portal) TMS integration(TMS對接) (Don't support)" },
       { s: "(TSC) {{N}} (Portal) Others integration(PMS對接)" },
       { s: "(PJM) {{N}} (Doc) Acceptance Form/Training/Delivery Note(驗收單/教育訓練/交貨單)" },
       { s: "(PJM) {{N}} (Doc) Customized Customer Specification Table Update(客製客規表更新)" },
       { s: "(PJM) {{N}} (Doc) Acceptance Form Update(驗收單更新)" },
-    ];
+      ],
+      ACA: [
+        { s: "(TAC)({{N}}) Portal Creation (建立)" },
+        { s: "(BE)({{N}}) ACA 基礎設定 (測試用分機)" },
+        { s: "(BE)({{N}}) ACA 語音開單設定 (POC)" },
+        { s: "(BE)({{N}}) KMS 使用者權限設定" },
+        { s: "(BE)({{N}}) 新增測試分機" },
+      ],
+    };
 
     const created: string[] = [];
+    const PRODUCT_ORDER = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS"];
+    const productList: string[] = (Array.isArray(products) && products.length > 0 ? products : ["AVA"])
+      .slice()
+      .sort((a: string, b: string) => {
+        const ai = PRODUCT_ORDER.indexOf(a);
+        const bi = PRODUCT_ORDER.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      });
+    const seen = new Set<string>();
+    const tasksToCreate = productList
+      .flatMap((p: string) => TEMPLATES[p] ?? [])
+      .filter((t: { s: string; a?: string }) => {
+        if (seen.has(t.s)) return false;
+        seen.add(t.s);
+        return true;
+      });
+
     const failed: { summary: string; msg: any }[] = [];
 
-    for (const tmpl of TEMPLATES) {
+    for (const tmpl of tasksToCreate) {
       const summary = tmpl.s.replace(/\{\{N\}\}/g, hotelName);
       const fields: any = {
         project:          { key: "AHP" },
@@ -444,7 +508,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       created: created.length,
-      total: TEMPLATES.length,
+      total: tasksToCreate.length,
       failed,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

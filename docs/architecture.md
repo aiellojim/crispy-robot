@@ -86,6 +86,12 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - 總覽頁 checklist 的「前往」按鈕（沒有對應表單分頁的項目，如 FAQ GPT／Showcase／廣告／QR code／GuestWeb 編輯器）
   會讀 `project_progress.sheet_links`（PM 在內部儀表填的外部連結）跟 `projects.kms_link`／`hotel_id` 動態組網址；
   PM 沒填就反灰。邏輯在 `checklistExternalUrl()`（2026-07-21 新增）。
+- `sheet_links` 三個欄位在 PM 端（`dbToUi`／`newProject`，2026-07-22 新增）有智慧預設值，用 `??` 只在
+  DB 值為 `null`/`undefined` 時套用（存過一次之後就是使用者自己的值，行為同 AVA 表單 `checklistDue` 的 seed 邏輯）：
+  `basic` → 該專案自己的 AVA 表單連結（`AVA_FORM_BASE_URL + "?p=" + project.id`）、
+  `faq` → 固定 `https://kms.aiello.ai/dashboard`、
+  `guestWeb` → 有 GW 產品且已填 `hotel_id` 時才給 `https://spi.aiello.ai/<hotel_id>/guest_web_builder`，否則空字串。
+  三者皆可在 UI 手動覆蓋。
 - **已知安全缺口（2026-07-21 發現，尚未修）**：上面那 10 張表 + `projects` 的 UPDATE + `project_progress` 的 SELECT，
   anon RLS policy 目前都是 `USING(true)`——`?p=` 連結只是前端過濾，資料庫層沒有真的限制只能讀寫該 project。
   詳細分析、已測試過但不可行的方案（自訂 header）、以及推薦方案（自訂 JWT + `auth.jwt()->>'project_id'`，

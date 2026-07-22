@@ -4,11 +4,16 @@
 // 提醒對象與時機：沿用前端「通知設定」的 subscribed_projects 和 notify_days_before
 // 涵蓋：專案到期日（第一批、第二批、上線日）+ 任務截止日 / 週期開始與結束
 
-const RESEND_KEY = Deno.env.get("RESEND_API_KEY")!;
+import nodemailer from "npm:nodemailer@6.9.9";
+
 const SUPA_URL   = Deno.env.get("SUPABASE_URL")!;
 const SUPA_KEY   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DASHBOARD  = "https://hotel-dashboard-aiellojims-projects.vercel.app";
-const FROM       = "Aiello 儀表板 <onboarding@resend.dev>"; // 測試用；正式換成 dashboard@aiello.ai
+const FROM       = "Aiello <service@aiello.ai>";
+const SMTP_HOST  = Deno.env.get("SMTP_HOST")!;   // smtp.office365.com
+const SMTP_PORT  = Number(Deno.env.get("SMTP_PORT") ?? "587");
+const SMTP_USER  = Deno.env.get("SMTP_USER")!;   // dashboard@aiello.ai
+const SMTP_PASS  = Deno.env.get("SMTP_PASS")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":  "*",
@@ -24,24 +29,30 @@ async function supaFetch(path: string) {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+  const transporter = nodemailer.createTransport({
+    host:   SMTP_HOST,
+    port:   SMTP_PORT,
+    secure: false,      // STARTTLS（port 587）
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
-  return { ok: res.ok, data: await res.json() };
+  try {
+    await transporter.sendMail({ from: FROM, to, subject, html });
+    return { ok: true, data: null };
+  } catch (err: any) {
+    return { ok: false, data: { message: err.message ?? String(err) } };
+  }
 }
 
 function emailHtml(projectName: string, type: string, date: string, daysLeft: number) {
   const urgency = daysLeft === 0 ? "今天到期" : `還有 ${daysLeft} 天到期`;
-  const color   = daysLeft === 0 ? "#DC2626" : daysLeft === 1 ? "#B45309" : "#5E6AD2";
+  const color   = daysLeft === 0 ? "#DC2626" : daysLeft === 1 ? "#B45309" : "#E8621A";
   const icon    = daysLeft === 0 ? "⚠️" : "📅";
   return `<!DOCTYPE html>
 <html lang="zh-TW">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background:#F5F5F5;font-family:'Noto Sans TC',sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #E5E5E5;">
-    <div style="background:#5E6AD2;padding:24px 32px;">
+    <div style="background:#E8621A;padding:24px 32px;">
       <p style="margin:0;color:#fff;font-size:12px;opacity:0.75;letter-spacing:1px;text-transform:uppercase;">Aiello 專案交付中心</p>
       <h1 style="margin:8px 0 0;color:#fff;font-size:20px;font-weight:700;">${icon} ${type}提醒</h1>
     </div>
@@ -50,11 +61,11 @@ function emailHtml(projectName: string, type: string, date: string, daysLeft: nu
         <strong>${projectName}</strong> 的 <strong>${type}</strong>
         <strong style="color:${color};"> ${urgency}</strong>。
       </p>
-      <div style="background:#F5F5F5;border-radius:8px;padding:14px 18px;margin-bottom:24px;">
+      <div style="background:#FFF4EE;border-radius:8px;padding:14px 18px;margin-bottom:24px;border:1px solid #FDDCC8;">
         <p style="margin:0;font-size:12px;color:#6B6B6B;letter-spacing:0.5px;">日期</p>
         <p style="margin:4px 0 0;font-size:20px;font-weight:700;color:#111;font-family:monospace;">${date}</p>
       </div>
-      <a href="${DASHBOARD}" style="display:inline-block;padding:11px 22px;background:#5E6AD2;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">前往儀表板 →</a>
+      <a href="${DASHBOARD}" style="display:inline-block;padding:11px 22px;background:#E8621A;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">前往儀表板 →</a>
     </div>
     <div style="padding:14px 32px;border-top:1px solid #E5E5E5;font-size:11px;color:#A3A3A3;">
       此通知依你在儀表板設定的提醒偏好自動發送。如要調整，請至儀表板「🔔 通知設定」。
