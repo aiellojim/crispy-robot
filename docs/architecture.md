@@ -83,8 +83,11 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - 存取模式：**無登入**，飯店拿到連結 `AVA_FORM_BASE_URL + "?p=" + project.id`（`project.id` 本身就是權杖，
   UI 由 `hotel-project-dashboard.jsx` 的 `ProjectDetail` 產生／複製，`AVA_FORM_BASE_URL` 常數定義在檔案開頭）就能直接編輯，
   體驗要求跟線上 Excel 一樣（含多人即時同步，透過 Realtime `postgres_changes` 訂閱上面那 10 張表）。
-- **已知安全缺口（2026-07-21 發現，尚未修）**：上面那 10 張表 + `projects` 的 UPDATE，anon RLS policy
-  目前都是 `USING(true)`——`?p=` 連結只是前端過濾，資料庫層沒有真的限制只能讀寫該 project。
+- 總覽頁 checklist 的「前往」按鈕（沒有對應表單分頁的項目，如 FAQ GPT／Showcase／廣告／QR code／GuestWeb 編輯器）
+  會讀 `project_progress.sheet_links`（PM 在內部儀表填的外部連結）跟 `projects.kms_link`／`hotel_id` 動態組網址；
+  PM 沒填就反灰。邏輯在 `checklistExternalUrl()`（2026-07-21 新增）。
+- **已知安全缺口（2026-07-21 發現，尚未修）**：上面那 10 張表 + `projects` 的 UPDATE + `project_progress` 的 SELECT，
+  anon RLS policy 目前都是 `USING(true)`——`?p=` 連結只是前端過濾，資料庫層沒有真的限制只能讀寫該 project。
   詳細分析、已測試過但不可行的方案（自訂 header）、以及推薦方案（自訂 JWT + `auth.jwt()->>'project_id'`，
   需要 Jim 提供 JWT Secret）都記錄在 `docs/todo.md` 待辦 #6，動工前先讀那邊。
 - `form-submit-notify` Edge Function：飯店按「提交／更新」時觸發，寄信通知 `avapjm@aiello.ai`（Aiello 內部相關人員 email 群組，Jim 確認寄一次全員收到，不需要動態抓 PIC）。

@@ -24,8 +24,9 @@
 - 2026-07-21 審查發現：AVA 表單存檔是整包 upsert（見 index.html 的 `syncToSupabase`），跟 `project_progress`（走 `update_check_item` RPC 做單一 key 原子更新）不同。若飯店兩人同時在不同分頁填、或 PM 同時在後台改同一專案，後寫入的會整包覆蓋前面的。
 - Jim 確認**需要處理，但不急**，先記錄。動工前想清楚：哪些欄位真的需要 diff-then-upsert（目前 `syncToSupabase` 已經有 dirty-check，只送有變動的欄位，衝突視窗比全量覆蓋小很多，但同一欄位被兩邊同時改還是會有 last-write-wins 問題）。
 
-### 6. Anon RLS 對 AVA 表單相關 11 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
+### 6. Anon RLS 對 AVA 表單相關 12 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
 - 現況：`projects`（UPDATE）、`hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`room_types`、`room_type_images`、`welcome_messages` 的 anon RLS policy 都是 `USING(true)`——任何人持有 anon key（表單前端本來就公開）即可讀寫任意飯店資料，不受 `?p=<project.id>` 連結限制。`floor_wifi_rooms` 還存明碼 WiFi 密碼。
+- **2026-07-21 新增**：`project_progress` 也加了一條 anon SELECT policy（`anon: read for AVA form`，`USING(true)`）——AVA 表單總覽頁的 checklist「前往」按鈕要讀 `sheet_links`（PM 在內部儀表填的 FAQ／Showcase／廣告／QR code 連結）才能運作。範圍比其他 11 張表小（只開 SELECT，沒有寫入權限），但一樣沒有 project 隔離，之後方案 B 要一併涵蓋這張表。
 - Jim 的訴求：飯店拿到表單連結就能同步編輯、不需登入，體驗要跟線上 Excel 一樣（含即時多人同步）。
 - 已測試過的方案與結論：
   - **方案 A（`x-project-id` 自訂 header + RLS 用 `current_setting('request.headers')` 檢查）**：REST 讀寫可行，但 **Realtime 的 `postgres_changes` 不吃自訂 header**，只認 JWT claim（`supabase.realtime.setAuth()`），查證見 Supabase 官方文件 Realtime > Postgres Changes > Custom tokens 段落。套用後會讓即時同步整個失效，已在正式環境 canary 測試（`welcome_messages` 表）後確認並復原，不能用。
