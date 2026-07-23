@@ -46,6 +46,13 @@
   3. 圖片欄位目前是 base64 直接塞資料庫欄位（非 Supabase Storage）——分頁/欄位數量變成使用者可無限新增後，這個模式會讓存檔資料量隨之膨脹，建議一併改成存 Storage、資料庫只存網址。
 - **狀態：Jim 已選定方向，尚未排入 sprint，之後要主動提醒 Jim 排時間動工。**
 
+### 8. 新網站：Showcase + 廣告 + QR Code 合併獨立站（2026-07-23 開始籌備）
+- 要把 AVA 表單裡的 Showcase 分頁（2026-07-22 建的）搬出來，跟目前完全沒實作的「廣告設定」「Pop-up QR
+  code 內容設定」合併成一個獨立公開網站。架構決策、現況盤點（AVA 表單/hotel-dashboard 各要改哪裡）、
+  風險點（先確認有無真實飯店已填過 Showcase 資料再拆分頁）都寫在
+  `docs/showcase-ads-qr-site-handoff.md`，動工前先讀那份文件。
+- **狀態：Jim 正在建新資料夾/新 chat 準備動工，尚未開始寫 code。**
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
