@@ -27,6 +27,8 @@
 ### 6. Anon RLS 對 AVA 表單相關 12 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
 - 現況：`projects`（UPDATE）、`hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`room_types`、`room_type_images`、`welcome_messages` 的 anon RLS policy 都是 `USING(true)`——任何人持有 anon key（表單前端本來就公開）即可讀寫任意飯店資料，不受 `?p=<project.id>` 連結限制。`floor_wifi_rooms` 還存明碼 WiFi 密碼。
 - **2026-07-21 新增**：`project_progress` 也加了一條 anon SELECT policy（`anon: read for AVA form`，`USING(true)`）——AVA 表單總覽頁的 checklist「前往」按鈕要讀 `sheet_links`（PM 在內部儀表填的 FAQ／Showcase／廣告／QR code 連結）才能運作。範圍比其他 11 張表小（只開 SELECT，沒有寫入權限），但一樣沒有 project 隔離，之後方案 B 要一併涵蓋這張表。
+- **2026-07-22 新增**：Showcase 功能新增的 `showcase_sections`／`showcase_cards` 兩張表，比照同一套 `anon: edit via link USING(true)` 開放 policy 建立（跟其他 12 張表同款、同樣的已知缺口，沒有另外設計更嚴謹的隔離），方案 B 要一併涵蓋這兩張新表，缺口總數變成 14 張。
+- **2026-07-22 再新增**：「其他參考文件」功能新增的 `reference_documents` 表，同樣套用 `anon: edit via link USING(true)`，缺口總數變成 15 張。
 - Jim 的訴求：飯店拿到表單連結就能同步編輯、不需登入，體驗要跟線上 Excel 一樣（含即時多人同步）。
 - 已測試過的方案與結論：
   - **方案 A（`x-project-id` 自訂 header + RLS 用 `current_setting('request.headers')` 檢查）**：REST 讀寫可行，但 **Realtime 的 `postgres_changes` 不吃自訂 header**，只認 JWT claim（`supabase.realtime.setAuth()`），查證見 Supabase 官方文件 Realtime > Postgres Changes > Custom tokens 段落。套用後會讓即時同步整個失效，已在正式環境 canary 測試（`welcome_messages` 表）後確認並復原，不能用。
