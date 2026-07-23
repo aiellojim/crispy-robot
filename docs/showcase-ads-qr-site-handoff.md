@@ -162,6 +162,17 @@ Jim 截圖回報用起來的問題，逐一修掉（commit 9ba7a09）：
   2. **即時預覽的卡片文字沒吃 Enter 換行**：`renderShowcasePreviewHtml()` screen 2 卡片簡述 `<div>` 少了 `white-space:pre-line`（展開後的卡片詳情 modal 原本就有），補上即可。
 - 一樣做了 node 靜態驗證（語法檢查、id/class 對應檢查），**沒有瀏覽器可以肉眼跑過**，麻煩 Jim push 後實際測試中文輸入法搜尋、以及多行文字在預覽卡片上的換行顯示。
 
+## 2026-07-24 第六次更新：新網站加上「提交 / 更新」按鈕 + form-submit-notify 改支援多來源
+
+- Jim 要求 AVA UI settings 加一顆跟 AVA 基本設定表單一樣的「提交 / 更新」按鈕：樣式沿用既有 `.btn.primary`、三語 i18n、點擊後二次確認（confirm 文案原封不動比照 AVA 基本設定表單），確認後 email 通知 `avapjm@aiello.ai`。
+- **共用 `form-submit-notify` Edge Function**，而不是另開一支：發現這支 function 完全沒有被任何 repo 追蹤（純部署在 Supabase，找不到原始碼檔案）——已補進 `hotel-dashboard/supabase/functions/form-submit-notify/index.ts`，比照 `send-push`/`send-email`/`jira-proxy`/`customer-access-manage` 這幾支既有函式的版控慣例。
+- Function 介面變更（新增可選 `source` 參數）前，先在三個相關 repo（`AVA UI settings`／`AVA basic settings`／`hotel-dashboard`）都打了 `pre-submit-button-2026-07-24` git tag 還原點。
+- 改動內容：
+  1. `form-submit-notify`：新增 `SOURCE_LABELS` 對照表（`basic_settings` → 「基礎設定表單」、`ui_settings` → 「Showcase／廣告／QR Code 設定表單」），信件標題與內文的來源字樣改吃這個對照表；同時把原本寫死的「AVA 基本設定表單」字樣改成「基礎設定表單」（Jim 指出：現在基本設定表已經不只涵蓋 AVA 這個產品線）。缺省 `source` 一律 fallback 到 `basic_settings`，向下相容不帶這個欄位的舊呼叫。已透過 Supabase MCP `deploy_edge_function` 部署（version 3）。
+  2. `AVA basic settings/index.html` 的 `notifySubmit()`：明確加上 `source:"basic_settings"`（原本就是預設值，明確帶出來避免未來預設值調整時被誤傷）。
+  3. `AVA UI settings/index.html`：header 新增 `submitBtn`，新增對應的 `notifySubmit()`（帶 `source:"ui_settings"`），沒有另外持久化「已提交」時間戳——AVA 基本設定表單的 `submittedAt`/`form_submitted_at` 目前也只是存著、沒有任何畫面真的顯示它，所以這次先不新增對應欄位/schema，純粹是點擊→二次確認→寄信的流程。如果之後要在畫面上顯示「已提交」狀態，需要另外討論要不要幫 `projects` 或新表加欄位。
+- 已用 `node --check` 驗證兩個網站的語法、id/class 對應；**沒有瀏覽器可以肉眼跑過、也沒有實際觸發過信件**（Supabase Edge Function 需要真實 HTTP 呼叫，這個沙盒的 outbound network 被 allowlist 擋掉，連 `*.supabase.co` 都連不到），麻煩 Jim push 後實際點一次「提交 / 更新」，確認：(a) 兩語言按鈕文案／confirm 對話框正常，(b) `avapjm@aiello.ai` 真的有收到信、且標題正確顯示「Showcase／廣告／QR Code 設定表單」而不是「基礎設定表單」。
+
 ## 下一個 session 開場建議
 
 新 session 連結資料夾：這份 handoff 提到的三個地方都要連結——本 repo（`hotel-dashboard`，看這份文件、
