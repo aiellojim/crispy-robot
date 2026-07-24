@@ -184,6 +184,15 @@ Jim 截圖回報用起來的問題，逐一修掉（commit 9ba7a09）：
 - 每次資料模型調整都有用 Supabase MCP 對正式環境跑過一次性測試（新增測試 project + 不同語言各自不同 image 的列 → 讀回驗證 → cascade 刪除確認乾淨）。
 - 一樣全程只有 `node --check` + id/class 對應腳本驗證，**沒有瀏覽器可以肉眼跑過**，麻煩 Jim push 後實際測試兩個分頁的新增/編輯/搜尋/圖片上傳，以及廣告的畫面預覽兩層切換。
 
+## 2026-07-25 第八次更新：行銷事件單層畫面預覽 + 觸發詞欄位
+
+- **行銷事件畫面預覽**（commit 0982ab8）：依 Jim 提供的「Marketing Event Preview Specification」建了單層預覽（480×270，跟廣告設定頁的雙層機制不同，這個只有一層、非互動式 Confirm 按鈕）：背景圖、置中標題、左側敘述文字、右側 QR Code、底部 Confirm 按鈕；一樣是每則行銷事件卡片有「預覽」按鈕、懶渲染、欄位編輯即時同步回預覽。
+- **本次微調**（commit ce4fe72）：
+  1. 敘述文字字體從 18px 縮小為 14px（行高 24px→19px 同步調整）——Jim 反映原規格字體太大。
+  2. Confirm 按鈕倒角從規格書寫的 5px 改成 3px、背景透明度從 .20 提高到 .35——同樣是 Jim 對照畫面後的直接修正，覆蓋規格書原文字。
+  3. **新增「觸發詞」（Trigger Words）欄位**：導流網址下方新增單行輸入欄，每語言各自獨立；使用者輸入後按 Enter 會把 trim 過的值 push 進 `content[lang].triggerWords` 陣列並渲染成可移除的 pill badge、輸入欄清空；空值/純空白不反應；IME 組字中的 Enter（`compositionstart`/`compositionend` + `e.isComposing` 雙重判斷）不會誤觸發新增，比照既有搜尋欄的 IME 安全模式。新增 `renderTriggerPillsHtml()`／`refreshTriggerPillsFor()` 兩個輔助函式，`refreshTriggerPillsFor()` 只重繪單一卡片的 pill 容器（避免整份清單重繪打斷使用者輸入焦點）。`qr_popups.content` 本來就是 jsonb，這次沒有 DB schema 變更。
+- 一樣只有 `node --check` + id/class 對應腳本驗證，**沒有瀏覽器可以肉眼跑過**。commit 已經進到 `AVA UI settings` 本機 repo，但**這個沙盒沒有 GitHub 認證，`git push` 會失敗**（`could not read Username for 'https://github.com'`）——麻煩 Jim 在自己電腦上開 Terminal 到 `AVA UI settings` 資料夾手動 `git push`，然後實際測試：(a) 行銷事件敘述字體大小、(b) Confirm 按鈕的圓角/透明度觀感、(c) 觸發詞完整流程（輸入→Enter 新增 pill→空值不反應→移除 pill→切換語言各自獨立→用中文/日文等需要 IME 的文字輸入不會誤觸發)。
+
 ## 下一個 session 開場建議
 
 新 session 連結資料夾：這份 handoff 提到的三個地方都要連結——本 repo（`hotel-dashboard`，看這份文件、
