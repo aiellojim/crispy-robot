@@ -173,6 +173,17 @@ Jim 截圖回報用起來的問題，逐一修掉（commit 9ba7a09）：
   3. `AVA UI settings/index.html`：header 新增 `submitBtn`，新增對應的 `notifySubmit()`（帶 `source:"ui_settings"`），沒有另外持久化「已提交」時間戳——AVA 基本設定表單的 `submittedAt`/`form_submitted_at` 目前也只是存著、沒有任何畫面真的顯示它，所以這次先不新增對應欄位/schema，純粹是點擊→二次確認→寄信的流程。如果之後要在畫面上顯示「已提交」狀態，需要另外討論要不要幫 `projects` 或新表加欄位。
 - 已用 `node --check` 驗證兩個網站的語法、id/class 對應；**沒有瀏覽器可以肉眼跑過、也沒有實際觸發過信件**（Supabase Edge Function 需要真實 HTTP 呼叫，這個沙盒的 outbound network 被 allowlist 擋掉，連 `*.supabase.co` 都連不到），麻煩 Jim push 後實際點一次「提交 / 更新」，確認：(a) 兩語言按鈕文案／confirm 對話框正常，(b) `avapjm@aiello.ai` 真的有收到信、且標題正確顯示「Showcase／廣告／QR Code 設定表單」而不是「基礎設定表單」。
 
+## 2026-07-24 第七次更新：廣告設定頁重構 + QR 分頁改名為「行銷事件」
+
+- **廣告設定頁**（commit 4d77ea7 起，f40f8fa/15a8569/90215ca/de9c75b/cd730e6/b20720a）：頁面結構改成比照 Showcase（標題/說明/畫面預覽/語言 pill badge），但沒有區塊 tab（廣告本來就是扁平清單）；搜尋欄保留（IME 安全），下方每則廣告改成可直接編輯的表單區塊（標題/內容/背景圖片上傳+下載/QR 網址），拿掉 toggle（連同 `ad_settings.active` 欄位一併 drop）。圖片從整張卡片共用改成 `content[lang].image` 每語言各自獨立，不需要 DB schema 異動（`content` 本來就是 jsonb）。
+  - 畫面預覽依 Jim 提供的「Attraction Preview Specification v1.0」建了完整兩層 AVA 裝置模擬（Layer 1 Hero / Layer 2 Detail Overlay + QR Code），每張廣告卡片有「預覽」按鈕，點擊才懶渲染進共用預覽區；欄位編輯會即時同步回預覽（如果正在編輯的廣告正是預覽中的那個）。
+  - 後續依 Jim 對照實際畫面的直接修正做了好幾輪對齊微調（標題/敘述 text-align 問題根因是外層 `text-align:center` 往下繼承、Layer 2 標題垂直位置改成跟 X 按鈕文字同高而非規格書寫的「跟 Layer 1 同位置」、Layer 1 敘述文字加寬到接近整個螢幕寬、Layer 2 標題/敘述間距調整）。
+  - 順手修正 `INPUT_STYLE` 高度從寫死 44px 改成 `var(--ctrl-h)`（38px，跟 AVA 基本設定一致，全站输入框都變細）、「上傳／下載」樣式改成 AVA 基本設定歡迎畫面的精簡版（新增 `dataUrlExt()`/`tInline()`/`uploadDownloadLink()` 三個輔助函式）、卡片計數「廣告 N」換行 bug（根因是 `T()` 回傳 block-level span，改用 `tInline()`）。
+- **QR 分頁改名重構為「行銷事件」**（commit 694662c）：PANELS 標籤從「Pop-up QR Code」改成「行銷事件」/"Marketing Event"/「マーケティングイベント」（hash key 仍是 `#qr`，內部 `state.qr`／`qr_popups` 表名都不動，只改使用者看到的文字）。排版/資料模型完全比照廣告設定頁重構後的樣子：畫面預覽先放同尺寸 placeholder（還沒有畫面規格）、拿掉 toggle（`qr_popups.active` 欄位一併 drop）、圖片改成 `content[lang].image` 每語言獨立。舊的共用 `renderFlatCardList()`（Ads 之前已經改用專屬版本）這是最後一個呼叫端，已經整個移除。
+- 兩次 schema 變更（drop `ad_settings.active` / drop `qr_popups.active`）前都先在 `AVA UI settings` repo 打了對應的 git tag 還原點（`pre-ads-toggle-removal-2026-07-24`、`pre-qr-marketing-event-rebuild-2026-07-24`）。
+- 每次資料模型調整都有用 Supabase MCP 對正式環境跑過一次性測試（新增測試 project + 不同語言各自不同 image 的列 → 讀回驗證 → cascade 刪除確認乾淨）。
+- 一樣全程只有 `node --check` + id/class 對應腳本驗證，**沒有瀏覽器可以肉眼跑過**，麻煩 Jim push 後實際測試兩個分頁的新增/編輯/搜尋/圖片上傳，以及廣告的畫面預覽兩層切換。
+
 ## 下一個 session 開場建議
 
 新 session 連結資料夾：這份 handoff 提到的三個地方都要連結——本 repo（`hotel-dashboard`，看這份文件、
