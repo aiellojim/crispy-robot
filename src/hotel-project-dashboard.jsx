@@ -3373,6 +3373,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
                     <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                      {/* 加上「基礎設定：」字首跟下面第二行的「介面設定：」對齊（Jim, 2026-07-27） */}
+                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap" }}>基礎設定：</span>
                       <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
                         {AVA_FORM_BASE_URL}?p={project.id}
                       </div>
