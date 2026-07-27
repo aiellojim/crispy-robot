@@ -34,6 +34,14 @@ const GW_LINK_KEY = "guestWeb";
 // project.id 本身就是連結權杖（無須登入，跟公開 Excel 連結同一個概念），詳見該專案 index.html 的 getProjectId()
 const AVA_FORM_BASE_URL = "https://basic-settings.aiello.dev/";
 
+// AVA UI settings 表單（Vercel 部署，獨立站，涵蓋機台 Showcase / 廣告設定 / 行銷事件三頁）— 同一把
+// project.id 當連結權杖，跟 AVA_FORM_BASE_URL 一樣的邏輯。加 hash 可以直接導到對應分頁
+// （#showcase/#ads/#qr，順序對應 BATCH2_ITEMS/BATCH2_LINK_KEYS），不加 hash 則落在第一頁。
+// 單一來源：這三個連結（batch2 的預設值 + 總覽頁的第二行連結）都呼叫這個 helper，不要另外複製網址字串
+// （Jim, 2026-07-27）。
+const AVA_UI_SETTINGS_BASE_URL = "https://ava-ui-settings.aiello.dev/";
+const avaUiSettingsUrl = (id, hash) => AVA_UI_SETTINGS_BASE_URL + "?p=" + id + (hash ? ("#" + hash) : "");
+
 // Calendar event type colours — CSS var based for dark mode
 const CAL_COLORS = {
   launch:    { bg:"var(--cal-launch-bg)",  text:"var(--cal-launch-text)",  border:"var(--cal-launch-border)" },
@@ -267,8 +275,9 @@ const dbToUi = (row, prog) => ({
   sheetLinks: {
     basic: prog?.sheet_links?.basic || (AVA_FORM_BASE_URL + "?p=" + row.id),
     faq: prog?.sheet_links?.faq || "https://kms.aiello.ai/dashboard",
-    showcase: prog?.sheet_links?.showcase ?? "", ad: prog?.sheet_links?.ad ?? "",
-    popupQR: prog?.sheet_links?.popupQR ?? "",
+    showcase: prog?.sheet_links?.showcase || avaUiSettingsUrl(row.id, "showcase"),
+    ad: prog?.sheet_links?.ad || avaUiSettingsUrl(row.id, "ads"),
+    popupQR: prog?.sheet_links?.popupQR || avaUiSettingsUrl(row.id, "qr"),
     guestWeb: prog?.sheet_links?.guestWeb || (((row.products ?? []).includes("GW") && row.hotel_id) ? ("https://spi.aiello.ai/" + encodeURIComponent(row.hotel_id) + "/guest_web_builder") : ""),
     acaScenario: prog?.sheet_links?.acaScenario ?? "",
   },
@@ -304,7 +313,7 @@ const newProject = () => {
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
   batch2Checked:{}, batch2Notes:{},
-  sheetLinks:{ basic: AVA_FORM_BASE_URL + "?p=" + id, faq: "https://kms.aiello.ai/dashboard", showcase:"", ad:"", popupQR:"", guestWeb:"", acaScenario:"" },
+  sheetLinks:{ basic: AVA_FORM_BASE_URL + "?p=" + id, faq: "https://kms.aiello.ai/dashboard", showcase: avaUiSettingsUrl(id,"showcase"), ad: avaUiSettingsUrl(id,"ads"), popupQR: avaUiSettingsUrl(id,"qr"), guestWeb:"", acaScenario:"" },
   tasks:[],
   };
 };
@@ -3391,6 +3400,40 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         </svg>
                       </a>
                     </div>
+                    {/* 第二行：AVA UI settings（Showcase／廣告設定／行銷事件）站的連結，不帶 hash（落在
+                        第一頁），AVA 專屬所以只在有選 AVA 時顯示 - 跟 batch2 三個項目的顯示邏輯一致
+                        （Jim, 2026-07-27）。*/}
+                    {info.products.includes("AVA") && (
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginTop:8 }}>
+                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap" }}>介面設定：</span>
+                      <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                        {avaUiSettingsUrl(project.id)}
+                      </div>
+                      <button
+                        onClick={(e)=>{
+                          navigator.clipboard.writeText(avaUiSettingsUrl(project.id));
+                          const btn = e.currentTarget;
+                          btn.style.color = "var(--green)";
+                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
+                        }}
+                        title="複製 UI 設定表單連結"
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
+                      <a href={avaUiSettingsUrl(project.id)} target="_blank" rel="noreferrer"
+                        title="在新分頁開啟 UI 設定表單"
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    </div>
+                    )}
                   </div>
                   )}
                   {[
