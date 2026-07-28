@@ -2590,6 +2590,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [copiedHotelId, setCopiedHotelId] = useState(false);
   const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
   const saveTimer = useRef(null);
+  // Guards the autosave effect below against firing on mount, before the user has actually
+  // touched anything (2026-07-28). Without this, the effect's guaranteed first run - which
+  // happens on every mount regardless of whether any state changed - would call onUpdate with
+  // whatever snapshot happened to be in props at that moment. If someone else had saved a newer
+  // edit to this same project in the meantime and this tab was just sitting open (e.g. Jim
+  // monitoring the dashboard without editing), that first-run save would silently push the
+  // stale snapshot back and clobber the other person's edit. Real incident, not theoretical -
+  // see docs/todo.md #10. This only skips the truly-empty first run; the later re-fire caused by
+  // the DB refresh below (merging fresh basic/faq/batch2Checked) still goes through normally,
+  // since that one is a deliberate, real change.
+  const didMountRef = useRef(false);
 
   useEffect(() => {
     (async()=>{
@@ -2617,6 +2628,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   }, [project.id]); // eslint-disable-line
 
   useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     setSaveStatus("saving");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     onUpdate({ ...project, info, basicChecked, basicNotes, faqChecked, faqNotes, batch2Checked, batch2Notes, sheetLinks, tasks });
