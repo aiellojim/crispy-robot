@@ -228,7 +228,7 @@ const getFlags = (products, integrations) => ({
 const calcTotal = (products, integrations) => {
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(products, integrations);
   return (hasAva ? BASIC_ITEMS.length : 0) + (hasAca ? 1 : 0)
-    + (hasAva ? (hasIptv ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1) : 0)
+    + ((hasAva||hasGw) ? (hasIptv ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1) : 0)
     + (hasAva ? BATCH2_ITEMS.length : 0) + (hasGw ? 1 : 0);
 };
 
@@ -241,7 +241,7 @@ const calcPct = (proj) => {
   const done =
     (hasAva ? Object.values(proj.basicChecked).filter(Boolean).length : 0)
     + (hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0)
-    + (hasAva ? Object.entries(proj.faqChecked).filter(([k,v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length : 0)
+    + ((hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length : 0)
     + (hasAva ? BATCH2_ITEMS.filter(i => proj.batch2Checked[i]).length : 0)
     + (hasGw  && proj.batch2Checked[GW_ITEM] ? 1 : 0);
   return Math.round((done / total) * 100);
@@ -1506,7 +1506,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
 
             const basicDone = hasAva ? Object.values(proj.basicChecked).filter(Boolean).length : 0;
             const acaDone   = hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0;
-            const faqDone   = hasAva ? Object.entries(proj.faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
+            const faqDone   = (hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
             const b2done    = (hasAva?BATCH2_ITEMS.filter(it=>proj.batch2Checked[it]).length:0)+(hasGw&&proj.batch2Checked[GW_ITEM]?1:0);
             const b2total   = (hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0);
 
@@ -1605,18 +1605,16 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
                 {/* Row 5: Sub-counts */}
                 {(hasAva||hasAca||hasGw) ? (
                   <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
-                    {hasAva && <>
-                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                    {hasAva && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.green,flexShrink:0 }}/>
                         <span style={{ fontSize:11,color:C.textLight }}>基礎設定</span>
                         <span style={{ fontSize:11,color:C.green,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{basicDone}/{BASIC_ITEMS.length}</span>
-                      </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                      </div>}
+                    {(hasAva||hasGw) && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.amber,flexShrink:0 }}/>
                         <span style={{ fontSize:11,color:C.textLight }}>FAQ</span>
                         <span style={{ fontSize:11,color:C.amber,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{faqDone}/{hasIptv?FAQ_ITEMS.length:FAQ_ITEMS.length-1}</span>
-                      </div>
-                    </>}
+                      </div>}
                     {hasAca && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:PRODUCT_COLORS.ACA,flexShrink:0 }}/>
                       <span style={{ fontSize:11,color:C.textLight }}>ACA</span>
@@ -2705,12 +2703,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
   const jiraTaskCount = (hasAva ? 51 : 0) + (hasAca ? (hasAva ? 4 : 5) : 0) || 51;
-  const canBatch1 = hasAva||hasAca, canBatch2 = hasAva||hasGw;
+  const canBatch1 = hasAva||hasAca||hasGw, canBatch2 = hasAva||hasGw;
   const activeFaq = FAQ_ITEMS.filter(item => item!==FAQ_TV_ITEM||hasIptv);
 
   const basicCount = hasAva ? Object.values(basicChecked).filter(Boolean).length : 0;
   const acaCount   = hasAca && basicChecked[ACA_ITEM] ? 1 : 0;
-  const faqCount   = hasAva ? Object.entries(faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
+  const faqCount   = (hasAva||hasGw) ? Object.entries(faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
   const b2Count    = hasAva ? BATCH2_ITEMS.filter(it=>batch2Checked[it]).length : 0;
   const gwCount    = hasGw  && batch2Checked[GW_ITEM] ? 1 : 0;
   const totalItems = calcTotal(info.products, info.integrations);
@@ -2767,7 +2765,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
       <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, padding:"0 40px", display:"flex" }}>
         {STEPS.map((s,i) => {
           const locked = (i===1&&!canBatch1)||(i===2&&!canBatch2);
-          const tip    = i===1?"請先選購 AVA 或 ACA":"請先選購 AVA 或 GW";
+          const tip    = i===1?"請先選購 AVA、ACA 或 GW":"請先選購 AVA 或 GW";
           return (
             <button key={i} onClick={()=>!locked&&setStep(i)} title={locked?tip:""}
               style={{ padding:"14px 18px", background:"none", border:"none", fontFamily:"inherit",
@@ -3123,7 +3121,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         {/* Step 1: 第一批資料 */}
         {step===1&&(
           <div style={{ animation:"fadeIn 0.25s ease" }}>
-            {!canBatch1?<LockScreen msg="請先選購 AVA 或 ACA 以開啟第一批資料"/>:(
+            {!canBatch1?<LockScreen msg="請先選購 AVA、ACA 或 GW 以開啟第一批資料"/>:(
               <>
                 <div style={{ marginBottom:24 }}>
                   <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:"0 0 6px" }}>第一批資料</h2>
@@ -3154,7 +3152,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <SheetLink value={sheetLinks[ACA_LINK_KEY]||""} onChange={v=>setSheetLinks(p=>({ ...p, [ACA_LINK_KEY]:v }))} color={PRODUCT_COLORS.ACA}/>
                   </Card>
                 )}
-                {hasAva&&(
+                {(hasAva||hasGw)&&(
                   <Card>
                     <SectionCount title="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>
                     {activeFaq.map(item=>(
@@ -3335,7 +3333,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <div style={{ display:"flex", gap:14, marginBottom:20, flexWrap:"wrap" }}>
               {hasAva&&<ProgressCard label="基礎設定資料表" checked={basicCount} total={BASIC_ITEMS.length} color={C.green}/>}
               {hasAca&&<ProgressCard label="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA}/>}
-              {hasAva&&<ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>}
+              {(hasAva||hasGw)&&<ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>}
               {(hasAva||hasGw)&&<ProgressCard label="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>}
             </div>
             {info.name&&(
@@ -3508,7 +3506,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {BASIC_ITEMS.map(item=><OvCheckRow key={item} label={item} checked={basicChecked[item]} note={basicNotes[item]} color={C.green}/>)}
                 </OvCard>
               )}
-              {hasAva&&(
+              {(hasAva||hasGw)&&(
                 <OvCard title="FAQ 資料表" color={C.amber} linkKey="faq" sheetLinks={sheetLinks}>
                   {activeFaq.map(item=><OvCheckRow key={item} label={item} checked={faqChecked[item]} note={faqNotes[item]} color={C.amber}/>)}
                   {!hasIptv&&<div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", opacity:0.5 }}>
