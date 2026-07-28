@@ -54,6 +54,22 @@
   `docs/showcase-ads-qr-site-handoff.md`，動工前先讀那份文件。
 - **狀態：Jim 正在建新資料夾/新 chat 準備動工，尚未開始寫 code。**
 
+### 9. 上傳圖片沒有版本／備份機制（2026-07-28 發現）
+- 現況：AVA basic settings、AVA UI settings 的圖片上傳（房型照片、Welcome Screen 圖片、樓層 WiFi 掃描圖、Showcase／廣告／QR 背景圖）都是前端用 `FileReader.readAsDataURL()` 轉成 base64 字串後直接寫進 Postgres 欄位，沒有走 Supabase Storage，也沒有任何獨立的檔案版本歷史。覆蓋等於直接遺失舊版，唯一救得回來的方式是整個資料庫／資料表層級的時間點還原，代價很高（會連帶復原同一時間之後其他所有欄位的異動）。base64 也讓同一張圖比原始檔案體積多約三成，長期會讓資料表越長越肥。
+- 建議方案：
+  - 輕量：覆蓋前把舊值寫進一張新的歷史記錄表（project_id／欄位名稱／舊值／時間），不動現有 base64-in-DB 架構，但沒解決體積肥大問題，復原也要另外做介面或手動查 SQL。
+  - 正規（建議）：改用 Supabase Storage bucket 存實際檔案，資料庫只存 URL（比照 `reference_documents` 存 URL 的模式）；上傳路徑帶時間戳記、不覆蓋舊檔，舊版本自然留在 bucket 裡當版本歷史，之後可定期清理。需要：三個上傳入口改呼叫 Storage API、設定 bucket RLS policy（比照現有 anon 開放模式）、既有 base64 資料一次性搬遷成真正檔案。
+- 狀態：Jim 已了解取捨，尚未決定要不要做，先記錄。
+
+### 10. hotel-dashboard：ProjectDetail 整包 upsert 會覆蓋其他使用者的即時編輯（2026-07-28 實際發生）
+- 現象：Jim 開著某專案的「專案資訊」頁閒置，另一人在別的分頁編輯同一專案並正常存檔；Jim 之後離開該頁面觸發的自動存檔，把資料庫覆蓋回 Jim 那份完全沒編輯過的舊版本，另一人的編輯消失。
+- 根因：`ProjectDetail` 的 `info`／`sheetLinks`／`tasks`／各 notes 只在元件掛載當下用 `useState(project.xxx)` 初始化一次（約 2577-2585 行），掛載後不會再跟資料庫或父層 `project` prop 同步——沒有 realtime 訂閱、沒有輪詢。觸發存檔的 `useEffect`（約 2619-2627 行）依賴陣列只要有任何一個物件參照變動就會呼叫 `onUpdate`，一路送到 `handleUpdate`（約 3841-3862 行）對 `projects` 表做整包 `upsert`——不是單一 key 原子更新，也沒有 diff。只要 Jim 那個分頁在別人編輯之後、還沒重新整理之前觸發任何一次存檔（哪怕只是掛載當下就會觸發一次，或欄位 blur 產生新的物件參照但內容其實沒變），就會把整包舊資料寫回去蓋掉別人剛存的新資料。
+- 範圍：`projects` 表整包 upsert（`info` 等）、`project_progress` 的 `basic_notes`／`faq_notes`／`batch2_notes`／`sheet_links` 都有這個風險；`basic_checked`／`faq_checked`／`batch2_checked` 已經是走 `update_check_item` RPC 原子更新，不受影響（跟 CLAUDE.md 硬規則 #1 的設計初衷一致，只是沒有涵蓋到這幾個欄位）。
+- 建議方案：
+  - 治標：`ProjectDetail` 增加 realtime 訂閱，或至少在重新取得 focus／重新進入頁面時重新拉一次 `projects`／`project_progress` 最新值再繼續編輯，縮小衝突視窗。
+  - 治本：把 `info`／`sheetLinks`／`tasks`／notes 也改成跟 checklist 一樣走單一 key 的原子更新（例如擴充 `update_check_item` 或另開一支類似的 RPC），淘汰整包 `upsert(project)` 的寫法。
+- 狀態：剛發現，尚未修，先記錄；範圍比待辦 #5（AVA 表單）更需要留意，因為 hotel-dashboard 是內部人員會多人同時開同一專案的工具，觸發條件比飯店端常見。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
