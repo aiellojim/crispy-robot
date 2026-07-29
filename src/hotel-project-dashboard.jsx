@@ -306,6 +306,17 @@ const newProject = () => {
   const id = crypto.randomUUID();
   return {
   id,
+  // Local-only convenience field for immediate correct sort order right after creation
+  // (2026-07-29). dbToUi() normally sets this from the DB row's real created_at on load, but a
+  // brand-new project lives purely in local state until the next full refetch - without this,
+  // createdAt stayed undefined for the whole session, and the sort comparators' `?? ""` fallback
+  // made an empty string, which sorts before every real timestamp - so new projects looked like
+  // the oldest project in the list regardless of sortBy direction (real incident, Jim 2026-07-29).
+  // Deliberately NOT sent to the DB - uiToDb()'s `project` object has no created_at/createdAt key,
+  // so this has zero effect on the insert; the projects table's created_at column already has its
+  // own `default now()` and keeps being the source of truth there. The two timestamps will differ
+  // by a network round-trip's worth of milliseconds at most, irrelevant for sorting purposes.
+  createdAt: new Date().toISOString(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
     products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", integrations:[], integrationNotes:{},
