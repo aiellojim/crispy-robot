@@ -12,11 +12,6 @@
 ### 2. 顏色變數漸進重構：`C.blue` 系列 → `C.accent` 系列
 - 策略：漸進替換，不一次全改。`C` 物件位置見 `docs/jsx-map.md`（約 39–58 行）。
 
-### 3. Web Push 三項未解
-1. Chrome：舊版 FCM endpoint（`fcm.googleapis.com/fcm/send/...`）回 `BadWebPushRequest`——需 Firebase Server Key 或改用新版 FCM endpoint 格式。
-2. Safari：需 RFC 8291（ECDH+HKDF）payload 加密，尚未實作。**高知識密度題**：卡兩次就停，建議升級模型專門處理（見 lessons 判準區 #5）。
-3. `NotificationPanel` 重開頁面後不會從瀏覽器 endpoint 恢復訂閱狀態——需在 `useEffect` 加自動查詢邏輯。
-
 ### 4. `customer-access-manage` Edge Function（2026-07-03 觀察）
 - ~~只存在於 Jim 主工作目錄、未進 git~~ **已解決（2026-07-21 確認）**：已進 git（`supabase/functions/customer-access-manage/index.ts`），前端 `CustomerAccessPanel` 正常呼叫中。
 
@@ -49,12 +44,12 @@
   3. 圖片欄位目前是 base64 直接塞資料庫欄位（非 Supabase Storage）——分頁/欄位數量變成使用者可無限新增後，這個模式會讓存檔資料量隨之膨脹，建議一併改成存 Storage、資料庫只存網址。
 - **狀態：Jim 已選定方向，尚未排入 sprint，之後要主動提醒 Jim 排時間動工。**
 
-### 8. 新網站：Showcase + 廣告 + QR Code 合併獨立站（2026-07-23 開始籌備）
+### 8. ~~新網站：Showcase + 廣告 + QR Code 合併獨立站（2026-07-23 開始籌備）~~ **已解決（2026-08-05 確認）**
 - 要把 AVA 表單裡的 Showcase 分頁（2026-07-22 建的）搬出來，跟目前完全沒實作的「廣告設定」「Pop-up QR
   code 內容設定」合併成一個獨立公開網站。架構決策、現況盤點（AVA 表單/hotel-dashboard 各要改哪裡）、
   風險點（先確認有無真實飯店已填過 Showcase 資料再拆分頁）都寫在
-  `docs/showcase-ads-qr-site-handoff.md`，動工前先讀那份文件。
-- **狀態：Jim 正在建新資料夾/新 chat 準備動工，尚未開始寫 code。**
+  `docs/showcase-ads-qr-site-handoff.md`。
+- **已完成**：`AVA UI settings`（`ava-ui-settings.aiello.dev`）已是獨立公開網站，三個分頁都已實作並持續在打磨：Showcase（`renderShowcase`）、Ad Settings（`ads`，`广告設定`）、Marketing Event（`qr`，原「Pop-up QR Code」，已改名重構為跟 Ad Settings 同款頁面結構）。待辦 #6 的 RLS 缺口清單也已把這個網站新增的 `ad_settings`／`qr_popups` 兩張表算進去，待辦 #5 也已把這個網站的並發保護現況記錄進去，後續追蹤都併入那兩項，不再需要獨立追這項。
 
 ### 9. 上傳圖片沒有版本／備份機制（2026-07-28 發現）
 - 現況：AVA basic settings、AVA UI settings 的圖片上傳（房型照片、Welcome Screen 圖片、樓層 WiFi 掃描圖、Showcase／廣告／QR 背景圖）都是前端用 `FileReader.readAsDataURL()` 轉成 base64 字串後直接寫進 Postgres 欄位，沒有走 Supabase Storage，也沒有任何獨立的檔案版本歷史。覆蓋等於直接遺失舊版，唯一救得回來的方式是整個資料庫／資料表層級的時間點還原，代價很高（會連帶復原同一時間之後其他所有欄位的異動）。base64 也讓同一張圖比原始檔案體積多約三成，長期會讓資料表越長越肥。
