@@ -31,6 +31,7 @@
 - **2026-07-22 新增**：Showcase 功能新增的 `showcase_sections`／`showcase_cards` 兩張表，比照同一套 `anon: edit via link USING(true)` 開放 policy 建立（跟其他 12 張表同款、同樣的已知缺口，沒有另外設計更嚴謹的隔離），方案 B 要一併涵蓋這兩張新表，缺口總數變成 14 張。
 - **2026-07-22 再新增**：「其他參考文件」功能新增的 `reference_documents` 表，同樣套用 `anon: edit via link USING(true)`，缺口總數變成 15 張。
 - **2026-07-23 再新增**：Showcase+廣告+QR 新網站（`AVA UI settings`，見 `docs/showcase-ads-qr-site-handoff.md`）新增的 `ad_settings`／`qr_popups` 兩張表，同樣套用 `anon: edit via link USING(true)`，缺口總數變成 17 張。
+- **2026-08-05 再新增**：TMS Pro「房號清單」功能（`AVA basic settings`，TMSP 未選 AVA 時在空間設定分頁顯示）新增的 `tmsp_room_rows` 表，同樣套用 `anon: edit via link USING(true)` + `staff: full access`（跟 `tmsp_space_rows` 同款），`get_advisors` 確認只有既有已知的 `rls_policy_always_true` 警告類型，缺口總數變成 18 張。
 - Jim 的訴求：飯店拿到表單連結就能同步編輯、不需登入，體驗要跟線上 Excel 一樣（含即時多人同步）。
 - 已測試過的方案與結論：
   - **方案 A（`x-project-id` 自訂 header + RLS 用 `current_setting('request.headers')` 檢查）**：REST 讀寫可行，但 **Realtime 的 `postgres_changes` 不吃自訂 header**，只認 JWT claim（`supabase.realtime.setAuth()`），查證見 Supabase 官方文件 Realtime > Postgres Changes > Custom tokens 段落。套用後會讓即時同步整個失效，已在正式環境 canary 測試（`welcome_messages` 表）後確認並復原，不能用。
