@@ -23,6 +23,7 @@
 ### 5. AVA 表單（`hotel_form_config` 等表）缺並發保護
 - 2026-07-21 審查發現：AVA 表單存檔是整包 upsert（見 index.html 的 `syncToSupabase`），跟 `project_progress`（走 `update_check_item` RPC 做單一 key 原子更新）不同。若飯店兩人同時在不同分頁填、或 PM 同時在後台改同一專案，後寫入的會整包覆蓋前面的。
 - Jim 確認**需要處理，但不急**，先記錄。動工前想清楚：哪些欄位真的需要 diff-then-upsert（目前 `syncToSupabase` 已經有 dirty-check，只送有變動的欄位，衝突視窗比全量覆蓋小很多，但同一欄位被兩邊同時改還是會有 last-write-wins 問題）。
+- **2026-08-04 新增（Jim 確認記得有這問題，實際檢查後坐實）**：`AVA UI settings`（`docs/showcase-ads-qr-site-handoff.md` 提到的新網站）的 `syncToSupabase()`（index.html 約 408-439 行）是從 AVA 表單移植過來的同一套架構，已經比整包表級 upsert 進步一階——改用逐列 diff（`diffRepeater()`，約 318-339 行），只送有變動的列。但每一列的 `update()` 送出的還是整個 mapped payload：`ad_settings`/`qr_popups` 的 `content` 是整包 JSONB 覆蓋，不是單一子欄位原子更新，兩人同時編輯同一列（同一支廣告/QR）的不同欄位時，後寫入的會把 `content` 整包蓋過去。風險更高的是 `showcase_cards`（`diffShowcaseCards()`，約 343-362 行）：用「整個 section 先刪光所有卡片、再重新 insert」策略，兩個分頁同時對同一個 Showcase section 觸發同步時，有機會互相蓋掉對方剛存好的卡片，不只是欄位層級的覆蓋。跟本項是同一類問題（whole-record last-write-wins），只是粒度從「整張表」變成「整列／整個 section」，方案要一併涵蓋。
 
 ### 6. Anon RLS 對 AVA 表單相關 12 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
 - 現況：`projects`（UPDATE）、`hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`room_types`、`room_type_images`、`welcome_messages` 的 anon RLS policy 都是 `USING(true)`——任何人持有 anon key（表單前端本來就公開）即可讀寫任意飯店資料，不受 `?p=<project.id>` 連結限制。`floor_wifi_rooms` 還存明碼 WiFi 密碼。
