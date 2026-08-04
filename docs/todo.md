@@ -5,9 +5,9 @@
 
 ## 進行中
 
-### 1. 任務狀態修改者追蹤
-- **建議案（方案 C）**：Magic Link 登入 + 每人一組 Jira token，不需要 RLS。
-- 方案 A / B 的內容與落選原因**未在舊文件留存（未確認）**——動工前先請 Jim 口述補齊，寫回本段再實作。
+### 1. ~~任務狀態修改者追蹤~~ **已解決（2026-08-05 確認）**
+- 方案 C（Magic Link 登入 + 每人一組 Jira token，不需要 RLS）已實作並在跑：`user_profiles`（`jira_email`／`jira_token`）+ `signInWithOtp()` 登入、`jira_action_log` 表（`user_id`／`display_name`／`issue_key`／`from_status`／`to_status`／`project_id`）由 `jira-proxy` Edge Function 在每次任務狀態切換成功後非同步寫入（`index.ts` 約 154-174 行）。
+- 目前沒有前端畫面讀取這張 log，Jim 確認現況用手動查 SQL 就夠，不需要另外做查看介面。
 
 ### 2. 顏色變數漸進重構：`C.blue` 系列 → `C.accent` 系列
 - 策略：漸進替換，不一次全改。`C` 物件位置見 `docs/jsx-map.md`（約 39–58 行）。
