@@ -9,8 +9,9 @@
 - 方案 C（Magic Link 登入 + 每人一組 Jira token，不需要 RLS）已實作並在跑：`user_profiles`（`jira_email`／`jira_token`）+ `signInWithOtp()` 登入、`jira_action_log` 表（`user_id`／`display_name`／`issue_key`／`from_status`／`to_status`／`project_id`）由 `jira-proxy` Edge Function 在每次任務狀態切換成功後非同步寫入（`index.ts` 約 154-174 行）。
 - 目前沒有前端畫面讀取這張 log，Jim 確認現況用手動查 SQL 就夠，不需要另外做查看介面。
 
-### 2. 顏色變數漸進重構：`C.blue` 系列 → `C.accent` 系列
-- 策略：漸進替換，不一次全改。`C` 物件位置見 `docs/jsx-map.md`（約 39–58 行）。
+### 2. ~~顏色變數漸進重構：`C.blue` 系列 → `C.accent` 系列~~ **已解決（2026-08-05）**
+- `C.blue`／`C.blueLight`／`C.blueBorder` 的值本來就已經是 `var(--accent)` 系列 CSS 變數（不是寫死的藍色），純粹是屬性命名跟語意不符，改名風險低，一次做完不需要漸進：`src/hotel-project-dashboard.jsx` 87 處全數改名（`C.blue`→`C.accent` 63 處、`C.blueBorder`→`C.accentBorder` 13 處、`C.blueLight`→`C.accentLight` 11 處），`npm run build` 通過。
+- 順便確認並清掉了未被引用的死代碼 `old-dashboard.jsx`（`main.jsx` 只 import `hotel-project-dashboard.jsx`，全 repo 搜尋也無其他引用）——因沙盒環境的 FUSE 限制無法刪除實體檔案，已從 git 追蹤移除，**該檔案仍會留在你本機資料夾，麻煩手動刪除**。
 
 ### 4. `customer-access-manage` Edge Function（2026-07-03 觀察）
 - ~~只存在於 Jim 主工作目錄、未進 git~~ **已解決（2026-07-21 確認）**：已進 git（`supabase/functions/customer-access-manage/index.ts`），前端 `CustomerAccessPanel` 正常呼叫中。

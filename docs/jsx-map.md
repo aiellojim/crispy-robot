@@ -19,7 +19,7 @@
 | `PRODUCTS` / `INTEGRATIONS` / `COUNTRIES` / `PRODUCT_COLORS` | 11–17 | 產品、串接、國家清單與產品顏色 |
 | `BASIC_ITEMS` / `FAQ_ITEMS` / `ACA_ITEM` / `BATCH2_ITEMS` / `GW_ITEM` | 19–27 | 各階段 checklist 項目定義與 link key |
 | `CAL_COLORS` | 30–37 | 行事曆事件顏色 |
-| `const C = {` | 39–58 | 全域顏色 / 樣式 token（C.blue→C.accent 重構標的） |
+| `const C = {` | 39–58 | 全域顏色 / 樣式 token（2026-08-05 已完成 C.blue→C.accent 改名） |
 | `baseInput` | 59–64 | 共用 input 基礎樣式 |
 | `const GLOBAL_CSS` | 65–199 | 全域 CSS 字串（含淺/深色主題變數） |
 | `daysUntil` `fmtDate` `getFlags` `calcTotal` `calcPct` `newTask` `dbToUi` `uiToDb` `newProject` | 201–297 | 純工具函式群：日期、進度計算、DB↔UI 轉換 |
