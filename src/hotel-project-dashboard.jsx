@@ -3796,6 +3796,11 @@ export default function App() {
   const [authLoading,  setAuthLoading]  = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const saveTimer = useRef({});
+  // Per-project snapshot of the last { project, progress } payload (uiToDb shape) actually sent to
+  // Supabase, keyed by project id (2026-08-05, todo #10 fix). handleUpdate diffs against this
+  // instead of blindly re-sending every column on every save - see handleUpdate for why. Seeded on
+  // initial load and on handleNew's insert; updated after every successful save.
+  const lastSavedRef = useRef({});
 
   // ── Auth state ───────────────────────────────────────────────
   useEffect(() => {
@@ -3848,6 +3853,9 @@ export default function App() {
         const projs = (rows??[]).map(r=>({ ...dbToUi(r,progMap[r.id]), tasks:tasksByProject[r.id]||[] }));
         setProjects(projs);
         setAllTasks(taskRows??[]);
+        // Seed the diff baseline with what's actually in the DB right now, so the first edit in a
+        // session only sends the column(s) that actually change (todo #10 fix).
+        lastSavedRef.current = Object.fromEntries(projs.map(p => [p.id, uiToDb(p)]));
       } catch(err) { setError("無法連線到資料庫："+(err.message??err)); }
       finally { setLoading(false); }
     })();
@@ -3861,6 +3869,10 @@ export default function App() {
       const { project, progress } = uiToDb(proj);
       const { error:e1 } = await sb.from("projects").insert(project); if (e1) throw e1;
       const { error:e2 } = await sb.from("project_progress").insert(progress); if (e2) throw e2;
+      // Seed the diff baseline for this brand-new row (todo #10 fix) - without this, the first
+      // handleUpdate call would diff against {} and treat every column as "changed", which is
+      // harmless (just one redundant full write) but unnecessary now that we have the real values.
+      lastSavedRef.current[proj.id] = { project, progress };
     } catch(err) { setError("新增專案失敗："+(err.message??err)); }
   };
 
@@ -3875,14 +3887,48 @@ export default function App() {
     saveTimer.current[updated.id] = setTimeout(async () => {
       try {
         const { project, progress } = uiToDb(updated);
-        const { error:e1 } = await sb.from("projects").upsert(project); if (e1) throw e1;
-        const { error:e2 } = await sb.from("project_progress").upsert({
-          project_id:    progress.project_id,
-          basic_notes:   progress.basic_notes,
-          faq_notes:     progress.faq_notes,
-          batch2_notes:  progress.batch2_notes,
-          sheet_links:   progress.sheet_links,
-        }, { onConflict:"project_id" }); if (e2) throw e2;
+        const last = lastSavedRef.current[updated.id] || {};
+        const lastProject  = last.project  || {};
+        const lastProgress = last.progress || {};
+
+        // ── projects 表：只送真的變動的欄位（2026-08-05, todo #10）───────────────
+        // 舊寫法是不管改了哪個欄位都整包 upsert(project)，AVA basic settings 也會寫
+        // 同一張表的部分欄位（products/installing_rooms/ava_units/... 等，見該站
+        // syncToSupabase() 的 ovMap）。整包覆蓋等於「這個分頁打開當下看到的舊值」
+        // 隨時可能把另一邊剛存好的新值蓋掉，這正是 Jim 實際遇到的事故（AVA basic
+        // settings 對應資料看起來消失）的根因。改成只送真正變動的欄位後，沒碰過的
+        // 欄位不會出現在這次的 UPDATE payload 裡，自然不會覆蓋別人剛存的值。
+        const projectDiff = {};
+        Object.keys(project).forEach(k => {
+          if (k === "id") return;
+          if (JSON.stringify(project[k]) !== JSON.stringify(lastProject[k])) projectDiff[k] = project[k];
+        });
+        if (Object.keys(projectDiff).length > 0) {
+          const { error:e1 } = await sb.from("projects").update(projectDiff).eq("id", project.id);
+          if (e1) throw e1;
+        }
+
+        // ── project_progress 的 notes/連結欄位：改走單一 key 原子更新 RPC ──────────
+        // 這四個欄位本身是 JSONB map（key 是 checklist 項目/連結名稱），舊寫法整包
+        // upsert 這四個欄位，兩人同時改同一個 JSONB 欄位裡的不同 key 時後寫入的會把
+        // 整包蓋過去。改用 update_progress_field RPC（跟既有的 update_check_item 同
+        // 一套模式，見該 RPC 定義）逐 key 原子合併，只送這次真的變動的 key。
+        const noteFields = ["basic_notes","faq_notes","batch2_notes","sheet_links"];
+        for (const field of noteFields) {
+          const curObj  = progress[field]     || {};
+          const prevObj = lastProgress[field] || {};
+          const keys = new Set([...Object.keys(curObj), ...Object.keys(prevObj)]);
+          for (const key of keys) {
+            if ((curObj[key] ?? "") !== (prevObj[key] ?? "")) {
+              const { error:e2 } = await sb.rpc("update_progress_field", {
+                p_project_id: project.id, p_field: field, p_key: key, p_value: curObj[key] ?? "",
+              });
+              if (e2) throw e2;
+            }
+          }
+        }
+
+        lastSavedRef.current[updated.id] = { project, progress };
       } catch(err) { setError("儲存失敗："+(err.message??err)); }
     }, 800);
   }, []);

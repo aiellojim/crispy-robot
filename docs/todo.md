@@ -59,14 +59,16 @@
   - 正規（建議）：改用 Supabase Storage bucket 存實際檔案，資料庫只存 URL（比照 `reference_documents` 存 URL 的模式）；上傳路徑帶時間戳記、不覆蓋舊檔，舊版本自然留在 bucket 裡當版本歷史，之後可定期清理。需要：三個上傳入口改呼叫 Storage API、設定 bucket RLS policy（比照現有 anon 開放模式）、既有 base64 資料一次性搬遷成真正檔案。
 - 狀態：Jim 已了解取捨，尚未決定要不要做，先記錄。
 
-### 10. hotel-dashboard：ProjectDetail 整包 upsert 會覆蓋其他使用者的即時編輯（2026-07-28 實際發生）
-- 現象：Jim 開著某專案的「專案資訊」頁閒置，另一人在別的分頁編輯同一專案並正常存檔；Jim 之後離開該頁面觸發的自動存檔，把資料庫覆蓋回 Jim 那份完全沒編輯過的舊版本，另一人的編輯消失。
-- 根因：`ProjectDetail` 的 `info`／`sheetLinks`／`tasks`／各 notes 只在元件掛載當下用 `useState(project.xxx)` 初始化一次（約 2577-2585 行），掛載後不會再跟資料庫或父層 `project` prop 同步——沒有 realtime 訂閱、沒有輪詢。觸發存檔的 `useEffect`（約 2619-2627 行）依賴陣列只要有任何一個物件參照變動就會呼叫 `onUpdate`，一路送到 `handleUpdate`（約 3841-3862 行）對 `projects` 表做整包 `upsert`——不是單一 key 原子更新，也沒有 diff。只要 Jim 那個分頁在別人編輯之後、還沒重新整理之前觸發任何一次存檔（哪怕只是掛載當下就會觸發一次，或欄位 blur 產生新的物件參照但內容其實沒變），就會把整包舊資料寫回去蓋掉別人剛存的新資料。
-- 範圍：`projects` 表整包 upsert（`info` 等）、`project_progress` 的 `basic_notes`／`faq_notes`／`batch2_notes`／`sheet_links` 都有這個風險；`basic_checked`／`faq_checked`／`batch2_checked` 已經是走 `update_check_item` RPC 原子更新，不受影響（跟 CLAUDE.md 硬規則 #1 的設計初衷一致，只是沒有涵蓋到這幾個欄位）。
-- 建議方案：
-  - 治標：`ProjectDetail` 增加 realtime 訂閱，或至少在重新取得 focus／重新進入頁面時重新拉一次 `projects`／`project_progress` 最新值再繼續編輯，縮小衝突視窗。
-  - 治本：把 `info`／`sheetLinks`／`tasks`／notes 也改成跟 checklist 一樣走單一 key 的原子更新（例如擴充 `update_check_item` 或另開一支類似的 RPC），淘汰整包 `upsert(project)` 的寫法。
-- 狀態：剛發現，尚未修，先記錄；範圍比待辦 #5（AVA 表單）更需要留意，因為 hotel-dashboard 是內部人員會多人同時開同一專案的工具，觸發條件比飯店端常見。
+### 10. ~~hotel-dashboard：ProjectDetail 整包 upsert 會覆蓋其他使用者的即時編輯~~ **已解決（2026-08-05，治本方案）**
+- 現象：Jim 開著某專案的「專案資訊」頁閒置，另一人在別的分頁編輯同一專案並正常存檔；Jim 之後離開該頁面觸發的自動存檔，把資料庫覆蓋回 Jim 那份完全沒編輯過的舊版本，另一人的編輯消失。**同一根因也會讓 `AVA basic settings` 對應資料看起來消失**：該站的 `projects.products`／`installing_rooms`／`ava_units`／`ava_spare`／`launch_date`／`integrations`／`integration_notes` 是跟 hotel-dashboard 共用同一張表、同一批欄位（見 `AVA basic settings/index.html` `syncToSupabase()` 的 `ovMap`，且該站在 `products` 上還有 realtime 訂閱），hotel-dashboard 舊的整包 upsert 只要在別人剛存好這幾個欄位之後、自己這邊存了任何無關欄位，就會把舊值送回去，AVA basic settings 會透過 realtime 立刻反映這個舊值，造成畫面上「資料消失」（實際上子表如 `tmsp_room_rows` 的資料列沒有真的被刪，只是 `products` 之類的欄位被寫回舊值，畫面判斷條件跟著跑掉才看不到）。
+- 根因：`ProjectDetail` 的 `info`／`sheetLinks`／`tasks`／各 notes 只在元件掛載當下用 `useState(project.xxx)` 初始化一次，掛載後不會再跟資料庫或父層 `project` prop 同步；`handleUpdate` 不論改了哪個欄位都對 `projects` 表整包 `upsert`、對 `project_progress` 的四個 notes/連結欄位整包 upsert——都不是單一 key 原子更新，也沒有 diff。
+- **已採治本方案**：
+  1. `projects` 表：`handleUpdate` 改成用 `lastSavedRef`（每個 project 存一份「最後一次真的送出去的 { project, progress }」快照）跟這次要存的值做逐欄位 diff，只送真正變動的欄位（`sb.from("projects").update(diff)`），不再整包 upsert。沒碰過的欄位不會出現在這次的 UPDATE payload 裡，不會覆蓋別人剛存的值。
+  2. `project_progress` 的 `basic_notes`／`faq_notes`／`batch2_notes`／`sheet_links`：新增 `update_progress_field(p_project_id, p_field, p_key, p_value)` RPC（跟既有 `update_check_item` 同一套 `jsonb_build_object` 合併模式，只是 value 型別放寬成 text），`handleUpdate` 逐 key diff 後只呼叫 RPC 更新真的變動的 key，不再整包覆蓋整個 JSONB 物件。
+  3. `lastSavedRef` 在初始載入（主資料載入 effect）跟 `handleNew` 建立新專案後都會seed，避免第一次存檔時把所有欄位都當作「變動」。
+  4. `basic_checked`／`faq_checked`／`batch2_checked` 維持原本 `update_check_item` RPC 不變，未受影響。
+  5. `npm run build`／`npx eslint` 都跑過，確認沒有新增的錯誤（既有的 17 個 lint error 都在這次沒碰過的既有程式碼裡）。
+- 未解決的殘餘風險（設計上無法完全避免，範圍已大幅縮小）：兩人真的在同一個 debounce 視窗內（800ms）編輯「同一個欄位」還是後寫的贏；但「改了不相關欄位、把別人剛存的其他欄位蓋掉」這個 Jim 實際遇到的情境已經解決。
 
 ## 長期方向
 
