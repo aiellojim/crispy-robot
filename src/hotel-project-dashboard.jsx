@@ -510,7 +510,7 @@ const Chip = ({ label, active, onClick, color="var(--accent)" }) => (
 );
 
 // CheckRow: simplified — checked always green-subtle, no red unchecked state
-const CheckRow = ({ label, checked, onChange, color="var(--green)" }) => (
+const CheckRow = ({ label, checked, onChange }) => (
   <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
     borderRadius:8, cursor:"pointer", marginBottom:4,
     background: checked ? "var(--green-subtle)" : "transparent",
@@ -536,7 +536,7 @@ const NoteArea = ({ value, onChange, focusColor="var(--accent)" }) => (
     onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
 );
 
-const SheetLink = ({ value, onChange, color="var(--accent)" }) => {
+const SheetLink = ({ value, onChange }) => {
   const invalid = value.length>0 && !value.startsWith("http");
   return (
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
@@ -1198,8 +1198,6 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
               const isExpanded= expandedDay===k;
               const dayEvents = d?getEventsForDay(d):[];
               const col       = di===0?C.red:di===6?C.accent:C.text;
-              const visible   = isExpanded?dayEvents:dayEvents.slice(0,2);
-              const hasMore   = !isExpanded && dayEvents.length>2;
               return (
                 <div key={di}
                   onClick={e=>{ e.stopPropagation(); if(d&&dayEvents.length>2) {
@@ -1344,7 +1342,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
 
 
 // ─── HomePage ─────────────────────────────────────────────────
-const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile }) => {
+const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
   const [search,        setSearch]        = useState("");
   const [regionFilter,  setRegionFilter]  = useState("all");
   const [productFilter, setProductFilter] = useState("all");
@@ -1503,7 +1501,7 @@ const HomePage = ({ projects, onNew, onOpen, onDelete, allPics, session, profile
         </div>
       ) : (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(500px,1fr))", gap:20 }}>
-          {filtered.map((proj,i) => {
+          {filtered.map((proj) => {
             const pct = calcPct(proj);
             const { hasAva, hasAca, hasGw, hasIptv } = getFlags(proj.info.products, proj.info.integrations);
             const rd = proj.info.region==="其他"?(proj.info.regionOther||"其他"):proj.info.region;
@@ -1939,7 +1937,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
 
 
 // ─── CustomerAccessPanel ──────────────────────────────────────
-const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
+const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
   const [emails,   setEmails]   = useState([]);
   const [newEmail, setNewEmail] = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -2106,8 +2104,6 @@ const CustomerAccessPanel = ({ hotelId, projectId, session, onClose }) => {
 const JIRA_PROXY              = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
 const CUSTOMER_ACCESS_MANAGE  = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-access-manage`;
 const JIRA_ANON  = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const JIRA_STATUSES = ["交付","DEV","DEV_DONE","IN MONITOR","審核中","IN VERIFICATION","INIT","INIT_DONE","LINK TO RD JIRA","PROCESSING","TEST","TEST_DONE","完成"];
 
 // 顏色依 statusCategory 決定，不依賴狀態名稱字串
 // key: "new" = 待辦（灰）, "indeterminate" = 進行中（藍）, "done" = 完成（綠）
@@ -2598,7 +2594,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [showCustomerAccess, setShowCustomerAccess] = useState(false);
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
-  const [copiedHotelId, setCopiedHotelId] = useState(false);
   const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
   const saveTimer = useRef(null);
   // Guards the autosave effect below against firing on mount, before the user has actually
@@ -2920,7 +2915,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         <div style={{ padding:"10px 14px", background:"var(--surface-raised)",
                           border:"1px solid var(--border)", borderRadius:8, fontSize:13, marginBottom:18, lineHeight:1.7 }}>
                           Epic 名稱：<strong style={{ color:"var(--text)" }}>{info.name}</strong><br/>
-                          專案：<strong style={{ color:"var(--text)" }}>AHP</strong>　
+                          專案：<strong style={{ color:"var(--text)" }}>AHP</strong> 
                           子任務：<strong style={{ color:"var(--text)" }}>{jiraTaskCount} 筆</strong>（含指定 assignee）<br/>
                           {profile?.jira_email && profile?.jira_token ? (<>
                             Reporter：<strong style={{ color:"var(--text)" }}>{profile.display_name || profile.jira_email}</strong>
@@ -2962,7 +2957,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           {jiraBoot.issueTypeName && (
                             <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
                               Issue type：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.issueTypeName}</code>
-                              {jiraBoot.reporterName && <>　Reporter：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.reporterName}</code></>}
+                              {jiraBoot.reporterName && <> Reporter：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.reporterName}</code></>}
                             </div>
                           )}
                         </div>
@@ -2977,7 +2972,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                             <div style={{ fontSize:12, color:"var(--text-mid)" }}>
                               Epic：<a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
                                 style={{ color:"#0052cc", fontWeight:500, textDecoration:"none" }}>{jiraBoot.epicKey}</a>
-                              　子任務：{jiraBoot.created} 筆已建立
+                               子任務：{jiraBoot.created} 筆已建立
                             </div>
                           </div>
                           {jiraBoot.failed.length>0 && (
