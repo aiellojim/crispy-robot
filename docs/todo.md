@@ -52,12 +52,15 @@
   `docs/showcase-ads-qr-site-handoff.md`。
 - **已完成**：`AVA UI settings`（`ava-ui-settings.aiello.dev`）已是獨立公開網站，三個分頁都已實作並持續在打磨：Showcase（`renderShowcase`）、Ad Settings（`ads`，「廣告設定」）、Marketing Event（`qr`，原「Pop-up QR Code」，已改名重構為跟 Ad Settings 同款頁面結構）。待辦 #6 的 RLS 缺口清單也已把這個網站新增的 `ad_settings`／`qr_popups` 兩張表算進去，待辦 #5 也已把這個網站的並發保護現況記錄進去，後續追蹤都併入那兩項，不再需要獨立追這項。
 
-### 9. 上傳圖片沒有版本／備份機制（2026-07-28 發現）
-- 現況：AVA basic settings、AVA UI settings 的圖片上傳（房型照片、Welcome Screen 圖片、樓層 WiFi 掃描圖、Showcase／廣告／QR 背景圖）都是前端用 `FileReader.readAsDataURL()` 轉成 base64 字串後直接寫進 Postgres 欄位，沒有走 Supabase Storage，也沒有任何獨立的檔案版本歷史。覆蓋等於直接遺失舊版，唯一救得回來的方式是整個資料庫／資料表層級的時間點還原，代價很高（會連帶復原同一時間之後其他所有欄位的異動）。base64 也讓同一張圖比原始檔案體積多約三成，長期會讓資料表越長越肥。
-- 建議方案：
-  - 輕量：覆蓋前把舊值寫進一張新的歷史記錄表（project_id／欄位名稱／舊值／時間），不動現有 base64-in-DB 架構，但沒解決體積肥大問題，復原也要另外做介面或手動查 SQL。
-  - 正規（建議）：改用 Supabase Storage bucket 存實際檔案，資料庫只存 URL（比照 `reference_documents` 存 URL 的模式）；上傳路徑帶時間戳記、不覆蓋舊檔，舊版本自然留在 bucket 裡當版本歷史，之後可定期清理。需要：三個上傳入口改呼叫 Storage API、設定 bucket RLS policy（比照現有 anon 開放模式）、既有 base64 資料一次性搬遷成真正檔案。
-- 狀態：Jim 已了解取捨，尚未決定要不要做，先記錄。
+### 9. ~~上傳圖片沒有版本／備份機制~~ **已解決（2026-08-07，正規方案）**
+- 原現況：AVA basic settings、AVA UI settings 的圖片上傳（房型照片、Welcome Screen 圖片、樓層 WiFi 掃描圖、Showcase／廣告／QR 背景圖）都是前端用 `FileReader.readAsDataURL()` 轉成 base64 字串後直接寫進 Postgres 欄位，沒有走 Supabase Storage，也沒有任何獨立的檔案版本歷史，且 base64 讓同一張圖比原始檔案體積多約三成。
+- **已採正規方案**：
+  1. 新建公開 Storage bucket `project-images`（`public:true`，`file_size_limit:15MB`，白名單 `image/jpeg|png|webp|gif|heic|heif`），RLS 比照既有 anon 開放模式（`anon: read/write project-images` USING/CHECK `bucket_id='project-images'`）+ `staff: full access`（`@aiello.ai` 帳號）。`get_advisors(security)` 確認沒有新增警告類型。
+  2. `AVA basic settings`：新增 `compressImageIfNeeded()`（>2000px 長邊才轉 JPEG q0.9 壓縮，小圖不處理，不影響下載品質）+ `uploadImageFile()` 共用工具，改寫 4 個真正的圖片上傳點——房型照片、Welcome Screen 背景圖、樓層 WiFi 掃描截圖（另一個 amenity/repair「Upload Filled List」是 Excel 檔，非圖片，維持原樣不動）。
+  3. `AVA UI settings`：同一套工具，改寫 3 個上傳點——Showcase 卡片圖、行銷事件／QR 圖、廣告背景圖。`dataUrlExt()` 同步調整為可辨識一般網址副檔名（不只 `data:` URI）；ZIP 下載功能（`dataUrlToBlob()`）本來就是格式無關的 `fetch().blob()`，不需改動。
+  4. 既有 base64 資料已於 2026-08-07 一次搬遷完成（透過 Claude in Chrome 注入獨立腳本，繞過沙盒對 `*.supabase.co` 的網路白名單限制）：`hotel_form_config.ws_image_url`（2 筆）、`fw_scan_image_url`（2 筆）、`qr_popups.content` 圖片（1 筆）、`ad_settings.content` 圖片（1 筆）全數搬到 Storage、DB 欄位改存公開網址；`showcase_cards`／`room_type_images` 實測沒有真正的圖片資料，無需搬遷。搬遷後重新查詢確認資料庫內已無殘留 base64。
+  5. 驗證：抽測搬遷後的網址皆回應 200、正確 content-type，且 CORS 允許 JS `fetch().blob()` 讀取（ZIP 下載功能相容）；於兩個正式站（`ava-ui-settings.aiello.dev`、`basic-settings.aiello.dev`）實際開啟對應分頁，廣告背景圖、行銷事件圖皆正常顯示，樓層 WiFi 掃描截圖／Welcome Screen 圖片下載連結皆正確指向新 Storage 網址。
+- 副作用（原本就是搬遷 Storage 的次要動機）：上傳路徑帶時間戳記、不覆蓋舊檔，舊版本自然留在 bucket 當版本歷史；資料庫體積不再隨圖片線性膨脹。
 
 ### 10. ~~hotel-dashboard：ProjectDetail 整包 upsert 會覆蓋其他使用者的即時編輯~~ **已解決（2026-08-05，治本方案）**
 - 現象：Jim 開著某專案的「專案資訊」頁閒置，另一人在別的分頁編輯同一專案並正常存檔；Jim 之後離開該頁面觸發的自動存檔，把資料庫覆蓋回 Jim 那份完全沒編輯過的舊版本，另一人的編輯消失。**同一根因也會讓 `AVA basic settings` 對應資料看起來消失**：該站的 `projects.products`／`installing_rooms`／`ava_units`／`ava_spare`／`launch_date`／`integrations`／`integration_notes` 是跟 hotel-dashboard 共用同一張表、同一批欄位（見 `AVA basic settings/index.html` `syncToSupabase()` 的 `ovMap`，且該站在 `products` 上還有 realtime 訂閱），hotel-dashboard 舊的整包 upsert 只要在別人剛存好這幾個欄位之後、自己這邊存了任何無關欄位，就會把舊值送回去，AVA basic settings 會透過 realtime 立刻反映這個舊值，造成畫面上「資料消失」（實際上子表如 `tmsp_room_rows` 的資料列沒有真的被刪，只是 `products` 之類的欄位被寫回舊值，畫面判斷條件跟著跑掉才看不到）。
