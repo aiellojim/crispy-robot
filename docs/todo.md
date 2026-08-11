@@ -16,10 +16,16 @@
 ### 4. `customer-access-manage` Edge Function（2026-07-03 觀察）
 - ~~只存在於 Jim 主工作目錄、未進 git~~ **已解決（2026-07-21 確認）**：已進 git（`supabase/functions/customer-access-manage/index.ts`），前端 `CustomerAccessPanel` 正常呼叫中。
 
-### 5. AVA 表單（`hotel_form_config` 等表）缺並發保護
-- 2026-07-21 審查發現：AVA 表單存檔是整包 upsert（見 index.html 的 `syncToSupabase`），跟 `project_progress`（走 `update_check_item` RPC 做單一 key 原子更新）不同。若飯店兩人同時在不同分頁填、或 PM 同時在後台改同一專案，後寫入的會整包覆蓋前面的。
-- Jim 確認**需要處理，但不急**，先記錄。動工前想清楚：哪些欄位真的需要 diff-then-upsert（目前 `syncToSupabase` 已經有 dirty-check，只送有變動的欄位，衝突視窗比全量覆蓋小很多，但同一欄位被兩邊同時改還是會有 last-write-wins 問題）。
-- **2026-08-04 新增（Jim 確認記得有這問題，實際檢查後坐實）**：`AVA UI settings`（`docs/showcase-ads-qr-site-handoff.md` 提到的新網站）的 `syncToSupabase()`（index.html 約 408-439 行）是從 AVA 表單移植過來的同一套架構，已經比整包表級 upsert 進步一階——改用逐列 diff（`diffRepeater()`，約 318-339 行），只送有變動的列。但每一列的 `update()` 送出的還是整個 mapped payload：`ad_settings`/`qr_popups` 的 `content` 是整包 JSONB 覆蓋，不是單一子欄位原子更新，兩人同時編輯同一列（同一支廣告/QR）的不同欄位時，後寫入的會把 `content` 整包蓋過去。風險更高的是 `showcase_cards`（`diffShowcaseCards()`，約 343-362 行）：用「整個 section 先刪光所有卡片、再重新 insert」策略，兩個分頁同時對同一個 Showcase section 觸發同步時，有機會互相蓋掉對方剛存好的卡片，不只是欄位層級的覆蓋。跟本項是同一類問題（whole-record last-write-wins），只是粒度從「整張表」變成「整列／整個 section」，方案要一併涵蓋。
+### 5. ~~AVA 表單（`hotel_form_config` 等表）缺並發保護~~ **已解決（2026-08-08，欄位級 + delete/reinsert 兩類都處理）**
+- 原現況：2026-07-21 審查發現 AVA 表單存檔是整包 upsert（見 index.html 的 `syncToSupabase`），跟 `project_progress`（走 `update_check_item` RPC 做單一 key 原子更新）不同。若飯店兩人同時在不同分頁填、或 PM 同時在後台改同一專案，後寫入的會整包覆蓋前面的。
+- 2026-08-04 追加發現：`AVA UI settings` 的 `diffRepeater()` 雖然已經是逐列 diff（只送有變動的列），但每一列的 `update()` 送出的還是整個 mapped payload，不是單一欄位；`showcase_cards`（`diffShowcaseCards()`）風險更高，用「整個 section 先刪光所有卡片、再重新 insert」策略。
+- **已採方案（Jim 2026-08-08 確認：風險高的先治本，其餘表判斷都需要欄位級原子更新就一起做）**：
+  1. **`diffRepeater()` 改成欄位級 diff（兩個 app 共用同一套邏輯，各自改一次）**：UPDATE 現在只送真正變動的欄位，不再送整列 mapped payload。涵蓋兩邊所有用這個函式的表：`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`tmsp_room_rows`、`reference_documents`、`pending_confirmation_items`、`room_types`（basic settings）、`showcase_sections`、`ad_settings`、`qr_popups`、`showcase_cards`（UI settings）。用獨立 node 測試腳本驗證過 insert／update／delete／純排序／完全無變動五種情境，皆只送出預期的最小 payload。
+  2. **`diffRoomTypeImages()`（basic settings）從整批刪除＋重建改成 URL 值диff**：圖片陣列本身沒有 `_id`，但每次上傳都是唯一時間戳記路徑，直接拿 URL 當身分比對——新增的插入、刪除的刪除、只是排序變動的只更新 `sort_order`，沒變動的圖片完全不會被 SQL 碰到。同樣用獨立測試腳本驗證。
+  3. **`diffShowcaseCards()`（UI settings）從整個 section 刪光重建改成委派給 `diffRepeater()`**：卡片本來就有穩定的 `_id`（見 `defaultState()`），不需要額外設計，直接沿用同一套逐列＋欄位級 diff 邏輯。
+  4. **`welcome_messages`（basic settings）**：從 `upsert({mode, message_text})`（兩欄一起送）改成該列已存在時只送真正變動的欄位；列不存在時仍走 upsert（insert 需要兩欄都給值）。
+  5. `node --check` 兩邊都過，commit：`AVA basic settings` `dc2f12d`、`AVA UI settings` `1d00a1d`。
+- **範圍內判斷保留、沒有一併做的部分**：`ad_settings`/`qr_popups` 的 `content` 欄位本身是 JSONB（單一欄位內含標題/內容/圖片等多個子欄位），這次的欄位級 diff 只能做到「`content` 這個欄位有沒有變」的粒度——兩人同時改同一列 `content` 內的不同子欄位（例如一人改標題、一人改圖片）還是會互相覆蓋，要做到子欄位原子更新需要新增 `jsonb_build_object` 合併模式的 RPC（比照 `update_check_item`），這是需要額外新增 anon 可呼叫的 SECURITY DEFINER function 的設計決策，這次沒有一併做，Jim 之後想做再另外確認。
 
 ### 6. Anon RLS 對 AVA 表單相關 12 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
 - 現況：`projects`（UPDATE）、`hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`room_types`、`room_type_images`、`welcome_messages` 的 anon RLS policy 都是 `USING(true)`——任何人持有 anon key（表單前端本來就公開）即可讀寫任意飯店資料，不受 `?p=<project.id>` 連結限制。`floor_wifi_rooms` 還存明碼 WiFi 密碼。
