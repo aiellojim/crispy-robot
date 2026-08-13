@@ -431,6 +431,35 @@ const Card = ({ children, style={} }) => (
   </div>
 );
 
+// Single-line, horizontally-scrollable text (used for form-link URLs that must stay on one line
+// without shrinking their font or wrapping). Shows a fade-out mask on the right edge, but only
+// when the text actually overflows its container — so short URLs that already fit fully never
+// get a fake "cut off" look (Jim, 2026-08-13).
+const ScrollFadeText = ({ children, fadeColor="var(--surface)", style={} }) => {
+  const ref = useRef(null);
+  const [overflowing, setOverflowing] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      const el = ref.current;
+      if (el) setOverflowing(el.scrollWidth > el.clientWidth + 1);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [children]);
+  return (
+    <div style={{ position:"relative", flex:1, minWidth:0 }}>
+      <div ref={ref} style={{ overflowX:"auto", whiteSpace:"nowrap", scrollbarWidth:"thin", ...style }}>
+        {children}
+      </div>
+      {overflowing && (
+        <div style={{ position:"absolute", top:0, right:0, bottom:0, width:20,
+          background:`linear-gradient(to right, transparent, ${fadeColor})`, pointerEvents:"none" }}/>
+      )}
+    </div>
+  );
+};
+
 const SectionLabel = ({ title, icon, color="var(--accent)" }) => (
   <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12,
     display:"flex", alignItems:"center", gap:6, fontWeight:400 }}>
@@ -3397,12 +3426,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
                     <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
                     {(info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP")) && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                       {/* 加上「基礎設定：」字首跟下面第二行的「介面設定：」對齊（Jim, 2026-07-27） */}
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap" }}>基礎設定：</span>
-                      <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>基礎設定：</span>
+                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
                         {AVA_FORM_BASE_URL}?p={project.id}
-                      </div>
+                      </ScrollFadeText>
                       <button
                         onClick={(e)=>{
                           navigator.clipboard.writeText(`${AVA_FORM_BASE_URL}?p=${project.id}`);
@@ -3432,11 +3461,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         第一頁），AVA 專屬所以只在有選 AVA 時顯示 - 跟 batch2 三個項目的顯示邏輯一致
                         （Jim, 2026-07-27）。*/}
                     {info.products.includes("AVA") && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginTop:8 }}>
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap" }}>介面設定：</span>
-                      <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
+                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>介面設定：</span>
+                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
                         {avaUiSettingsUrl(project.id)}
-                      </div>
+                      </ScrollFadeText>
                       <button
                         onClick={(e)=>{
                           navigator.clipboard.writeText(avaUiSettingsUrl(project.id));
@@ -3466,11 +3495,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         基礎設定表單無關，所以直接掛在 SiteChat 產品上，不像 AVA UI settings 掛在 AVA 底下
                         （Jim, 2026-08-12）。*/}
                     {info.products.includes("SiteChat") && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginTop:8 }}>
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap" }}>SiteChat 設定：</span>
-                      <div style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace", wordBreak:"break-all" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
+                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>SiteChat 設定：</span>
+                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
                         {sitechatFormUrl(project.id)}
-                      </div>
+                      </ScrollFadeText>
                       <button
                         onClick={(e)=>{
                           navigator.clipboard.writeText(sitechatFormUrl(project.id));
