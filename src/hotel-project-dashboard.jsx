@@ -3418,115 +3418,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       </div>
                     </div>
                   )}
-                  {/* 飯店填寫表單連結：複製 / 開啟，取代手動去 Supabase 複製 project id */}
-                  {/* 表單網址是同一把（project.id 當權杖），裡面的分頁會依 products 各自顯示/隱藏，
-                      所以只要有 AVA / GuestWeb / TMS Pro 任一項，就該顯示這把連結；複選時表單會
-                      自動同時顯示對應分頁，不需要額外處理。 */}
-                  {(info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP") || info.products.includes("SiteChat")) && (
-                  <div style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}`, gridColumn:"1 / -1" }}>
-                    <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>飯店填寫表單連結</div>
-                    {(info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP")) && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                      {/* 加上「基礎設定：」字首跟下面第二行的「介面設定：」對齊（Jim, 2026-07-27） */}
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>基礎設定：</span>
-                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
-                        {AVA_FORM_BASE_URL}?p={project.id}
-                      </ScrollFadeText>
-                      <button
-                        onClick={(e)=>{
-                          navigator.clipboard.writeText(`${AVA_FORM_BASE_URL}?p=${project.id}`);
-                          const btn = e.currentTarget;
-                          btn.style.color = "var(--green)";
-                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
-                        }}
-                        title="複製表單連結"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2"/>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                      </button>
-                      <a href={`${AVA_FORM_BASE_URL}?p=${project.id}`} target="_blank" rel="noreferrer"
-                        title="在新分頁開啟表單"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                          <polyline points="15 3 21 3 21 9"/>
-                          <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                      </a>
-                    </div>
-                    )}
-                    {/* 第二行：AVA UI settings（Showcase／廣告設定／行銷事件）站的連結，不帶 hash（落在
-                        第一頁），AVA 專屬所以只在有選 AVA 時顯示 - 跟 batch2 三個項目的顯示邏輯一致
-                        （Jim, 2026-07-27）。*/}
-                    {info.products.includes("AVA") && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>介面設定：</span>
-                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
-                        {avaUiSettingsUrl(project.id)}
-                      </ScrollFadeText>
-                      <button
-                        onClick={(e)=>{
-                          navigator.clipboard.writeText(avaUiSettingsUrl(project.id));
-                          const btn = e.currentTarget;
-                          btn.style.color = "var(--green)";
-                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
-                        }}
-                        title="複製 UI 設定表單連結"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2"/>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                      </button>
-                      <a href={avaUiSettingsUrl(project.id)} target="_blank" rel="noreferrer"
-                        title="在新分頁開啟 UI 設定表單"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                          <polyline points="15 3 21 3 21 9"/>
-                          <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                      </a>
-                    </div>
-                    )}
-                    {/* SiteChat Settings（Chat Theme & Colors + FAQ Cards）站的連結，獨立產品、跟 AVA
-                        基礎設定表單無關，所以直接掛在 SiteChat 產品上，不像 AVA UI settings 掛在 AVA 底下
-                        （Jim, 2026-08-12）。*/}
-                    {info.products.includes("SiteChat") && (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
-                      <span style={{ fontSize:11, color:C.textLight, whiteSpace:"nowrap", flexShrink:0 }}>SiteChat 設定：</span>
-                      <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
-                        {sitechatFormUrl(project.id)}
-                      </ScrollFadeText>
-                      <button
-                        onClick={(e)=>{
-                          navigator.clipboard.writeText(sitechatFormUrl(project.id));
-                          const btn = e.currentTarget;
-                          btn.style.color = "var(--green)";
-                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
-                        }}
-                        title="複製 SiteChat 設定表單連結"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2"/>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                      </button>
-                      <a href={sitechatFormUrl(project.id)} target="_blank" rel="noreferrer"
-                        title="在新分頁開啟 SiteChat 設定表單"
-                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                          <polyline points="15 3 21 3 21 9"/>
-                          <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                      </a>
-                    </div>
-                    )}
-                  </div>
-                  )}
                   {[
                     ["飯店名稱",info.name],
                     ["負責人（PIC）",info.pic||"—"],["地址",info.address],
@@ -3588,6 +3479,63 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ))}
                   </div>
                 )}
+              </Card>
+            )}
+            {/* 飯店填寫表單連結：拉出成獨立卡片（而不是塞進「專案資訊」的兩欄格子裡），格式比照
+                其他卡片，一個表單一列，用 Grid 固定欄寬取代原生 table；長網址一樣靠 ScrollFadeText
+                單行捲動+溢出才淡出，取代手動去 Supabase 複製 project id（Jim, 2026-08-13）。
+                同一把 project.id 當連結權杖，裡面的分頁依 products 各自顯示/隱藏，所以只要有
+                AVA / GuestWeb / TMS Pro / SiteChat 任一項，就該顯示這張卡；複選時對應的列會
+                自動同時出現，不需要額外處理。 */}
+            {info.name && (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP") || info.products.includes("SiteChat")) && (
+              <Card>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="link" size={13} color="currentColor"/>飯店填寫表單連結</div>
+                {[
+                  (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP")) && {
+                    key:"basic", label:"基礎設定", url:`${AVA_FORM_BASE_URL}?p=${project.id}`,
+                    copyTitle:"複製表單連結", openTitle:"在新分頁開啟表單",
+                  },
+                  info.products.includes("AVA") && {
+                    key:"ui", label:"介面設定", url:avaUiSettingsUrl(project.id),
+                    copyTitle:"複製 UI 設定表單連結", openTitle:"在新分頁開啟 UI 設定表單",
+                  },
+                  info.products.includes("SiteChat") && {
+                    key:"sitechat", label:"SiteChat 設定", url:sitechatFormUrl(project.id),
+                    copyTitle:"複製 SiteChat 設定表單連結", openTitle:"在新分頁開啟 SiteChat 設定表單",
+                  },
+                ].filter(Boolean).map(({ key, label, url, copyTitle, openTitle })=>(
+                  <div key={key} style={{ display:"grid", gridTemplateColumns:"92px 1fr auto", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+                    <span style={{ fontSize:12, color:C.textLight, whiteSpace:"nowrap" }}>{label}</span>
+                    <ScrollFadeText style={{ fontSize:13, color:C.text, fontWeight:400, fontFamily:"'DM Mono',monospace" }}>
+                      {url}
+                    </ScrollFadeText>
+                    <div style={{ display:"flex", alignItems:"center", gap:2 }}>
+                      <button
+                        onClick={(e)=>{
+                          navigator.clipboard.writeText(url);
+                          const btn = e.currentTarget;
+                          btn.style.color = "var(--green)";
+                          setTimeout(()=>{ btn.style.color = ""; }, 1500);
+                        }}
+                        title={copyTitle}
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", background:"none", border:"none", cursor:"pointer", padding:3, borderRadius:4, color:C.textLight, transition:"color 0.2s" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                      </button>
+                      <a href={url} target="_blank" rel="noreferrer"
+                        title={openTitle}
+                        style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:3, color:C.textLight, textDecoration:"none" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                ))}
               </Card>
             )}
             {/* Batch 1 checklists */}
