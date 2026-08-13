@@ -25,6 +25,7 @@ React（Vite）+ 純 inline style 前端（Vercel）＋ Supabase 後端（Postgr
 | 目前待辦與方案評估 | `docs/todo.md` |
 | 要派 subagent（大量掃描、結案驗證） | `docs/delegation.md` + `docs/templates/` |
 | 想知道這套制度的由來 | `docs/harness-notes.md` |
+| 動 AVA basic settings／AVA UI settings／SiteChat Settings 等飯店端表單（header/sidebar、語言切換、banner、自動存檔、Supabase 慣例） | `docs/aiello-forms-spec.md` |
 
 ## 硬規則（不路由，一律直接遵守）
 
