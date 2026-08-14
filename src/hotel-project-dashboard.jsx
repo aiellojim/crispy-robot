@@ -44,7 +44,7 @@ const avaUiSettingsUrl = (id, hash) => AVA_UI_SETTINGS_BASE_URL + "?p=" + id + (
 
 // SiteChat Settings 表單（Vercel 部署，獨立站，Chat Theme & Colors + FAQ Cards）— 同一把
 // project.id 當連結權杖，跟上面兩個表單一樣的邏輯，只在有選 SiteChat 產品時顯示。
-const SITECHAT_FORM_BASE_URL = "https://site-chat-setting-form.vercel.app/";
+const SITECHAT_FORM_BASE_URL = "https://sitechat-settings.aiello.dev/";
 const sitechatFormUrl = (id) => SITECHAT_FORM_BASE_URL + "?p=" + id;
 
 // Calendar event type colours — CSS var based for dark mode
