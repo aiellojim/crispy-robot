@@ -20,11 +20,17 @@ const PRODUCT_COLORS = {
   TMSP:"var(--prod-tmsp)", GW:"var(--prod-gw)", KMS:"var(--prod-kms)", SiteChat:"var(--prod-sitechat)"
 };
 
-const BASIC_ITEMS  = ["房型及機台擺放位置圖片","需申請後台權限的 email 帳號","樓層房號表及 WiFi 資訊","機台重啟（Check out）方式","是否需開啟打掃 & 勿擾功能","通話快捷鍵設定 & 分機提供","歡迎畫面背景","歡迎詞填寫","後台服務功能設定 & 送物 / 修繕項目清單","TMS Pro 設定"];
+// "TMS Pro 設定" 原本是這個陣列的第 10 項，但這個陣列整體只在 hasAva 時才會渲染/計入分母——
+// 導致純 TMSP（未選 AVA）的專案永遠看不到、也勾不到這個項目，且 canBatch1 也沒把 hasTmsp 算進去，
+// 整個第一批分頁會直接被鎖住。2026-08-17 起改成比照 ACA_ITEM 的獨立 item + 獨立 Card 模式，
+// 由 hasTmsp 單獨控制顯示（見 getFlags / canBatch1 / ProjectDetail 內的 TMS Pro Card）。
+const BASIC_ITEMS  = ["房型及機台擺放位置圖片","需申請後台權限的 email 帳號","樓層房號表及 WiFi 資訊","機台重啟（Check out）方式","是否需開啟打掃 & 勿擾功能","通話快捷鍵設定 & 分機提供","歡迎畫面背景","歡迎詞填寫","後台服務功能設定 & 送物 / 修繕項目清單"];
 const FAQ_TV_ITEM  = "電視頻道設定（若串接項目不含 IPTV 則不用填寫）";
 const FAQ_ITEMS    = ["飯店基本資訊","飯店內設施","飯店提供之服務","入住規則","備品清單",FAQ_TV_ITEM,"特別推薦美食景點"];
 const ACA_ITEM     = "轉接情境與歡迎詞設定";
 const ACA_LINK_KEY = "acaScenario";
+const TMSP_ITEM     = "TMS Pro 設定";
+const TMSP_LINK_KEY = "tmspSetup";
 const BATCH2_ITEMS     = ["機台 Showcase 設定","廣告設定","Pop-up QR code 內容設定"];
 const BATCH2_LINK_KEYS = ["showcase","ad","popupQR"];
 const GW_ITEM     = "GuestWeb 內容建置";
@@ -227,25 +233,27 @@ const getFlags = (products, integrations) => ({
   hasAva:  products.includes("AVA"),
   hasAca:  products.includes("ACA"),
   hasGw:   products.includes("GW"),
+  hasTmsp: products.includes("TMSP"),
   hasIptv: integrations.includes("IPTV"),
 });
 
 const calcTotal = (products, integrations) => {
-  const { hasAva, hasAca, hasGw, hasIptv } = getFlags(products, integrations);
-  return (hasAva ? BASIC_ITEMS.length : 0) + (hasAca ? 1 : 0)
+  const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(products, integrations);
+  return (hasAva ? BASIC_ITEMS.length : 0) + (hasAca ? 1 : 0) + (hasTmsp ? 1 : 0)
     + ((hasAva||hasGw) ? (hasIptv ? FAQ_ITEMS.length : FAQ_ITEMS.length - 1) : 0)
     + (hasAva ? BATCH2_ITEMS.length : 0) + (hasGw ? 1 : 0);
 };
 
 const calcPct = (proj) => {
   const { products, integrations } = proj.info;
-  const { hasAva, hasAca, hasGw, hasIptv } = getFlags(products, integrations);
-  if (!hasAva && !hasAca && !hasGw) return 0;
+  const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(products, integrations);
+  if (!hasAva && !hasAca && !hasGw && !hasTmsp) return 0;
   const total = calcTotal(products, integrations);
   if (!total) return 0;
   const done =
     (hasAva ? BASIC_ITEMS.filter(k => proj.basicChecked[k]).length : 0)
     + (hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0)
+    + (hasTmsp && proj.basicChecked[TMSP_ITEM] ? 1 : 0)
     + ((hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length : 0)
     + (hasAva ? BATCH2_ITEMS.filter(i => proj.batch2Checked[i]).length : 0)
     + (hasGw  && proj.batch2Checked[GW_ITEM] ? 1 : 0);
@@ -285,6 +293,7 @@ const dbToUi = (row, prog) => ({
     popupQR: prog?.sheet_links?.popupQR || avaUiSettingsUrl(row.id, "qr"),
     guestWeb: prog?.sheet_links?.guestWeb || (((row.products ?? []).includes("GW") && row.hotel_id) ? ("https://spi.aiello.ai/" + encodeURIComponent(row.hotel_id) + "/guest_web_builder") : ""),
     acaScenario: prog?.sheet_links?.acaScenario ?? "",
+    tmspSetup: prog?.sheet_links?.tmspSetup ?? "",
   },
   tasks: [],
 });
@@ -329,7 +338,7 @@ const newProject = () => {
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
   batch2Checked:{}, batch2Notes:{},
-  sheetLinks:{ basic: AVA_FORM_BASE_URL + "?p=" + id, faq: "https://kms.aiello.ai/dashboard", showcase: avaUiSettingsUrl(id,"showcase"), ad: avaUiSettingsUrl(id,"ads"), popupQR: avaUiSettingsUrl(id,"qr"), guestWeb:"", acaScenario:"" },
+  sheetLinks:{ basic: AVA_FORM_BASE_URL + "?p=" + id, faq: "https://kms.aiello.ai/dashboard", showcase: avaUiSettingsUrl(id,"showcase"), ad: avaUiSettingsUrl(id,"ads"), popupQR: avaUiSettingsUrl(id,"qr"), guestWeb:"", acaScenario:"", tmspSetup:"" },
   tasks:[],
   };
 };
@@ -1537,7 +1546,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(500px,1fr))", gap:20 }}>
           {filtered.map((proj) => {
             const pct = calcPct(proj);
-            const { hasAva, hasAca, hasGw, hasIptv } = getFlags(proj.info.products, proj.info.integrations);
+            const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(proj.info.products, proj.info.integrations);
             const rd = proj.info.region==="其他"?(proj.info.regionOther||"其他"):proj.info.region;
             const d  = daysUntil(proj.info.launchDate);
             const isComplete = pct===100, isSoon = d!==null&&d>=0&&d<=30;
@@ -1549,6 +1558,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 
             const basicDone = hasAva ? BASIC_ITEMS.filter(k => proj.basicChecked[k]).length : 0;
             const acaDone   = hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0;
+            const tmspDone  = hasTmsp && proj.basicChecked[TMSP_ITEM] ? 1 : 0;
             const faqDone   = (hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
             const b2done    = (hasAva?BATCH2_ITEMS.filter(it=>proj.batch2Checked[it]).length:0)+(hasGw&&proj.batch2Checked[GW_ITEM]?1:0);
             const b2total   = (hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0);
@@ -1646,7 +1656,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                 </div>
 
                 {/* Row 5: Sub-counts */}
-                {(hasAva||hasAca||hasGw) ? (
+                {(hasAva||hasAca||hasGw||hasTmsp) ? (
                   <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
                     {hasAva && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.green,flexShrink:0 }}/>
@@ -1663,6 +1673,11 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                       <span style={{ fontSize:11,color:C.textLight }}>ACA</span>
                       <span style={{ fontSize:11,color:PRODUCT_COLORS.ACA,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{acaDone}/1</span>
                     </div>}
+                    {hasTmsp && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                      <span style={{ width:7,height:7,borderRadius:"50%",background:PRODUCT_COLORS.TMSP,flexShrink:0 }}/>
+                      <span style={{ fontSize:11,color:C.textLight }}>TMS Pro</span>
+                      <span style={{ fontSize:11,color:PRODUCT_COLORS.TMSP,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{tmspDone}/1</span>
+                    </div>}
                     {(hasAva||hasGw) && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:C.purple,flexShrink:0 }}/>
                       <span style={{ fontSize:11,color:C.textLight }}>第二批</span>
@@ -1670,7 +1685,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                     </div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize:11, color:C.textLight, fontStyle:"italic" }}>未選購 AVA、ACA 或 GW，無進度追蹤</div>
+                  <div style={{ fontSize:11, color:C.textLight, fontStyle:"italic" }}>未選購 AVA、ACA、GW 或 TMSP，無進度追蹤</div>
                 )}
               </div>
             );
@@ -2756,18 +2771,19 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     }
   };
 
-  const { hasAva, hasAca, hasGw, hasIptv } = getFlags(info.products, info.integrations);
+  const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(info.products, info.integrations);
   const jiraTaskCount = (hasAva ? 51 : 0) + (hasAca ? (hasAva ? 4 : 5) : 0) || 51;
-  const canBatch1 = hasAva||hasAca||hasGw, canBatch2 = hasAva||hasGw;
+  const canBatch1 = hasAva||hasAca||hasGw||hasTmsp, canBatch2 = hasAva||hasGw;
   const activeFaq = FAQ_ITEMS.filter(item => item!==FAQ_TV_ITEM||hasIptv);
 
   const basicCount = hasAva ? BASIC_ITEMS.filter(k => basicChecked[k]).length : 0;
   const acaCount   = hasAca && basicChecked[ACA_ITEM] ? 1 : 0;
+  const tmspCount  = hasTmsp && basicChecked[TMSP_ITEM] ? 1 : 0;
   const faqCount   = (hasAva||hasGw) ? Object.entries(faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
   const b2Count    = hasAva ? BATCH2_ITEMS.filter(it=>batch2Checked[it]).length : 0;
   const gwCount    = hasGw  && batch2Checked[GW_ITEM] ? 1 : 0;
   const totalItems = calcTotal(info.products, info.integrations);
-  const totalPct   = totalItems===0 ? 0 : Math.round(((basicCount+acaCount+faqCount+b2Count+gwCount)/totalItems)*100);
+  const totalPct   = totalItems===0 ? 0 : Math.round(((basicCount+acaCount+tmspCount+faqCount+b2Count+gwCount)/totalItems)*100);
 
   // Steps: 0=info, 1=batch1, 2=batch2, 3=jira, 4=tasks, 5=overview
   const STEPS = ["專案資訊","第一批資料","第二批資料","Jira 子任務","任務紀錄","總覽"];
@@ -3176,7 +3192,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         {/* Step 1: 第一批資料 */}
         {step===1&&(
           <div style={{ animation:"fadeIn 0.25s ease" }}>
-            {!canBatch1?<LockScreen msg="請先選購 AVA、ACA 或 GW 以開啟第一批資料"/>:(
+            {!canBatch1?<LockScreen msg="請先選購 AVA、ACA、GW 或 TMSP 以開啟第一批資料"/>:(
               <>
                 <div style={{ marginBottom:24 }}>
                   <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:"0 0 6px" }}>第一批資料</h2>
@@ -3205,6 +3221,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <NoteArea value={basicNotes[ACA_ITEM]||""} onChange={v=>setBasicNotes(p=>({ ...p, [ACA_ITEM]:v }))} focusColor={PRODUCT_COLORS.ACA}/>
                     </div>
                     <SheetLink value={sheetLinks[ACA_LINK_KEY]||""} onChange={v=>setSheetLinks(p=>({ ...p, [ACA_LINK_KEY]:v }))} color={PRODUCT_COLORS.ACA}/>
+                  </Card>
+                )}
+                {hasTmsp&&(
+                  <Card>
+                    <SectionCount title="TMS Pro 設定" checked={tmspCount} total={1} color={PRODUCT_COLORS.TMSP}/>
+                    <div style={{ marginBottom:8 }}>
+                      <CheckRow label={TMSP_ITEM} checked={!!basicChecked[TMSP_ITEM]} onChange={()=>toggleCheck(setBasicChecked, TMSP_ITEM, "basic_checked")} color={PRODUCT_COLORS.TMSP}/>
+                      <NoteArea value={basicNotes[TMSP_ITEM]||""} onChange={v=>setBasicNotes(p=>({ ...p, [TMSP_ITEM]:v }))} focusColor={PRODUCT_COLORS.TMSP}/>
+                    </div>
+                    <SheetLink value={sheetLinks[TMSP_LINK_KEY]||""} onChange={v=>setSheetLinks(p=>({ ...p, [TMSP_LINK_KEY]:v }))} color={PRODUCT_COLORS.TMSP}/>
                   </Card>
                 )}
                 {(hasAva||hasGw)&&(
@@ -3388,6 +3414,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <div style={{ display:"flex", gap:14, marginBottom:20, flexWrap:"wrap" }}>
               {hasAva&&<ProgressCard label="基礎設定資料表" checked={basicCount} total={BASIC_ITEMS.length} color={C.green}/>}
               {hasAca&&<ProgressCard label="ACA 設定" checked={acaCount} total={1} color={PRODUCT_COLORS.ACA}/>}
+              {hasTmsp&&<ProgressCard label="TMS Pro 設定" checked={tmspCount} total={1} color={PRODUCT_COLORS.TMSP}/>}
               {(hasAva||hasGw)&&<ProgressCard label="FAQ 資料表" checked={faqCount} total={activeFaq.length} color={C.amber}/>}
               {(hasAva||hasGw)&&<ProgressCard label="第二批資料" checked={b2Count+gwCount} total={(hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0)} color={C.purple}/>}
             </div>
@@ -3558,6 +3585,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {hasAca&&(
                 <OvCard title="ACA 設定" color={PRODUCT_COLORS.ACA} linkKey={ACA_LINK_KEY} sheetLinks={sheetLinks}>
                   <OvCheckRow label={ACA_ITEM} checked={basicChecked[ACA_ITEM]} note={basicNotes[ACA_ITEM]} color={PRODUCT_COLORS.ACA}/>
+                </OvCard>
+              )}
+              {hasTmsp&&(
+                <OvCard title="TMS Pro 設定" color={PRODUCT_COLORS.TMSP} linkKey={TMSP_LINK_KEY} sheetLinks={sheetLinks}>
+                  <OvCheckRow label={TMSP_ITEM} checked={basicChecked[TMSP_ITEM]} note={basicNotes[TMSP_ITEM]} color={PRODUCT_COLORS.TMSP}/>
                 </OvCard>
               )}
             </div>
