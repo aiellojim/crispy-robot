@@ -1832,7 +1832,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
 
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1880,7 +1880,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>AI 助理</div>
-              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.1 Flash Lite</div>
+              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.5 Flash Lite</div>
             </div>
           </div>
           <button onClick={onClose}
