@@ -244,7 +244,7 @@ const calcPct = (proj) => {
   const total = calcTotal(products, integrations);
   if (!total) return 0;
   const done =
-    (hasAva ? Object.values(proj.basicChecked).filter(Boolean).length : 0)
+    (hasAva ? BASIC_ITEMS.filter(k => proj.basicChecked[k]).length : 0)
     + (hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0)
     + ((hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v]) => v && (k !== FAQ_TV_ITEM || hasIptv)).length : 0)
     + (hasAva ? BATCH2_ITEMS.filter(i => proj.batch2Checked[i]).length : 0)
@@ -1547,7 +1547,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
             ].filter(x=>x.date).map(x=>({ ...x, days:daysUntil(x.date) }))
              .filter(x=>x.days!==null&&x.days>=0).sort((a,b)=>a.days-b.days)[0]??null;
 
-            const basicDone = hasAva ? Object.values(proj.basicChecked).filter(Boolean).length : 0;
+            const basicDone = hasAva ? BASIC_ITEMS.filter(k => proj.basicChecked[k]).length : 0;
             const acaDone   = hasAca && proj.basicChecked[ACA_ITEM] ? 1 : 0;
             const faqDone   = (hasAva||hasGw) ? Object.entries(proj.faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
             const b2done    = (hasAva?BATCH2_ITEMS.filter(it=>proj.batch2Checked[it]).length:0)+(hasGw&&proj.batch2Checked[GW_ITEM]?1:0);
@@ -2761,7 +2761,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const canBatch1 = hasAva||hasAca||hasGw, canBatch2 = hasAva||hasGw;
   const activeFaq = FAQ_ITEMS.filter(item => item!==FAQ_TV_ITEM||hasIptv);
 
-  const basicCount = hasAva ? Object.values(basicChecked).filter(Boolean).length : 0;
+  const basicCount = hasAva ? BASIC_ITEMS.filter(k => basicChecked[k]).length : 0;
   const acaCount   = hasAca && basicChecked[ACA_ITEM] ? 1 : 0;
   const faqCount   = (hasAva||hasGw) ? Object.entries(faqChecked).filter(([k,v])=>v&&(k!==FAQ_TV_ITEM||hasIptv)).length : 0;
   const b2Count    = hasAva ? BATCH2_ITEMS.filter(it=>batch2Checked[it]).length : 0;
