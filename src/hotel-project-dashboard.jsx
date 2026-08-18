@@ -3879,6 +3879,8 @@ export default function App() {
   const [showAi,         setShowAi]         = useState(false);
   const [customerNotifs, setCustomerNotifs] = useState([]);
   const [eggFired,       setEggFired]       = useState(false); // 🥚 Konami code overlay
+  const [logoEggFired,   setLogoEggFired]   = useState(false); // 🥚 連點 logo 7 下 overlay
+  const logoClickRef = useRef({ count:0, lastTime:0 });
   // Auth
   const [session,      setSession]      = useState(null);
   const [profile,      setProfile]      = useState(null);
@@ -3927,6 +3929,20 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // 🥚 連點 header logo 7 下：兩次點擊間隔超過 1.2 秒就重置計數，避免平常隨手點一兩下誤觸。
+  const handleLogoClick = () => {
+    const now = Date.now();
+    const ref = logoClickRef.current;
+    if (now - ref.lastTime > 1200) ref.count = 0;
+    ref.count++;
+    ref.lastTime = now;
+    if (ref.count >= 7) {
+      ref.count = 0;
+      setLogoEggFired(true);
+      setTimeout(() => setLogoEggFired(false), 4000);
+    }
+  };
 
   const loadProfile = async (userId) => {
     const { data } = await sb.from("user_profiles").select("*").eq("id", userId).maybeSingle();
@@ -4129,8 +4145,8 @@ export default function App() {
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
-                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><AielloLogo size={22}/></div>
+              <div onClick={handleLogoClick} style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
+                display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, cursor:"pointer" }}><AielloLogo size={22}/></div>
               <div>
                 <div style={{ fontSize:15, fontWeight:500, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
                 <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
@@ -4261,6 +4277,17 @@ export default function App() {
             <div style={{ fontSize:44, marginBottom:10 }}>🎉</div>
             <div style={{ fontSize:20, fontWeight:500 }}>Konami Code 觸發了</div>
             <div style={{ fontSize:13, fontWeight:400, opacity:0.75, marginTop:4 }}>（範例訊息，自己改成想看到的內容）</div>
+          </div>
+        </div>
+      )}
+
+      {/* 🥚 連點 logo 7 下 overlay */}
+      {logoEggFired && (
+        <div style={{ position:"fixed", inset:0, zIndex:99999, display:"flex", alignItems:"center",
+          justifyContent:"center", background:"rgba(0,0,0,0.6)", animation:"fadeIn 0.2s ease", pointerEvents:"none" }}>
+          <div style={{ textAlign:"center", color:"#fff", animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:44, marginBottom:10 }}>😡</div>
+            <div style={{ fontSize:24, fontWeight:600 }}>為什麼還要上班！！！</div>
           </div>
         </div>
       )}
