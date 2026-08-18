@@ -1702,6 +1702,28 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 // ─── AI Chat ──────────────────────────────────────────────────
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 
+// ─── 🥚 Easter eggs (Jim only — never referenced in any UI/help text) ──────
+// 純本地比對，match 到就不打 Gemini API，直接把 reply 塞進對話（省額度、也不會被 model
+// 用不同語氣講走樣）。想加新的暗語/指令，照下面範例格式加進陣列即可，不用碰 sendText()。
+// - match: (輸入文字trim後) => boolean
+// - reply: (ctx) => 字串，ctx = { projects, allTasks, msgs }，可以用即時資料組字串
+const EASTER_EGGS = [
+  // 範例：暗語式回覆（整段完全比對，忽略大小寫）
+  // {
+  //   match: (text) => /^你的暗語$/i.test(text),
+  //   reply: () => "填你想看到的吐槽或鼓勵內容",
+  // },
+
+  // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料
+  // {
+  //   match: (text) => /^\/whoami$/i.test(text),
+  //   reply: (ctx) => `目前追蹤 ${ctx.projects.length} 個專案、${ctx.allTasks.length} 筆任務。`,
+  // },
+];
+
+// Konami code（全站通用，不限 AI 面板開著才能觸發）：↑↑↓↓←→←→BA
+const KONAMI_SEQUENCE = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+
 function renderMarkdown(md) {
   // 1. HTML-escape first
   let h = md
@@ -1814,12 +1836,33 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     bottomRef.current?.scrollIntoView({ behavior:"smooth" });
   }, [msgs, busy]);
 
+  // 🥚 深夜彩蛋：面板一打開就檢查現在幾點，是的話開場多塞一句只有你會看到的訊息。
+  // 時段/文字都自己改，跟 EASTER_EGGS 一樣純前端、不會被記進對話歷史送去 Gemini。
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 5) {
+      setMsgs(prev => prev.length ? prev : [
+        { role:"model", text:"（範例：深夜彩蛋文字，自己改）這麼晚了還在用 dashboard？" },
+      ]);
+    }
+  }, []); // eslint-disable-line
+
   const sendText = async (text) => {
     const trimmed = text.trim();
-    if (!trimmed || busy || !GEMINI_API_KEY) return;
+    if (!trimmed || busy) return;
     setInput("");
     const userMsg = { role:"user", text:trimmed };
     setMsgs(prev => [...prev, userMsg]);
+
+    // 🥚 easter egg intercept — 本地比對，match 到就不打 Gemini API，不受 GEMINI_API_KEY
+    // 是否設定影響（純前端回覆），也不會出現在打給 Google 的請求內容裡。
+    const egg = EASTER_EGGS.find(e => e.match(trimmed));
+    if (egg) {
+      setMsgs(prev => [...prev, { role:"model", text: egg.reply({ projects, allTasks, msgs }) }]);
+      return;
+    }
+
+    if (!GEMINI_API_KEY) return;
     setBusy(true);
 
     const history = [...msgs, userMsg];
@@ -3835,6 +3878,7 @@ export default function App() {
   const [showInAppNotif, setShowInAppNotif] = useState(false);
   const [showAi,         setShowAi]         = useState(false);
   const [customerNotifs, setCustomerNotifs] = useState([]);
+  const [eggFired,       setEggFired]       = useState(false); // 🥚 Konami code overlay
   // Auth
   const [session,      setSession]      = useState(null);
   const [profile,      setProfile]      = useState(null);
@@ -3860,6 +3904,28 @@ export default function App() {
       else { setProfile(null); setAuthLoading(false); }
     });
     return () => subscription.unsubscribe();
+  }, []);
+
+  // 🥚 Konami code（↑↑↓↓←→←→BA）：全站任何頁面都能觸發，跟 AI 面板開關無關。
+  // 目前只放了一個示範用的全螢幕 overlay，內容/動畫自己改（render 區塊搜尋 eggFired）。
+  useEffect(() => {
+    let idx = 0;
+    const onKey = (e) => {
+      const expected = KONAMI_SEQUENCE[idx];
+      const matched = e.key === expected || e.key.toLowerCase() === expected;
+      if (matched) {
+        idx++;
+        if (idx === KONAMI_SEQUENCE.length) {
+          idx = 0;
+          setEggFired(true);
+          setTimeout(() => setEggFired(false), 4000);
+        }
+      } else {
+        idx = (e.key === KONAMI_SEQUENCE[0]) ? 1 : 0;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const loadProfile = async (userId) => {
@@ -4186,6 +4252,18 @@ export default function App() {
 
       {/* AI Panel */}
       {showAi && <AiPanel projects={projects} allTasks={allTasks} onClose={()=>setShowAi(false)}/>}
+
+      {/* 🥚 Konami code overlay — 示範用，內容/動畫自己改 */}
+      {eggFired && (
+        <div style={{ position:"fixed", inset:0, zIndex:99999, display:"flex", alignItems:"center",
+          justifyContent:"center", background:"rgba(0,0,0,0.6)", animation:"fadeIn 0.2s ease", pointerEvents:"none" }}>
+          <div style={{ textAlign:"center", color:"#fff", animation:"fadeIn 0.3s ease" }}>
+            <div style={{ fontSize:44, marginBottom:10 }}>🎉</div>
+            <div style={{ fontSize:20, fontWeight:500 }}>Konami Code 觸發了</div>
+            <div style={{ fontSize:13, fontWeight:400, opacity:0.75, marginTop:4 }}>（範例訊息，自己改成想看到的內容）</div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {isDetailView
