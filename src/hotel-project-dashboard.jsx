@@ -499,7 +499,7 @@ const DebugHud = ({ projects, allTasks }) => {
   const ss = String(uptimeSec % 60).padStart(2, "0");
 
   return (
-    <div style={{ position:"fixed", bottom:16, right:16, zIndex:99997,
+    <div style={{ position:"fixed", bottom:16, left:16, zIndex:99997,
       background:"rgba(0,10,0,0.88)", color:"#00ff41", fontFamily:"'DM Mono','Courier New',monospace",
       fontSize:11, padding:"10px 14px", borderRadius:8, border:"1px solid rgba(0,255,65,0.35)",
       lineHeight:1.7, pointerEvents:"none", boxShadow:"0 4px 20px rgba(0,0,0,0.5)", minWidth:180 }}>
