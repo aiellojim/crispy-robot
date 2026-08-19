@@ -179,9 +179,33 @@ const GLOBAL_CSS = `
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
-  /* 🥚 do a barrel roll — 獨立命名，跟 loading spinner 用的 spin 分開，避免以後改 spinner 速度時互相影響 */
+  /* 🥚 視覺類彩蛋 — 獨立命名，跟 loading spinner 用的 spin 分開，避免以後改 spinner 速度時互相影響 */
   @keyframes barrelRoll { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   body.barrel-roll-effect { animation: barrelRoll 1s ease-in-out; transform-origin:center center; }
+
+  @keyframes eggShake {
+    0%,100% { transform:translate(0,0); }
+    10% { transform:translate(-8px,-4px); } 20% { transform:translate(8px,4px); }
+    30% { transform:translate(-8px,4px); }  40% { transform:translate(8px,-4px); }
+    50% { transform:translate(-6px,2px); }  60% { transform:translate(6px,-2px); }
+    70% { transform:translate(-4px,4px); }  80% { transform:translate(4px,-4px); }
+    90% { transform:translate(-2px,2px); }
+  }
+  body.shake-effect { animation: eggShake 0.5s ease-in-out; }
+
+  @keyframes eggFlipTable {
+    0% { transform:rotate(0deg); } 15% { transform:rotate(180deg); }
+    85% { transform:rotate(180deg); } 100% { transform:rotate(0deg); }
+  }
+  body.flip-table-effect { animation: eggFlipTable 3.5s ease-in-out; transform-origin:center center; }
+
+  @keyframes eggTripMode { from { filter:hue-rotate(0deg); } to { filter:hue-rotate(360deg); } }
+  html.trip-mode-effect { animation: eggTripMode 1s linear 4; }
+
+  @keyframes confettiFall {
+    from { transform:translateY(0) rotate(0deg); opacity:0.9; }
+    to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
+  }
 
   /* Manual theme overrides — higher specificity than media query */
   html[data-theme="light"] {
@@ -1705,16 +1729,76 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 // ─── AI Chat ──────────────────────────────────────────────────
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 
-// 🥚 do a barrel roll：真的讓整個畫面轉一圈（body.barrel-roll-effect，keyframes 見 GLOBAL_CSS）。
-// 用 animationend 事件收尾而不是 setTimeout，避免跟 CSS 動畫時長寫死兩份、之後改一邊忘記改另一邊。
-// 連續觸發時先強制 reflow 再重新掛 class，讓動畫能重新從頭播放。
-function triggerBarrelRoll() {
-  const el = document.body;
-  el.classList.remove("barrel-roll-effect");
-  void el.offsetWidth; // force reflow
-  el.classList.add("barrel-roll-effect");
-  const onEnd = () => { el.classList.remove("barrel-roll-effect"); el.removeEventListener("animationend", onEnd); };
+// 🥚 視覺類彩蛋效果 — CSS class 動畫用 animationend 事件收尾（不用 setTimeout 寫死時長，
+// 避免跟 CSS 動畫時長兩邊分開改、之後忘記同步）。同一個元素上的 class 彼此互斥，觸發前
+// 先清掉同組其他 class 再強制 reflow，避免兩個效果疊在一起打架（比如連續手滑打兩個指令）。
+const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect"];
+const EGG_HTML_CLASSES = ["trip-mode-effect"];
+
+function runEggClassEffect(el, className, siblingClasses) {
+  siblingClasses.forEach(c => el.classList.remove(c));
+  void el.offsetWidth; // force reflow，讓重複觸發時動畫能重新從頭播放
+  el.classList.add(className);
+  const onEnd = () => { el.classList.remove(className); el.removeEventListener("animationend", onEnd); };
   el.addEventListener("animationend", onEnd);
+}
+
+// do a barrel roll：整個畫面轉一圈
+function triggerBarrelRoll() { runEggClassEffect(document.body, "barrel-roll-effect", EGG_BODY_CLASSES); }
+// earthquake：畫面震動
+function triggerShake() { runEggClassEffect(document.body, "shake-effect", EGG_BODY_CLASSES); }
+// flip table：整頁倒過來，撐一下再自動轉回來
+function triggerFlipTable() { runEggClassEffect(document.body, "flip-table-effect", EGG_BODY_CLASSES); }
+// disco：全頁色相持續旋轉幾秒（套在 html 上，body 的 filter 不一定能蓋到最外層背景）
+function triggerTripMode() { runEggClassEffect(document.documentElement, "trip-mode-effect", EGG_HTML_CLASSES); }
+
+// ship it：彩帶雨。用純 DOM + inline style 動態生成小色塊，不需要額外套件，跑完自己清掉。
+function triggerConfetti() {
+  const colors = ["#f43f5e","#f59e0b","#22c55e","#3b82f6","#a855f7","#ec4899"];
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;inset:0;z-index:99998;pointer-events:none;overflow:hidden;";
+  document.body.appendChild(container);
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement("div");
+    const left = Math.random() * 100;
+    const duration = (2.5 + Math.random() * 1.5).toFixed(2);
+    const delay = (Math.random() * 0.4).toFixed(2);
+    const size = 6 + Math.random() * 6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.cssText = `position:absolute;top:-20px;left:${left}%;width:${size}px;height:${size*0.4}px;background:${color};opacity:0.9;animation:confettiFall ${duration}s ${delay}s ease-in forwards;`;
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.remove(), 4600);
+}
+
+// wake up neo：Matrix 代碼雨，全螢幕 canvas，跑幾秒淡出後自己清掉
+function triggerMatrixRain() {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;z-index:99998;pointer-events:none;transition:opacity 0.6s ease;";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789";
+  const fontSize = 16;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = new Array(columns).fill(1);
+  const draw = () => {
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00ff41";
+    ctx.font = fontSize + "px monospace";
+    drops.forEach((y, i) => {
+      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, y * fontSize);
+      if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  };
+  const interval = setInterval(draw, 40);
+  setTimeout(() => {
+    canvas.style.opacity = "0";
+    setTimeout(() => { clearInterval(interval); canvas.remove(); }, 600);
+  }, 4000);
 }
 
 // ─── 🥚 Easter eggs (Jim only — never referenced in any UI/help text) ──────
@@ -1732,6 +1816,11 @@ const EASTER_EGGS = [
   { match: (text) => /^ping$/i.test(text), reply: () => "pong" },
   { match: (text) => /^\/shrug$/i.test(text), reply: () => "¯\\_(ツ)_/¯" },
   { match: (text) => /^\/overtime$/i.test(text), reply: () => "I don't get paid enough to work this long..." },
+  { match: (text) => /^wake up neo$/i.test(text), reply: () => "Follow the white rabbit.", effect: () => triggerMatrixRain() },
+  { match: (text) => /^earthquake$/i.test(text), reply: () => "地牛翻身！", effect: () => triggerShake() },
+  { match: (text) => /^ship it$/i.test(text), reply: () => "🚀🎉 Shipped!", effect: () => triggerConfetti() },
+  { match: (text) => /^disco$/i.test(text), reply: () => "🕺💃", effect: () => triggerTripMode() },
+  { match: (text) => /^flip table$/i.test(text), reply: () => "(╯°□°）╯︵ ┻━┻", effect: () => triggerFlipTable() },
 
   // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料，自己再加
   // {
