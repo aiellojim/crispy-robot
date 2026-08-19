@@ -4275,8 +4275,7 @@ export default function App() {
           justifyContent:"center", background:"rgba(0,0,0,0.6)", animation:"fadeIn 0.2s ease", pointerEvents:"none" }}>
           <div style={{ textAlign:"center", color:"#fff", animation:"fadeIn 0.3s ease" }}>
             <div style={{ fontSize:44, marginBottom:10 }}>🎉</div>
-            <div style={{ fontSize:20, fontWeight:500 }}>Konami Code 觸發了</div>
-            <div style={{ fontSize:13, fontWeight:400, opacity:0.75, marginTop:4 }}>（範例訊息，自己改成想看到的內容）</div>
+            <div style={{ fontSize:20, fontWeight:500 }}>你很厲害但也很閒...</div>
           </div>
         </div>
       )}
