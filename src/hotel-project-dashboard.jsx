@@ -1708,13 +1708,16 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 // - match: (輸入文字trim後) => boolean
 // - reply: (ctx) => 字串，ctx = { projects, allTasks, msgs }，可以用即時資料組字串
 const EASTER_EGGS = [
-  // 範例：暗語式回覆（整段完全比對，忽略大小寫）
-  // {
-  //   match: (text) => /^你的暗語$/i.test(text),
-  //   reply: () => "填你想看到的吐槽或鼓勵內容",
-  // },
+  { match: (text) => /^sudo make me a sandwich$/i.test(text), reply: () => "OK." },
+  { match: (text) => /^xyzzy$/i.test(text), reply: () => "什麼事也沒發生。" },
+  { match: (text) => /^(iddqd|idkfa)$/i.test(text), reply: () => "無敵模式已啟動（其實沒有）。" },
+  { match: (text) => /^42$/.test(text), reply: () => "生命、宇宙以及一切的答案。" },
+  { match: (text) => /^do a barrel roll$/i.test(text), reply: () => "這裡沒有 Google 的預算讓頁面轉圈。" },
+  { match: (text) => /^ping$/i.test(text), reply: () => "pong" },
+  { match: (text) => /^\/shrug$/i.test(text), reply: () => "¯\\_(ツ)_/¯" },
+  { match: (text) => /^\/overtime$/i.test(text), reply: () => "I don't get paid enough to work this long..." },
 
-  // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料
+  // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料，自己再加
   // {
   //   match: (text) => /^\/whoami$/i.test(text),
   //   reply: (ctx) => `目前追蹤 ${ctx.projects.length} 個專案、${ctx.allTasks.length} 筆任務。`,
@@ -1842,7 +1845,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 5) {
       setMsgs(prev => prev.length ? prev : [
-        { role:"model", text:"（範例：深夜彩蛋文字，自己改）這麼晚了還在用 dashboard？" },
+        { role:"model", text:"這麼晚了還在上班？" },
       ]);
     }
   }, []); // eslint-disable-line
