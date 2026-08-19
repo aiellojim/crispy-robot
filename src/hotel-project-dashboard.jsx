@@ -179,6 +179,9 @@ const GLOBAL_CSS = `
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
+  /* 🥚 do a barrel roll — 獨立命名，跟 loading spinner 用的 spin 分開，避免以後改 spinner 速度時互相影響 */
+  @keyframes barrelRoll { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  body.barrel-roll-effect { animation: barrelRoll 1s ease-in-out; transform-origin:center center; }
 
   /* Manual theme overrides — higher specificity than media query */
   html[data-theme="light"] {
@@ -1702,17 +1705,30 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 // ─── AI Chat ──────────────────────────────────────────────────
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 
+// 🥚 do a barrel roll：真的讓整個畫面轉一圈（body.barrel-roll-effect，keyframes 見 GLOBAL_CSS）。
+// 用 animationend 事件收尾而不是 setTimeout，避免跟 CSS 動畫時長寫死兩份、之後改一邊忘記改另一邊。
+// 連續觸發時先強制 reflow 再重新掛 class，讓動畫能重新從頭播放。
+function triggerBarrelRoll() {
+  const el = document.body;
+  el.classList.remove("barrel-roll-effect");
+  void el.offsetWidth; // force reflow
+  el.classList.add("barrel-roll-effect");
+  const onEnd = () => { el.classList.remove("barrel-roll-effect"); el.removeEventListener("animationend", onEnd); };
+  el.addEventListener("animationend", onEnd);
+}
+
 // ─── 🥚 Easter eggs (Jim only — never referenced in any UI/help text) ──────
 // 純本地比對，match 到就不打 Gemini API，直接把 reply 塞進對話（省額度、也不會被 model
 // 用不同語氣講走樣）。想加新的暗語/指令，照下面範例格式加進陣列即可，不用碰 sendText()。
 // - match: (輸入文字trim後) => boolean
 // - reply: (ctx) => 字串，ctx = { projects, allTasks, msgs }，可以用即時資料組字串
+// - effect: (可選) () => void，match 到時除了塞 reply 進對話，順便呼叫一次（例如視覺效果）
 const EASTER_EGGS = [
   { match: (text) => /^sudo make me a sandwich$/i.test(text), reply: () => "OK." },
   { match: (text) => /^xyzzy$/i.test(text), reply: () => "什麼事也沒發生。" },
   { match: (text) => /^(iddqd|idkfa)$/i.test(text), reply: () => "無敵模式已啟動（其實沒有）。" },
   { match: (text) => /^42$/.test(text), reply: () => "生命、宇宙以及一切的答案。" },
-  { match: (text) => /^do a barrel roll$/i.test(text), reply: () => "這裡沒有 Google 的預算讓頁面轉圈。" },
+  { match: (text) => /^do a barrel roll$/i.test(text), reply: () => "轉囉！", effect: () => triggerBarrelRoll() },
   { match: (text) => /^ping$/i.test(text), reply: () => "pong" },
   { match: (text) => /^\/shrug$/i.test(text), reply: () => "¯\\_(ツ)_/¯" },
   { match: (text) => /^\/overtime$/i.test(text), reply: () => "I don't get paid enough to work this long..." },
@@ -1862,6 +1878,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     const egg = EASTER_EGGS.find(e => e.match(trimmed));
     if (egg) {
       setMsgs(prev => [...prev, { role:"model", text: egg.reply({ projects, allTasks, msgs }) }]);
+      egg.effect?.();
       return;
     }
 
