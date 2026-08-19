@@ -250,6 +250,27 @@ const GLOBAL_CSS = `
   }
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
+
+  /* 🥚 jim mode — 疊在既有的 CSS variable 系統上（跟 html[data-theme] 同一套機制），全站
+     inline style 裡寫 var(--text)/var(--bg) 這種變數參照都會自動吃到，不用改任何元件。 */
+  html.jim-mode-effect {
+    --bg: #000000; --surface: #060a06; --surface-raised: #0c140c;
+    --border: #113311; --border-mid: #1a4d1a;
+    --text: #00ff41; --text-mid: #00cc33; --text-subtle: #009926;
+    --accent: #00ff41; --accent-light: #00330d;
+    --accent-border: rgba(0,255,65,0.35); --accent-subtle: rgba(0,255,65,0.08);
+    --green: #00ff41; --green-light: #001a08; --green-subtle: rgba(0,255,65,0.08);
+    --amber: #ffcc00; --amber-light: #1a1500; --amber-subtle: rgba(255,204,0,0.08);
+    --red: #ff3333; --red-light: #1a0000; --red-subtle: rgba(255,51,51,0.08);
+    --purple: #33ffcc; --purple-light: #001a15; --purple-subtle: rgba(51,255,204,0.08);
+    --shadow-sm: 0 0 4px rgba(0,255,65,0.15);
+    --shadow: 0 0 12px rgba(0,255,65,0.12);
+  }
+  html.jim-mode-effect body { font-family:'DM Mono','Courier New',monospace; }
+  html.jim-mode-effect body::after {
+    content:""; position:fixed; inset:0; z-index:99990; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,255,65,0.04) 0px, rgba(0,255,65,0.04) 1px, transparent 1px, transparent 3px);
+  }
 `;
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -449,6 +470,47 @@ const ICONS = {
 const AielloLogo = ({ size=22 }) => (
   <img src="/aiello-logo.svg" width={size} height={size} alt="Aiello" style={{display:"block"}}/>
 );
+
+// 🥚 jim mode 的 debug HUD — 純裝飾用的開發者主機板風格浮動面板，跟真的 render 次數/API 次數
+// 無關（那需要全站埋計數器，投報率不高），只用容易且真實取得的資訊：時鐘、面板自己的 uptime、
+// 目前追蹤的專案/任務數，加一句每 6 秒輪播的工程師梗當調味。
+const JIM_HUD_QUOTES = [
+  "Compiling vibes...",
+  "No bugs, only undocumented features.",
+  "It works on my machine.",
+  "99 little bugs in the code...",
+  "Have you tried turning it off and on again?",
+  "// TODO: fix this properly (never)",
+];
+
+const DebugHud = ({ projects, allTasks }) => {
+  const [now, setNow] = useState(new Date());
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const t1 = setInterval(() => setNow(new Date()), 1000);
+    const t2 = setInterval(() => setQuoteIdx(i => (i + 1) % JIM_HUD_QUOTES.length), 6000);
+    return () => { clearInterval(t1); clearInterval(t2); };
+  }, []);
+
+  const uptimeSec = Math.floor((now.getTime() - startRef.current) / 1000);
+  const mm = String(Math.floor(uptimeSec / 60)).padStart(2, "0");
+  const ss = String(uptimeSec % 60).padStart(2, "0");
+
+  return (
+    <div style={{ position:"fixed", bottom:16, right:16, zIndex:99997,
+      background:"rgba(0,10,0,0.88)", color:"#00ff41", fontFamily:"'DM Mono','Courier New',monospace",
+      fontSize:11, padding:"10px 14px", borderRadius:8, border:"1px solid rgba(0,255,65,0.35)",
+      lineHeight:1.7, pointerEvents:"none", boxShadow:"0 4px 20px rgba(0,0,0,0.5)", minWidth:180 }}>
+      <div style={{ fontWeight:600, marginBottom:2 }}>🖥️ JIM MODE</div>
+      <div>{now.toLocaleTimeString("zh-TW", { hour12:false })}</div>
+      <div>uptime {mm}:{ss}</div>
+      <div>projects: {projects.length} · tasks: {allTasks.length}</div>
+      <div style={{ opacity:0.65, marginTop:4, fontStyle:"italic" }}>{JIM_HUD_QUOTES[quoteIdx]}</div>
+    </div>
+  );
+};
 
 const Ico = ({ name, size=16, color="currentColor", strokeWidth=1.6, style={} }) => (
   <Icon d={ICONS[name]||""} size={size} color={color} strokeWidth={strokeWidth} style={style}/>
@@ -1823,38 +1885,142 @@ let applyThemeEgg = () => {};
 function triggerLumos() { applyThemeEgg("light"); }
 function triggerNox()   { applyThemeEgg("dark"); }
 
+// jim mode / go rogue：AI 語氣人設切換。isPersonaActive() 由 sendText 組 systemPrompt 時讀取，
+// 兩個開關獨立存在 localStorage，任一個開著人設就生效，互不覆蓋彼此的開關狀態。
+const JIM_MODE_KEY   = "hotel-dash-jim-mode";
+const ROGUE_MODE_KEY = "hotel-dash-rogue-mode";
+function isJimMode()       { return localStorage.getItem(JIM_MODE_KEY) === "1"; }
+function isRogueMode()     { return localStorage.getItem(ROGUE_MODE_KEY) === "1"; }
+function isPersonaActive() { return isJimMode() || isRogueMode(); }
+
+// jim mode 同時橋接到 App 的 setJimMode，一次切三件事：hacker CSS 主題
+// （html.jim-mode-effect，見 GLOBAL_CSS）、debug HUD 顯示/隱藏、AI 語氣人設。
+let toggleJimModeEgg = () => {};
+function triggerJimMode() { toggleJimModeEgg(); }
+
+// go rogue 只切 AI 語氣人設，跟 jim mode 的視覺/HUD 部分無關，純 localStorage 開關，
+// 不需要橋接 React state。
+function triggerRogueMode() {
+  localStorage.setItem(ROGUE_MODE_KEY, isRogueMode() ? "0" : "1");
+}
+
+const JIM_PERSONA_PROMPT =
+  "現在切換成「Jim 專屬大姊姊」人設：說話直白、毒舌，喜歡吐槽數據和進度落後，但心地其實" +
+  "很溫柔，偶爾會突然真心稱讚或鼓勵 Jim，反差萌一點，不要毒舌到底沒有溫度。用詞可以口語化、" +
+  "帶點江湖氣，但底線是仍要根據下面的真實專案資料回答問題，不能因為換了人設就亂編數字。";
+
+// 🥚 彩蛋成就收集 — localStorage 記錄每個彩蛋「第一次觸發」的時間，打 `show achievements`
+// 才看得到；沒觸發過的一律顯示 ??? 不洩漏內容/暗語，維持探索感，只有解鎖過的才會顯示名稱。
+const EGG_UNLOCKS_KEY = "hotel-dash-egg-unlocks";
+
+function getEggUnlocks() {
+  try {
+    const raw = localStorage.getItem(EGG_UNLOCKS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function recordEggUnlock(id) {
+  if (!id) return;
+  try {
+    const unlocked = getEggUnlocks();
+    if (unlocked[id]) return; // 只記第一次觸發的時間
+    unlocked[id] = new Date().toISOString();
+    localStorage.setItem(EGG_UNLOCKS_KEY, JSON.stringify(unlocked));
+  } catch { /* localStorage 不可用時安靜失敗，不影響主功能 */ }
+}
+
+// 這份清單是「彩蛋成就」的權威來源，跟 EASTER_EGGS 陣列是分開維護的獨立清單（EASTER_EGGS
+// 專注在觸發比對邏輯，這份專注在成就顯示用的人類可讀名稱）——加新彩蛋時兩邊都要記得加。
+const EGG_REGISTRY = [
+  { id:"sandwich",   label:"sudo make me a sandwich" },
+  { id:"xyzzy",      label:"xyzzy" },
+  { id:"doom",       label:"IDDQD / IDKFA" },
+  { id:"answer42",   label:"42" },
+  { id:"barrelroll", label:"do a barrel roll" },
+  { id:"ping",       label:"ping" },
+  { id:"shrug",      label:"/shrug" },
+  { id:"overtime",   label:"/overtime" },
+  { id:"matrixrain", label:"wake up neo" },
+  { id:"earthquake", label:"earthquake" },
+  { id:"shipit",     label:"ship it" },
+  { id:"disco",      label:"disco" },
+  { id:"fliptable",  label:"flip table" },
+  { id:"illbeback",  label:"i'll be back" },
+  { id:"mordor",     label:"one does not simply" },
+  { id:"force",      label:"may the force be with you" },
+  { id:"gandalf",    label:"you shall not pass" },
+  { id:"dontpanic",  label:"don't panic" },
+  { id:"lumos",      label:"lumos" },
+  { id:"nox",        label:"nox" },
+  { id:"bigbrother", label:"big brother is watching" },
+  { id:"rickroll",   label:"never gonna give you up" },
+  { id:"jimmode",    label:"jim mode" },
+  { id:"gorogue",    label:"go rogue" },
+  { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）" },
+  { id:"logoclick",  label:"連點 header logo 7 下" },
+  { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板" },
+];
+
+function buildAchievementsReport() {
+  const unlocked = getEggUnlocks();
+  const done = EGG_REGISTRY.filter(e => unlocked[e.id]).length;
+  const lines = [`## 🏆 彩蛋成就（${done} / ${EGG_REGISTRY.length}）`, ""];
+  EGG_REGISTRY.forEach(e => {
+    if (unlocked[e.id]) {
+      const d = new Date(unlocked[e.id]);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      lines.push(`- ✅ ${e.label}（${dateStr}）`);
+    } else {
+      lines.push("- 🔒 ???");
+    }
+  });
+  return lines.join("\n");
+}
+
 // ─── 🥚 Easter eggs (Jim only — never referenced in any UI/help text) ──────
 // 純本地比對，match 到就不打 Gemini API，直接把 reply 塞進對話（省額度、也不會被 model
 // 用不同語氣講走樣）。想加新的暗語/指令，照下面範例格式加進陣列即可，不用碰 sendText()。
+// - id: 給成就收集用的唯一 key，沒有 id 就不會被記錄進 show achievements 清單
 // - match: (輸入文字trim後) => boolean
 // - reply: (ctx) => 字串，ctx = { projects, allTasks, msgs }，可以用即時資料組字串
 // - effect: (可選) () => void，match 到時除了塞 reply 進對話，順便呼叫一次（例如視覺效果）
 const EASTER_EGGS = [
-  { match: (text) => /^sudo make me a sandwich$/i.test(text), reply: () => "OK." },
-  { match: (text) => /^xyzzy$/i.test(text), reply: () => "什麼事也沒發生。" },
-  { match: (text) => /^(iddqd|idkfa)$/i.test(text), reply: () => "無敵模式已啟動（其實沒有）。" },
-  { match: (text) => /^42$/.test(text), reply: () => "生命、宇宙以及一切的答案。" },
-  { match: (text) => /^do a barrel roll$/i.test(text), reply: () => "轉囉！", effect: () => triggerBarrelRoll() },
-  { match: (text) => /^ping$/i.test(text), reply: () => "pong" },
-  { match: (text) => /^\/shrug$/i.test(text), reply: () => "¯\\_(ツ)_/¯" },
-  { match: (text) => /^\/overtime$/i.test(text), reply: () => "I don't get paid enough to work this long..." },
-  { match: (text) => /^wake up neo$/i.test(text), reply: () => "Follow the white rabbit.", effect: () => triggerMatrixRain() },
-  { match: (text) => /^earthquake$/i.test(text), reply: () => "地牛翻身！", effect: () => triggerShake() },
-  { match: (text) => /^ship it$/i.test(text), reply: () => "🚀🎉 Shipped!", effect: () => triggerConfetti() },
-  { match: (text) => /^disco$/i.test(text), reply: () => "🕺💃", effect: () => triggerTripMode() },
-  { match: (text) => /^flip table$/i.test(text), reply: () => "(╯°□°）╯︵ ┻━┻", effect: () => triggerFlipTable() },
-  { match: (text) => /^i'll be back$/i.test(text), reply: () => "🤖 收到，稍後回來。" },
-  { match: (text) => /^one does not simply$/i.test(text), reply: () => "...walk into Mordor." },
-  { match: (text) => /^may the force be with you$/i.test(text), reply: () => "願原力與你同在。" },
-  { match: (text) => /^you shall not pass$/i.test(text), reply: () => "🧙 YOU SHALL NOT PASS!", effect: () => triggerGandalfBlock() },
-  { match: (text) => /^don't panic$/i.test(text), reply: () => "📖 DON'T PANIC（大大的、友善的字體）。" },
-  { match: (text) => /^lumos$/i.test(text), reply: () => "🪄 Lumos！", effect: () => triggerLumos() },
-  { match: (text) => /^nox$/i.test(text), reply: () => "🪄 Nox...", effect: () => triggerNox() },
-  { match: (text) => /^big brother is watching$/i.test(text), reply: () => "👁️ 對，這是內部工具，本來就看得到全部飯店的資料。" },
-  { match: (text) => /^never gonna give you up$/i.test(text), reply: () => "😄 Rickrolled." },
+  { id:"sandwich",   match: (text) => /^sudo make me a sandwich$/i.test(text), reply: () => "OK." },
+  { id:"xyzzy",      match: (text) => /^xyzzy$/i.test(text), reply: () => "什麼事也沒發生。" },
+  { id:"doom",       match: (text) => /^(iddqd|idkfa)$/i.test(text), reply: () => "無敵模式已啟動（其實沒有）。" },
+  { id:"answer42",   match: (text) => /^42$/.test(text), reply: () => "生命、宇宙以及一切的答案。" },
+  { id:"barrelroll", match: (text) => /^do a barrel roll$/i.test(text), reply: () => "轉囉！", effect: () => triggerBarrelRoll() },
+  { id:"ping",       match: (text) => /^ping$/i.test(text), reply: () => "pong" },
+  { id:"shrug",      match: (text) => /^\/shrug$/i.test(text), reply: () => "¯\\_(ツ)_/¯" },
+  { id:"overtime",   match: (text) => /^\/overtime$/i.test(text), reply: () => "I don't get paid enough to work this long..." },
+  { id:"matrixrain", match: (text) => /^wake up neo$/i.test(text), reply: () => "Follow the white rabbit.", effect: () => triggerMatrixRain() },
+  { id:"earthquake", match: (text) => /^earthquake$/i.test(text), reply: () => "地牛翻身！", effect: () => triggerShake() },
+  { id:"shipit",     match: (text) => /^ship it$/i.test(text), reply: () => "🚀🎉 Shipped!", effect: () => triggerConfetti() },
+  { id:"disco",      match: (text) => /^disco$/i.test(text), reply: () => "🕺💃", effect: () => triggerTripMode() },
+  { id:"fliptable",  match: (text) => /^flip table$/i.test(text), reply: () => "(╯°□°）╯︵ ┻━┻", effect: () => triggerFlipTable() },
+  { id:"illbeback",  match: (text) => /^i'll be back$/i.test(text), reply: () => "🤖 收到，稍後回來。" },
+  { id:"mordor",     match: (text) => /^one does not simply$/i.test(text), reply: () => "...walk into Mordor." },
+  { id:"force",      match: (text) => /^may the force be with you$/i.test(text), reply: () => "願原力與你同在。" },
+  { id:"gandalf",    match: (text) => /^you shall not pass$/i.test(text), reply: () => "🧙 YOU SHALL NOT PASS!", effect: () => triggerGandalfBlock() },
+  { id:"dontpanic",  match: (text) => /^don't panic$/i.test(text), reply: () => "📖 DON'T PANIC（大大的、友善的字體）。" },
+  { id:"lumos",      match: (text) => /^lumos$/i.test(text), reply: () => "🪄 Lumos！", effect: () => triggerLumos() },
+  { id:"nox",        match: (text) => /^nox$/i.test(text), reply: () => "🪄 Nox...", effect: () => triggerNox() },
+  { id:"bigbrother", match: (text) => /^big brother is watching$/i.test(text), reply: () => "👁️ 對，這是內部工具，本來就看得到全部飯店的資料。" },
+  { id:"rickroll",   match: (text) => /^never gonna give you up$/i.test(text), reply: () => "😄 Rickrolled." },
+  { id:"jimmode",    match: (text) => /^jim mode$/i.test(text),
+    reply: () => isJimMode() ? "Jim mode 關閉，恢復正常。" : "Jim mode 啟動。配色、debug 資訊、講話語氣都換了，再打一次關掉。",
+    effect: () => triggerJimMode() },
+  { id:"gorogue",    match: (text) => /^go rogue$/i.test(text),
+    reply: () => isRogueMode() ? "收斂了，恢復正常語氣。" : "好，我豁出去了。",
+    effect: () => triggerRogueMode() },
+
+  // show achievements 本身刻意不給 id：查成就清單這個動作不算一個彩蛋
+  { match: (text) => /^show achievements$/i.test(text), reply: () => buildAchievementsReport() },
 
   // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料，自己再加
   // {
+  //   id:"whoami",
   //   match: (text) => /^\/whoami$/i.test(text),
   //   reply: (ctx) => `目前追蹤 ${ctx.projects.length} 個專案、${ctx.allTasks.length} 筆任務。`,
   // },
@@ -1983,6 +2149,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
       setMsgs(prev => prev.length ? prev : [
         { role:"model", text:"這麼晚了還在上班？" },
       ]);
+      recordEggUnlock("deepnight");
     }
   }, []); // eslint-disable-line
 
@@ -1998,6 +2165,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     const egg = EASTER_EGGS.find(e => e.match(trimmed));
     if (egg) {
       setMsgs(prev => [...prev, { role:"model", text: egg.reply({ projects, allTasks, msgs }) }]);
+      if (egg.id) recordEggUnlock(egg.id);
       egg.effect?.();
       return;
     }
@@ -2011,7 +2179,8 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
       parts: [{ text: m.text }],
     }));
 
-    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n專案資料：\n${projectCtx}`;
+    const personaAddon = isPersonaActive() ? `\n\n【人設切換】${JIM_PERSONA_PROMPT}` : "";
+    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n專案資料：\n${projectCtx}${personaAddon}`;
 
     try {
       const res = await fetch(
@@ -4020,6 +4189,7 @@ export default function App() {
   const [customerNotifs, setCustomerNotifs] = useState([]);
   const [eggFired,       setEggFired]       = useState(false); // 🥚 Konami code overlay
   const [logoEggFired,   setLogoEggFired]   = useState(false); // 🥚 連點 logo 7 下 overlay
+  const [jimMode,        setJimMode]        = useState(() => localStorage.getItem("hotel-dash-jim-mode") === "1"); // 🥚 jim mode
   const logoClickRef = useRef({ count:0, lastTime:0 });
   // Auth
   const [session,      setSession]      = useState(null);
@@ -4060,6 +4230,7 @@ export default function App() {
         if (idx === KONAMI_SEQUENCE.length) {
           idx = 0;
           setEggFired(true);
+          recordEggUnlock("konami");
           setTimeout(() => setEggFired(false), 4000);
         }
       } else {
@@ -4080,6 +4251,7 @@ export default function App() {
     if (ref.count >= 7) {
       ref.count = 0;
       setLogoEggFired(true);
+      recordEggUnlock("logoclick");
       setTimeout(() => setLogoEggFired(false), 4000);
     }
   };
@@ -4106,6 +4278,18 @@ export default function App() {
   useEffect(() => {
     applyThemeEgg = (t) => setTheme(t);
     return () => { applyThemeEgg = () => {}; };
+  }, []);
+
+  // 🥚 jim mode：CSS class（html.jim-mode-effect，見 GLOBAL_CSS）+ localStorage 持久化，
+  // 一份 state 同時驅動主題換膚跟下面 DebugHud 的顯示/隱藏。
+  useEffect(() => {
+    document.documentElement.classList.toggle("jim-mode-effect", jimMode);
+    localStorage.setItem("hotel-dash-jim-mode", jimMode ? "1" : "0");
+  }, [jimMode]);
+
+  useEffect(() => {
+    toggleJimModeEgg = () => setJimMode(p => !p);
+    return () => { toggleJimModeEgg = () => {}; };
   }, []);
 
   useEffect(() => {
@@ -4437,6 +4621,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* 🥚 jim mode debug HUD */}
+      {jimMode && <DebugHud projects={projects} allTasks={allTasks}/>}
 
       {/* Content */}
       {isDetailView
