@@ -1801,6 +1801,28 @@ function triggerMatrixRain() {
   }, 4000);
 }
 
+// you shall not pass：畫面變暗＋真的擋住點擊（overlay 蓋住整頁，預設 pointer-events 是 auto）
+// 撐 1.5 秒再自動淡出移除，比純文字回覆更有「真的被擋下來」的感覺。
+function triggerGandalfBlock() {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.75);"
+    + "display:flex;align-items:center;justify-content:center;cursor:not-allowed;color:#fff;"
+    + "font-size:26px;font-weight:600;text-align:center;padding:0 20px;transition:opacity 0.3s ease;";
+  overlay.textContent = "🧙 YOU SHALL NOT PASS!";
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.style.opacity = "0";
+    setTimeout(() => overlay.remove(), 300);
+  }, 1500);
+}
+
+// lumos / nox：真的切換 App 現有的深色/淺色主題（不是純文字/視覺效果）。EASTER_EGGS 是
+// module-level 陣列，摸不到 App 元件內的 setTheme，所以用這個可變的模組級函式當橋接——
+// App 掛載時會把真正的 setTheme 接上來，卸載時斷開（見 App 內對應的 useEffect）。
+let applyThemeEgg = () => {};
+function triggerLumos() { applyThemeEgg("light"); }
+function triggerNox()   { applyThemeEgg("dark"); }
+
 // ─── 🥚 Easter eggs (Jim only — never referenced in any UI/help text) ──────
 // 純本地比對，match 到就不打 Gemini API，直接把 reply 塞進對話（省額度、也不會被 model
 // 用不同語氣講走樣）。想加新的暗語/指令，照下面範例格式加進陣列即可，不用碰 sendText()。
@@ -1821,6 +1843,15 @@ const EASTER_EGGS = [
   { match: (text) => /^ship it$/i.test(text), reply: () => "🚀🎉 Shipped!", effect: () => triggerConfetti() },
   { match: (text) => /^disco$/i.test(text), reply: () => "🕺💃", effect: () => triggerTripMode() },
   { match: (text) => /^flip table$/i.test(text), reply: () => "(╯°□°）╯︵ ┻━┻", effect: () => triggerFlipTable() },
+  { match: (text) => /^i'll be back$/i.test(text), reply: () => "🤖 收到，稍後回來。" },
+  { match: (text) => /^one does not simply$/i.test(text), reply: () => "...walk into Mordor." },
+  { match: (text) => /^may the force be with you$/i.test(text), reply: () => "願原力與你同在。" },
+  { match: (text) => /^you shall not pass$/i.test(text), reply: () => "🧙 YOU SHALL NOT PASS!", effect: () => triggerGandalfBlock() },
+  { match: (text) => /^don't panic$/i.test(text), reply: () => "📖 DON'T PANIC（大大的、友善的字體）。" },
+  { match: (text) => /^lumos$/i.test(text), reply: () => "🪄 Lumos！", effect: () => triggerLumos() },
+  { match: (text) => /^nox$/i.test(text), reply: () => "🪄 Nox...", effect: () => triggerNox() },
+  { match: (text) => /^big brother is watching$/i.test(text), reply: () => "👁️ 對，這是內部工具，本來就看得到全部飯店的資料。" },
+  { match: (text) => /^never gonna give you up$/i.test(text), reply: () => "😄 Rickrolled." },
 
   // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料，自己再加
   // {
@@ -4069,6 +4100,13 @@ export default function App() {
     }
     localStorage.setItem("hotel-dash-theme", theme);
   }, [theme]);
+
+  // 🥚 lumos / nox 橋接：把真正的 setTheme 接到 module-level 的 applyThemeEgg，
+  // 讓 EASTER_EGGS（module-level 陣列，摸不到這個元件的 state）能觸發真實的主題切換。
+  useEffect(() => {
+    applyThemeEgg = (t) => setTheme(t);
+    return () => { applyThemeEgg = () => {}; };
+  }, []);
 
   useEffect(() => {
     (async () => {
