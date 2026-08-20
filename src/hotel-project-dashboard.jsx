@@ -1957,7 +1957,7 @@ const EGG_REGISTRY = [
   { id:"nox",        label:"nox" },
   { id:"bigbrother", label:"big brother is watching" },
   { id:"rickroll",   label:"never gonna give you up" },
-  { id:"jimmode",    label:"jim mode" },
+  { id:"jimmode",    label:"execute order 66" },
   { id:"gorogue",    label:"go rogue" },
   { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）" },
   { id:"logoclick",  label:"連點 header logo 7 下" },
@@ -2010,7 +2010,10 @@ const EASTER_EGGS = [
   { id:"nox",        match: (text) => /^nox$/i.test(text), reply: () => "🪄 Nox...", effect: () => triggerNox() },
   { id:"bigbrother", match: (text) => /^big brother is watching$/i.test(text), reply: () => "👁️ 對，這是內部工具，本來就看得到全部飯店的資料。" },
   { id:"rickroll",   match: (text) => /^never gonna give you up$/i.test(text), reply: () => "😄 Rickrolled." },
-  { id:"jimmode",    match: (text) => /^jim mode$/i.test(text),
+  // 觸發詞從「jim mode」改成「execute order 66」（2026-08-20，Jim 覺得原詞太好猜——就是功能名稱
+  // 本身）。內部代號（id/localStorage key/CSS class/DebugHud 標題等）維持 jimmode/jim-mode-effect
+  // 不變，只有玩家輸入比對的字串換掉，reply 文字裡的「Jim mode」是功能顯示名稱不是觸發詞，不用改。
+  { id:"jimmode",    match: (text) => /^execute order 66$/i.test(text),
     reply: () => isJimMode() ? "Jim mode 關閉，恢復正常。" : "Jim mode 啟動。配色、debug 資訊、講話語氣都換了，再打一次關掉。",
     effect: () => triggerJimMode() },
   { id:"gorogue",    match: (text) => /^go rogue$/i.test(text),
