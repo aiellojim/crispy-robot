@@ -325,6 +325,7 @@ const dbToUi = (row, prog) => ({
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
     products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
     installingRooms: row.installing_rooms ?? "", tmspMaxSpaces: row.tmsp_max_spaces ?? "",
+    tmspRoomCount: row.tmsp_room_count ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -352,6 +353,7 @@ const uiToDb = (p) => ({
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
     products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
     installing_rooms: p.info.installingRooms, tmsp_max_spaces: p.info.tmspMaxSpaces,
+    tmsp_room_count: p.info.tmspRoomCount,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -381,7 +383,7 @@ const newProject = () => {
   createdAt: new Date().toISOString(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -3476,7 +3478,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("TMSP")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>TMSP 空間數量</div>
-                  <div style={{ maxWidth:"50%" }}>
+                  {/* TMSP 房間數 is independent from AVA's installingRooms and from tmspMaxSpaces
+                      (license/space cap) - see docs/todo.md room-count design discussion. Software
+                      and hardware room counts can legitimately differ even when both AVA and TMSP
+                      are selected on the same project (separate contracts). */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, maxWidth:"100%" }}>
+                    <FInput label="TMSP 房間數" value={info.tmspRoomCount} onChange={v=>setInfo(p=>({ ...p, tmspRoomCount:v }))} placeholder="例：50" type="number"/>
                     <FInput label="最大空間數" value={info.tmspMaxSpaces} onChange={v=>setInfo(p=>({ ...p, tmspMaxSpaces:v }))} placeholder="例：20" type="number"/>
                   </div>
                 </div>
@@ -3806,7 +3813,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ["串接功能",info.integrations.join("、")||"無"],
                     info.products.includes("AVA")&&["AVA 裝機 / 備品 / 房間數",`${info.avaUnits||"—"} 台 / ${info.avaSpare||"—"} 台 / ${info.installingRooms||"—"} 房`],
                     info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
-                    info.products.includes("TMSP")&&["TMSP 最大空間數",`${info.tmspMaxSpaces||"—"} 間`],
+                    info.products.includes("TMSP")&&["TMSP 房間數 / 最大空間數",`${info.tmspRoomCount||"—"} 房 / ${info.tmspMaxSpaces||"—"} 間`],
                   ].filter(Boolean).map(([k,v])=>(
                     <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>{k}</div>
