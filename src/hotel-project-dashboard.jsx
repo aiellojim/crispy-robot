@@ -9,7 +9,7 @@ const sb = createClient(
 
 // ─── Constants ────────────────────────────────────────────────
 const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS", "SiteChat"];
-const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV"];
+const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV", "RSVN", "Robot"];
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 // PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
 // 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
