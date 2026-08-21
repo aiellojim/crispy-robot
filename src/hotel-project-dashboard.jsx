@@ -207,21 +207,17 @@ const GLOBAL_CSS = `
     to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
   }
 
-  /* punch it：2026-08-21 換掉「模擬光束」的做法（CSS 很難做出真的光速感，越模擬越假），改成
-     askew 那種「簡單但誇張到不會被忽略」的單一動作——巨大 emoji 從中心炸開衝出畫面，尾聲補一次
-     全螢幕白閃。這兩個 keyframes 是給 triggerHyperspace() 動態產生的 DOM 元素用（不是 body
-     class），清除交給 setTimeout，跟 triggerConfetti/triggerGandalfBlock 同一種寫法。 */
-  @keyframes eggHyperspaceBurst {
-    0%   { opacity:0; transform:translate(-50%,-50%) scale(0.1); }
-    15%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
-    60%  { opacity:1; transform:translate(-50%,-50%) scale(6); }
-    100% { opacity:0; transform:translate(-50%,-50%) scale(9); }
+  /* kamehameha：2026-08-21 換掉 punch it（疊在畫面上的 emoji/光束素材，Jim 反饋還是沒有說服
+     力），這次不做疊加層，改成對「真正的頁面內容」本身做一次縮放＋模糊衝擊——跟 break glass 的
+     strobe 同一個思路：改變你看整個畫面的方式，而不是貼一個東西上去，畫面本身真的往前衝一下
+     再彈回來。 */
+  @keyframes eggPunchZoom {
+    0%   { transform:scale(1); filter:blur(0); }
+    30%  { transform:scale(1.35); filter:blur(3px); }
+    55%  { transform:scale(1.1); filter:blur(1px); }
+    100% { transform:scale(1); filter:blur(0); }
   }
-  @keyframes eggHyperspaceFlash {
-    0%,45% { opacity:0; }
-    58%    { opacity:0.95; }
-    100%   { opacity:0; }
-  }
+  body.punch-effect { animation:eggPunchZoom 0.5s cubic-bezier(.3,.7,.4,1); transform-origin:center center; }
 
   /* break glass in case of emergency：2026-08-21 同樣換掉「模擬裂痕」的做法，改成全螢幕紅/白
      警報燈 strobe 閃爍（像消防警鈴），配合原本已經加強過的震動——不追求擬真，追求「一看就知道
@@ -1880,7 +1876,7 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 // 避免跟 CSS 動畫時長兩邊分開改、之後忘記同步）。同一個元素上的 class 彼此互斥，觸發前
 // 先清掉同組其他 class 再強制 reflow，避免兩個效果疊在一起打架（比如連續手滑打兩個指令）。
 const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect",
-  "glass-shatter-effect", "glitch-effect"];
+  "glass-shatter-effect", "glitch-effect", "punch-effect"];
 const EGG_HTML_CLASSES = ["trip-mode-effect"];
 
 function runEggClassEffect(el, className, siblingClasses) {
@@ -1899,22 +1895,9 @@ function triggerShake() { runEggClassEffect(document.body, "shake-effect", EGG_B
 function triggerFlipTable() { runEggClassEffect(document.body, "flip-table-effect", EGG_BODY_CLASSES); }
 // disco：全頁色相持續旋轉幾秒（套在 html 上，body 的 filter 不一定能蓋到最外層背景）
 function triggerTripMode() { runEggClassEffect(document.documentElement, "trip-mode-effect", EGG_HTML_CLASSES); }
-// punch it：巨大 emoji 從中心炸開 + 全螢幕白閃，2026-08-21 改成動態產生的 DOM 元素（不再是
-// body class），跟 triggerConfetti/triggerGandalfBlock 同一種寫法，清除交給 setTimeout。
-function triggerHyperspace() {
-  const burst = document.createElement("div");
-  burst.textContent = "🚀";
-  burst.style.cssText = "position:fixed;top:50%;left:50%;z-index:99998;pointer-events:none;"
-    + "font-size:18vw;line-height:1;opacity:0;animation:eggHyperspaceBurst 0.9s cubic-bezier(.2,.7,.3,1) forwards;";
-  document.body.appendChild(burst);
-
-  const flash = document.createElement("div");
-  flash.style.cssText = "position:fixed;inset:0;z-index:99999;pointer-events:none;background:#fff;"
-    + "opacity:0;animation:eggHyperspaceFlash 0.9s ease-out forwards;";
-  document.body.appendChild(flash);
-
-  setTimeout(() => { burst.remove(); flash.remove(); }, 950);
-}
+// kamehameha：整頁縮放＋模糊衝擊，2026-08-21 取代 punch it 的疊加式做法（見 GLOBAL_CSS
+// eggPunchZoom 註解）。
+function triggerKamehameha() { runEggClassEffect(document.body, "punch-effect", EGG_BODY_CLASSES); }
 // break glass in case of emergency：玻璃裂痕 + 短暫震動
 function triggerGlassShatter() { runEggClassEffect(document.body, "glass-shatter-effect", EGG_BODY_CLASSES); }
 // does not compute：訊號故障閃爍
@@ -2110,7 +2093,7 @@ const EGG_REGISTRY = [
   { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）", hint:"🎮⬆️⬇️" },
   { id:"logoclick",  label:"連點 header logo 7 下", hint:"🖱️🔁😡" },
   { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板", hint:"🌙💻😴" },
-  { id:"hyperspace", label:"punch it", hint:"🚀💫🌌" },
+  { id:"kamehameha", label:"kamehameha", hint:"🐉🔵💥" },
   { id:"glassshatter", label:"break glass in case of emergency", hint:"🚨🔨🪟" },
   { id:"glitch",      label:"does not compute", hint:"🤖⚡❌" },
   { id:"basterds",    label:"that's a bingo", hint:"🎯🪖🎬" },
@@ -2186,7 +2169,7 @@ const EASTER_EGGS = [
 
   // 2026-08-21 新增 7 個，湊到 35 個：3 個視覺效果 + 4 句電影台詞（純文字回應，跟其他非視覺彩蛋
   // 同規則）。片名見 reply 註記，僅引用單句短台詞，不逐字重製更多內容。
-  { id:"hyperspace", match: (text) => /^punch it$/i.test(text), reply: () => "🚀 Jumping to lightspeed.", effect: () => triggerHyperspace() },
+  { id:"kamehameha", match: (text) => /^kamehameha$/i.test(text), reply: () => "🔵 KAMEHAMEHA!!!", effect: () => triggerKamehameha() },
   { id:"glassshatter", match: (text) => /^break glass in case of emergency$/i.test(text), reply: () => "🔨 該用力的時候到了。", effect: () => triggerGlassShatter() },
   { id:"glitch",      match: (text) => /^does not compute$/i.test(text), reply: () => "⚠️ SYSTEM ERROR... just kidding.", effect: () => triggerGlitch() },
   { id:"basterds",    match: (text) => /^that's a bingo$/i.test(text), reply: () => "🎯 Bingo.（Inglourious Basterds）" },
