@@ -1925,6 +1925,48 @@ function triggerMatrixRain() {
   }, 4000);
 }
 
+// wake up, mr. anderson：三段式隱藏 combo 的終局特效，比 wake up neo 的 matrix rain 更強——
+// 獨立一個 canvas（不共用 triggerMatrixRain 的，避免生命週期互相打斷），代碼雨疊加置中大字
+// 淡入淡出，時間拉長到 6 秒，作為「極難觸發」對應的最強回饋。
+function triggerAndersonFinale() {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;z-index:99998;pointer-events:none;transition:opacity 1s ease;";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789";
+  const fontSize = 16;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = new Array(columns).fill(1);
+  const draw = () => {
+    ctx.fillStyle = "rgba(0,0,0,0.06)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00ff41";
+    ctx.font = fontSize + "px monospace";
+    drops.forEach((y, i) => {
+      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, y * fontSize);
+      if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  };
+  const interval = setInterval(draw, 35);
+
+  const text = document.createElement("div");
+  text.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;"
+    + "pointer-events:none;color:#00ff41;font-family:monospace;font-weight:700;font-size:clamp(20px,4vw,40px);"
+    + "text-shadow:0 0 14px rgba(0,255,65,0.85);text-align:center;padding:0 24px;opacity:0;transition:opacity 1.2s ease;";
+  text.textContent = "WAKE UP, MR. ANDERSON...";
+  document.body.appendChild(text);
+  requestAnimationFrame(() => { text.style.opacity = "1"; });
+
+  setTimeout(() => {
+    text.style.opacity = "0";
+    canvas.style.opacity = "0";
+    setTimeout(() => { clearInterval(interval); canvas.remove(); text.remove(); }, 1200);
+  }, 6000);
+}
+
 // you shall not pass：畫面變暗＋真的擋住點擊（overlay 蓋住整頁，預設 pointer-events 是 auto）
 // 撐 1.5 秒再自動淡出移除，比純文字回覆更有「真的被擋下來」的感覺。
 function triggerGandalfBlock() {
@@ -2029,6 +2071,7 @@ const EGG_REGISTRY = [
   { id:"se7en",       label:"what's in the box" },
   { id:"ghostbusters", label:"who you gonna call" },
   { id:"breakingbad", label:"say my name" },
+  { id:"mranderson", label:"there is no spoon → i know kung fu → wake up, mr. anderson（隱藏三段式）" },
 ];
 
 function buildAchievementsReport() {
@@ -2111,6 +2154,13 @@ const EASTER_EGGS = [
 // Konami code（全站通用，不限 AI 面板開著才能觸發）：↑↑↓↓←→←→BA
 const KONAMI_SEQUENCE = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
 
+// 🥚🥚 wake up, mr. anderson — 第 35 個彩蛋，2026-08-21 Jim 明確要求「極難觸發，流程可以複雜」。
+// 三段式隱藏 combo：要在 ANDERSON_TIMEOUT_MS 內依序打對三句才會觸發，任何一步打錯/超時都重置回
+// 第 0 步（見 AiPanel 內 sendText 的攔截邏輯，andersonRef 用 useRef 存 { step, at }）。前兩句
+// 完全不寫進對話紀錄、不消耗 API，看起來就像打字沒反應一樣，只有第三句成功才會顯示東西。
+const ANDERSON_PHRASES = [/^there is no spoon$/i, /^i know kung fu$/i, /^wake up,? mr\.? anderson$/i];
+const ANDERSON_TIMEOUT_MS = 90000;
+
 function renderMarkdown(md) {
   // 1. HTML-escape first
   let h = md
@@ -2165,6 +2215,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   const bottomRef = useRef(null);
   const inputRef    = useRef(null);
   const composingRef = useRef(false);
+  const andersonRef = useRef({ step: 0, at: 0 }); // 🥚🥚 wake up, mr. anderson combo 進度
 
   // Build project context summary — projects + progress + tasks
   const projectCtx = useMemo(() => {
@@ -2238,6 +2289,37 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   const sendText = async (text) => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
+
+    // 🥚🥚 wake up, mr. anderson — 隱藏三段式 combo 攔截，放在最前面、比一般 easter egg 判斷更早，
+    // 因為前兩步要做到「完全不寫進對話紀錄」，userMsg 都還沒 push 進 setMsgs 之前就要攔下來。
+    // 任何一步時間超過 ANDERSON_TIMEOUT_MS 或打錯，就整組重置回 0（唯一例外：打對第一句永遠
+    // 可以重新起手，不受目前進度影響）。
+    {
+      const step = andersonRef.current.step;
+      const inTime = Date.now() - andersonRef.current.at < ANDERSON_TIMEOUT_MS;
+      if (ANDERSON_PHRASES[0].test(trimmed)) {
+        andersonRef.current = { step: 1, at: Date.now() };
+        setInput("");
+        return;
+      }
+      if (step === 1 && inTime && ANDERSON_PHRASES[1].test(trimmed)) {
+        andersonRef.current = { step: 2, at: Date.now() };
+        setInput("");
+        return;
+      }
+      if (step === 2 && inTime && ANDERSON_PHRASES[2].test(trimmed)) {
+        andersonRef.current = { step: 0, at: 0 };
+        setInput("");
+        setMsgs(prev => [...prev,
+          { role:"user", text:trimmed },
+          { role:"model", text: "🕶️ Mr. Anderson... welcome back. We missed you." }]);
+        recordEggUnlock("mranderson");
+        triggerAndersonFinale();
+        return;
+      }
+      andersonRef.current = { step: 0, at: 0 };
+    }
+
     setInput("");
     const userMsg = { role:"user", text:trimmed };
     setMsgs(prev => [...prev, userMsg]);
