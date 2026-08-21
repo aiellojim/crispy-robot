@@ -2085,8 +2085,10 @@ function recordEggUnlock(id) {
 // App 登入後（session 確定）呼叫一次：先把這個 user 在 DB 裡已解鎖的項目讀進 cache，再把
 // localStorage 裡 DB 還沒有的項目補寫上去。用 upsert + ignoreDuplicates，重複呼叫也不會出錯。
 async function initEggUnlocksForUser(email) {
+  console.log("[egg-debug] initEggUnlocksForUser start", email);
   currentUserEmail = email;
   const { data, error } = await sb.from("dashboard_egg_unlocks").select("egg_id, unlocked_at").eq("user_email", email);
+  console.log("[egg-debug] db fetch result", { rowCount: data?.length, error });
   const fromDb = {};
   if (!error && data) data.forEach(row => { fromDb[row.egg_id] = row.unlocked_at; });
 
@@ -2101,6 +2103,7 @@ async function initEggUnlocksForUser(email) {
 
   eggUnlocksCache = fromDb;
   saveLocalEggUnlocks(eggUnlocksCache); // 順便同步回 local，離線/DB 打不到時還有得看
+  console.log("[egg-debug] notifying count", Object.keys(eggUnlocksCache).length, "bridge is noop?", notifyEggUnlockChange.toString().includes("=> {}"));
   notifyEggUnlockChange(Object.keys(eggUnlocksCache).length);
 }
 
@@ -4546,9 +4549,12 @@ export default function App() {
 
   // 🥚 由 recordEggUnlock/initEggUnlocksForUser 呼叫，讓皇冠徽章能即時反應新解鎖的彩蛋數量。
   useEffect(() => {
-    notifyEggUnlockChange = (count) => setEggUnlockCount(count);
+    console.log("[egg-debug] bridge wired up");
+    notifyEggUnlockChange = (count) => { console.log("[egg-debug] setEggUnlockCount called with", count); setEggUnlockCount(count); };
     return () => { notifyEggUnlockChange = () => {}; };
   }, []);
+
+  useEffect(() => { console.log("[egg-debug] eggUnlockCount is now", eggUnlockCount, "vs total", EGG_REGISTRY.length); }, [eggUnlockCount]);
 
   useEffect(() => {
     (async () => {
