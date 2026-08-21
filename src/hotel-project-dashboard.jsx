@@ -207,17 +207,22 @@ const GLOBAL_CSS = `
     to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
   }
 
-  /* kamehameha：2026-08-21 換掉 punch it（疊在畫面上的 emoji/光束素材，Jim 反饋還是沒有說服
-     力），這次不做疊加層，改成對「真正的頁面內容」本身做一次縮放＋模糊衝擊——跟 break glass 的
-     strobe 同一個思路：改變你看整個畫面的方式，而不是貼一個東西上去，畫面本身真的往前衝一下
-     再彈回來。 */
-  @keyframes eggPunchZoom {
-    0%   { transform:scale(1); filter:blur(0); }
-    30%  { transform:scale(1.35); filter:blur(3px); }
-    55%  { transform:scale(1.1); filter:blur(1px); }
-    100% { transform:scale(1); filter:blur(0); }
+  /* microscope：2026-08-21 換掉 kamehameha。整頁真的放到很大並維持幾秒再縮回來（跟 break
+     glass／kamehameha 一樣是真實 transform，不是疊加素材）。放大期間畫面上的東西雖然看起來變
+     大了，位置還是可以被點到（CSS transform 不影響 hit-test），所以額外疊一個全螢幕透明層
+     擋掉點擊（pointer-events:auto，其他效果的疊層都是 none，這個刻意相反）；這個疊層沒有自己
+     的動畫，純粹跟著 .microscope-effect class 存在/消失，class 一被拿掉就自動解除攔截，不用
+     另外對齊動畫時長。 */
+  @keyframes eggMicroscopeZoom {
+    0%   { transform:scale(1); }
+    16%  { transform:scale(5); }
+    84%  { transform:scale(5); }
+    100% { transform:scale(1); }
   }
-  body.punch-effect { animation:eggPunchZoom 0.5s cubic-bezier(.3,.7,.4,1); transform-origin:center center; }
+  body.microscope-effect { animation:eggMicroscopeZoom 3.5s cubic-bezier(.4,0,.2,1); transform-origin:center center; }
+  body.microscope-effect::after {
+    content:""; position:fixed; inset:0; z-index:999999; pointer-events:auto; cursor:not-allowed; background:transparent;
+  }
 
   /* break glass in case of emergency：2026-08-21 同樣換掉「模擬裂痕」的做法，改成全螢幕紅/白
      警報燈 strobe 閃爍（像消防警鈴），配合原本已經加強過的震動——不追求擬真，追求「一看就知道
@@ -1876,7 +1881,7 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 // 避免跟 CSS 動畫時長兩邊分開改、之後忘記同步）。同一個元素上的 class 彼此互斥，觸發前
 // 先清掉同組其他 class 再強制 reflow，避免兩個效果疊在一起打架（比如連續手滑打兩個指令）。
 const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect",
-  "glass-shatter-effect", "glitch-effect", "punch-effect"];
+  "glass-shatter-effect", "glitch-effect", "microscope-effect"];
 const EGG_HTML_CLASSES = ["trip-mode-effect"];
 
 function runEggClassEffect(el, className, siblingClasses) {
@@ -1895,9 +1900,9 @@ function triggerShake() { runEggClassEffect(document.body, "shake-effect", EGG_B
 function triggerFlipTable() { runEggClassEffect(document.body, "flip-table-effect", EGG_BODY_CLASSES); }
 // disco：全頁色相持續旋轉幾秒（套在 html 上，body 的 filter 不一定能蓋到最外層背景）
 function triggerTripMode() { runEggClassEffect(document.documentElement, "trip-mode-effect", EGG_HTML_CLASSES); }
-// kamehameha：整頁縮放＋模糊衝擊，2026-08-21 取代 punch it 的疊加式做法（見 GLOBAL_CSS
-// eggPunchZoom 註解）。
-function triggerKamehameha() { runEggClassEffect(document.body, "punch-effect", EGG_BODY_CLASSES); }
+// microscope：整頁放大檢視幾秒再縮回來，2026-08-21 取代 kamehameha（見 GLOBAL_CSS
+// eggMicroscopeZoom 註解，放大期間有額外疊層擋點擊）。
+function triggerMicroscope() { runEggClassEffect(document.body, "microscope-effect", EGG_BODY_CLASSES); }
 // break glass in case of emergency：玻璃裂痕 + 短暫震動
 function triggerGlassShatter() { runEggClassEffect(document.body, "glass-shatter-effect", EGG_BODY_CLASSES); }
 // does not compute：訊號故障閃爍
@@ -2093,7 +2098,7 @@ const EGG_REGISTRY = [
   { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）", hint:"🎮⬆️⬇️" },
   { id:"logoclick",  label:"連點 header logo 7 下", hint:"🖱️🔁😡" },
   { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板", hint:"🌙💻😴" },
-  { id:"kamehameha", label:"kamehameha", hint:"🐉🔵💥" },
+  { id:"microscope", label:"microscope", hint:"🔬🔍✨" },
   { id:"glassshatter", label:"break glass in case of emergency", hint:"🚨🔨🪟" },
   { id:"glitch",      label:"does not compute", hint:"🤖⚡❌" },
   { id:"basterds",    label:"that's a bingo", hint:"🎯🪖🎬" },
@@ -2169,7 +2174,7 @@ const EASTER_EGGS = [
 
   // 2026-08-21 新增 7 個，湊到 35 個：3 個視覺效果 + 4 句電影台詞（純文字回應，跟其他非視覺彩蛋
   // 同規則）。片名見 reply 註記，僅引用單句短台詞，不逐字重製更多內容。
-  { id:"kamehameha", match: (text) => /^kamehameha$/i.test(text), reply: () => "🔵 KAMEHAMEHA!!!", effect: () => triggerKamehameha() },
+  { id:"microscope", match: (text) => /^microscope$/i.test(text), reply: () => "🔬 顯微鏡模式啟動，看仔細一點。", effect: () => triggerMicroscope() },
   { id:"glassshatter", match: (text) => /^break glass in case of emergency$/i.test(text), reply: () => "🔨 該用力的時候到了。", effect: () => triggerGlassShatter() },
   { id:"glitch",      match: (text) => /^does not compute$/i.test(text), reply: () => "⚠️ SYSTEM ERROR... just kidding.", effect: () => triggerGlitch() },
   { id:"basterds",    match: (text) => /^that's a bingo$/i.test(text), reply: () => "🎯 Bingo.（Inglourious Basterds）" },
