@@ -207,6 +207,59 @@ const GLOBAL_CSS = `
     to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
   }
 
+  /* punch it：畫面中心放射狀光束快速外擴淡出，模擬跳躍光速。只在 ::after 上跑一個動畫，
+     不疊加 body 本身的 transform，避免兩個不同時長的動畫搶著觸發 animationend。 */
+  @keyframes eggHyperspace {
+    0%   { opacity:0; transform:scale(0.3); }
+    12%  { opacity:1; }
+    100% { opacity:0; transform:scale(2.4); }
+  }
+  body.hyperspace-effect::after {
+    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
+    background:repeating-conic-gradient(rgba(255,255,255,0.9) 0deg 0.6deg, transparent 0.6deg 6deg);
+    mix-blend-mode:screen; animation:eggHyperspace 0.7s ease-out forwards;
+  }
+
+  /* break glass in case of emergency：裂痕疊圖 + 短暫震動，兩個動畫時長刻意對齊成一樣長
+     （0.5s），確保不管哪個先觸發 animationend 都不會把另一個提前截斷。 */
+  @keyframes eggGlassShake {
+    0%,100% { transform:translate(0,0); }
+    20% { transform:translate(-5px,3px); } 40% { transform:translate(4px,-3px); }
+    60% { transform:translate(-3px,2px); } 80% { transform:translate(3px,-2px); }
+  }
+  @keyframes eggGlassCrack {
+    0%  { opacity:0; } 12% { opacity:1; } 70% { opacity:1; } 100% { opacity:0; }
+  }
+  body.glass-shatter-effect { animation:eggGlassShake 0.5s ease-in-out; }
+  body.glass-shatter-effect::after {
+    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg stroke='%23ffffff' stroke-width='2' fill='none' opacity='0.85'%3E%3Cpath d='M200 200 L120 60 M200 200 L260 40 M200 200 L340 140 M200 200 L360 260 M200 200 L280 360 M200 200 L140 380 M200 200 L40 300 M200 200 L30 160'/%3E%3Cpath d='M160 120 L140 90 M240 100 L260 70 M300 180 L340 160 M290 300 L320 330 M180 340 L160 370 M90 260 L60 280'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:cover; background-position:center;
+    animation:eggGlassCrack 0.5s ease-out forwards;
+  }
+
+  /* does not compute：VHS/訊號故障閃爍，body 位移抖動 + 雜訊條紋疊圖，同樣對齊 0.6s。 */
+  @keyframes eggGlitchShift {
+    0%,100% { transform:translate(0,0); }
+    10% { transform:translate(-3px,0); } 20% { transform:translate(3px,0); }
+    30% { transform:translate(-2px,0); } 40% { transform:translate(2px,0); }
+    50% { transform:translate(-1px,0); } 60% { transform:translate(1px,0); }
+    70%,100% { transform:translate(0,0); }
+  }
+  @keyframes eggGlitchFlicker {
+    0% { opacity:0; } 5% { opacity:0.85; } 10% { opacity:0.15; } 15% { opacity:0.9; }
+    25% { opacity:0.2; } 35% { opacity:0.75; } 50% { opacity:0.1; } 65% { opacity:0.6; }
+    100% { opacity:0; }
+  }
+  body.glitch-effect { animation:eggGlitchShift 0.6s steps(2,end); }
+  body.glitch-effect::after {
+    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none; mix-blend-mode:overlay;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(0,0,0,0.1) 1px, transparent 2px, transparent 4px),
+      repeating-linear-gradient(90deg, rgba(0,255,255,0.06), rgba(255,0,255,0.06) 2px, transparent 4px);
+    animation:eggGlitchFlicker 0.6s steps(6,end) forwards;
+  }
+
   /* Manual theme overrides — higher specificity than media query */
   html[data-theme="light"] {
     --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
@@ -1796,7 +1849,8 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 // 🥚 視覺類彩蛋效果 — CSS class 動畫用 animationend 事件收尾（不用 setTimeout 寫死時長，
 // 避免跟 CSS 動畫時長兩邊分開改、之後忘記同步）。同一個元素上的 class 彼此互斥，觸發前
 // 先清掉同組其他 class 再強制 reflow，避免兩個效果疊在一起打架（比如連續手滑打兩個指令）。
-const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect"];
+const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect",
+  "hyperspace-effect", "glass-shatter-effect", "glitch-effect"];
 const EGG_HTML_CLASSES = ["trip-mode-effect"];
 
 function runEggClassEffect(el, className, siblingClasses) {
@@ -1815,6 +1869,12 @@ function triggerShake() { runEggClassEffect(document.body, "shake-effect", EGG_B
 function triggerFlipTable() { runEggClassEffect(document.body, "flip-table-effect", EGG_BODY_CLASSES); }
 // disco：全頁色相持續旋轉幾秒（套在 html 上，body 的 filter 不一定能蓋到最外層背景）
 function triggerTripMode() { runEggClassEffect(document.documentElement, "trip-mode-effect", EGG_HTML_CLASSES); }
+// punch it：光速跳躍放射光束
+function triggerHyperspace() { runEggClassEffect(document.body, "hyperspace-effect", EGG_BODY_CLASSES); }
+// break glass in case of emergency：玻璃裂痕 + 短暫震動
+function triggerGlassShatter() { runEggClassEffect(document.body, "glass-shatter-effect", EGG_BODY_CLASSES); }
+// does not compute：訊號故障閃爍
+function triggerGlitch() { runEggClassEffect(document.body, "glitch-effect", EGG_BODY_CLASSES); }
 
 // ship it：彩帶雨。用純 DOM + inline style 動態生成小色塊，不需要額外套件，跑完自己清掉。
 function triggerConfetti() {
@@ -1962,6 +2022,13 @@ const EGG_REGISTRY = [
   { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）" },
   { id:"logoclick",  label:"連點 header logo 7 下" },
   { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板" },
+  { id:"hyperspace", label:"punch it" },
+  { id:"glassshatter", label:"break glass in case of emergency" },
+  { id:"glitch",      label:"does not compute" },
+  { id:"basterds",    label:"that's a bingo" },
+  { id:"se7en",       label:"what's in the box" },
+  { id:"ghostbusters", label:"who you gonna call" },
+  { id:"breakingbad", label:"say my name" },
 ];
 
 function buildAchievementsReport() {
@@ -2019,6 +2086,16 @@ const EASTER_EGGS = [
   { id:"gorogue",    match: (text) => /^go rogue$/i.test(text),
     reply: () => isRogueMode() ? "收斂了，恢復正常語氣。" : "好，我豁出去了。",
     effect: () => triggerRogueMode() },
+
+  // 2026-08-21 新增 7 個，湊到 35 個：3 個視覺效果 + 4 句電影台詞（純文字回應，跟其他非視覺彩蛋
+  // 同規則）。片名見 reply 註記，僅引用單句短台詞，不逐字重製更多內容。
+  { id:"hyperspace", match: (text) => /^punch it$/i.test(text), reply: () => "🚀 Jumping to lightspeed.", effect: () => triggerHyperspace() },
+  { id:"glassshatter", match: (text) => /^break glass in case of emergency$/i.test(text), reply: () => "🔨 該用力的時候到了。", effect: () => triggerGlassShatter() },
+  { id:"glitch",      match: (text) => /^does not compute$/i.test(text), reply: () => "⚠️ SYSTEM ERROR... just kidding.", effect: () => triggerGlitch() },
+  { id:"basterds",    match: (text) => /^that's a bingo$/i.test(text), reply: () => "🎯 Bingo.（Inglourious Basterds）" },
+  { id:"se7en",       match: (text) => /^what's in the box$/i.test(text), reply: () => "📦 你真的不會想知道。（Se7en）" },
+  { id:"ghostbusters", match: (text) => /^who you gonna call$/i.test(text), reply: () => "👻 Ghostbusters!" },
+  { id:"breakingbad", match: (text) => /^say my name$/i.test(text), reply: () => "🧪 You're God damn right.（Breaking Bad）" },
 
   // show achievements 本身刻意不給 id：查成就清單這個動作不算一個彩蛋
   { match: (text) => /^show achievements$/i.test(text), reply: () => buildAchievementsReport() },
