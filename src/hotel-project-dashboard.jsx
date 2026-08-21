@@ -2014,14 +2014,14 @@ function triggerGandalfBlock() {
   }, 1500);
 }
 
-// this is fine：經典迷因梗圖，全螢幕半透明遮罩 + 置中圖片，2026-08-21 新增。圖片放
-// public/this-is-fine.png（Vite 靜態資源慣例，跟 aiello-logo.svg 等既有檔案同一個資料夾，
-// build 時原樣複製到輸出根目錄，不用 import）。撐 4 秒自動淡出，點一下也能提前關掉。
+// this is fine：經典迷因梗圖鋪滿全螢幕當半透明遮罩（圖片本身是遮罩，不是深色底+置中小圖），
+// 2026-08-21 新增，08-21 依 Jim 回饋改版。圖片放 public/this-is-fine.png（Vite 靜態資源慣例，
+// 跟 aiello-logo.svg 等既有檔案同一個資料夾，build 時原樣複製到輸出根目錄，不用 import），
+// 原始尺寸 1920x1080，object-fit:cover 鋪滿沒問題。撐 4 秒自動淡出，點一下也能提前關掉。
 function triggerThisIsFine() {
   const overlay = document.createElement("div");
-  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);"
-    + "display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity 0.3s ease;";
-  overlay.innerHTML = '<img src="/this-is-fine.png" alt="this is fine" style="max-width:80vw;max-height:80vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">';
+  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;cursor:pointer;transition:opacity 0.3s ease;";
+  overlay.innerHTML = '<img src="/this-is-fine.png" alt="this is fine" style="width:100%;height:100%;object-fit:cover;opacity:0.55;">';
   document.body.appendChild(overlay);
   const dismiss = () => {
     overlay.style.opacity = "0";
