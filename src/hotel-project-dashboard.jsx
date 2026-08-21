@@ -207,47 +207,33 @@ const GLOBAL_CSS = `
     to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
   }
 
-  /* punch it：三層一起跑（放射狀光束外擴、中心到達閃光、body 本身輕微推進 punch），三個動畫
-     刻意都設成 1s，確保 animationend 幾乎同時觸發、不會互相截斷。2026-08-21 加強版：起始 scale
-     從幾乎 0 開始拉到 3.4（原本只到 2.4，線條外擴感太弱），中段拉長維持全亮，尾段補一次白閃
-     模擬「跳躍完成」的瞬間過曝，比原本單純淡出更有速度感。 */
-  @keyframes eggHyperspace {
-    0%   { opacity:0; transform:scale(0.05); }
-    8%   { opacity:1; }
-    70%  { opacity:1; transform:scale(2.2); }
-    100% { opacity:0; transform:scale(3.4); }
+  /* punch it：2026-08-21 換掉「模擬光束」的做法（CSS 很難做出真的光速感，越模擬越假），改成
+     askew 那種「簡單但誇張到不會被忽略」的單一動作——巨大 emoji 從中心炸開衝出畫面，尾聲補一次
+     全螢幕白閃。這兩個 keyframes 是給 triggerHyperspace() 動態產生的 DOM 元素用（不是 body
+     class），清除交給 setTimeout，跟 triggerConfetti/triggerGandalfBlock 同一種寫法。 */
+  @keyframes eggHyperspaceBurst {
+    0%   { opacity:0; transform:translate(-50%,-50%) scale(0.1); }
+    15%  { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    60%  { opacity:1; transform:translate(-50%,-50%) scale(6); }
+    100% { opacity:0; transform:translate(-50%,-50%) scale(9); }
   }
   @keyframes eggHyperspaceFlash {
-    0%,78% { opacity:0; }
-    88%    { opacity:0.9; }
+    0%,45% { opacity:0; }
+    58%    { opacity:0.95; }
     100%   { opacity:0; }
   }
-  @keyframes eggHyperspacePunch {
-    0%  { transform:scale(1); }
-    72% { transform:scale(1.05); }
-    100%{ transform:scale(1); }
-  }
-  body.hyperspace-effect { animation:eggHyperspacePunch 1s cubic-bezier(.2,.8,.2,1); }
-  body.hyperspace-effect::after {
-    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
-    background:repeating-conic-gradient(rgba(180,220,255,0.95) 0deg 0.4deg, transparent 0.4deg 4deg);
-    mix-blend-mode:screen; animation:eggHyperspace 1s cubic-bezier(.2,.8,.2,1) forwards;
-  }
-  body.hyperspace-effect::before {
-    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
-    background:radial-gradient(circle, rgba(255,255,255,0.95), transparent 70%);
-    animation:eggHyperspaceFlash 1s ease-out forwards;
-  }
 
-  /* break glass in case of emergency：2026-08-21 加強版，原本的裂痕太簡單/太淡看起來不真實，
-     改成「衝擊白閃 → 瞬間出現的密集裂痕（含二次分支＋中心碎片）→ 更用力的震動」三層疊加，
-     三個動畫都對齊 0.6s，同樣避免 animationend 互相截斷。裂痕 SVG 白線疊一層偏移 1px 的黑色
-     陰影線條，在淺色主題背景下也看得出立體感，不會糊成一片。 */
-  @keyframes eggGlassImpactFlash {
-    0%  { opacity:0; } 14% { opacity:0.9; } 34% { opacity:0; } 100% { opacity:0; }
-  }
-  @keyframes eggGlassCrack {
-    0%,9% { opacity:0; } 10% { opacity:1; } 75% { opacity:1; } 100% { opacity:0; }
+  /* break glass in case of emergency：2026-08-21 同樣換掉「模擬裂痕」的做法，改成全螢幕紅/白
+     警報燈 strobe 閃爍（像消防警鈴），配合原本已經加強過的震動——不追求擬真，追求「一看就知道
+     出事了」。 */
+  @keyframes eggGlassStrobe {
+    0%   { background-color:transparent; opacity:0; }
+    10%  { background-color:#ff1a1a; opacity:0.85; }
+    20%  { background-color:#ffffff; opacity:0.9; }
+    30%  { background-color:#ff1a1a; opacity:0.85; }
+    40%  { background-color:#ffffff; opacity:0.9; }
+    50%  { background-color:#ff1a1a; opacity:0.8; }
+    65%,100% { background-color:transparent; opacity:0; }
   }
   @keyframes eggGlassShake {
     0%   { transform:translate(0,0); }
@@ -260,16 +246,9 @@ const GLOBAL_CSS = `
     100% { transform:translate(0,0); }
   }
   body.glass-shatter-effect { animation:eggGlassShake 0.6s cubic-bezier(.36,.07,.19,.97); }
-  body.glass-shatter-effect::before {
-    content:""; position:fixed; inset:0; z-index:99996; pointer-events:none;
-    background:radial-gradient(circle at 44% 38%, rgba(255,255,255,0.95), transparent 55%);
-    animation:eggGlassImpactFlash 0.6s ease-out forwards;
-  }
   body.glass-shatter-effect::after {
     content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg stroke='%23000000' stroke-width='3' fill='none' opacity='0.3' transform='translate(1,1)'%3E%3Cpath d='M170 150 L90 40 M170 150 L230 20 M170 150 L320 70 M170 150 L360 180 M170 150 L330 300 M170 150 L230 370 M170 150 L90 350 M170 150 L20 260 M170 150 L10 120 M170 150 L60 60'/%3E%3Cpath d='M130 90 L110 55 M210 70 L235 35 M270 130 L310 105 M290 230 L330 250 M230 300 L250 340 M120 280 L90 310 M60 190 L25 200 M100 130 L70 110'/%3E%3C/g%3E%3Cg stroke='%23ffffff' stroke-width='1.6' fill='none' opacity='0.95'%3E%3Cpath d='M170 150 L90 40 M170 150 L230 20 M170 150 L320 70 M170 150 L360 180 M170 150 L330 300 M170 150 L230 370 M170 150 L90 350 M170 150 L20 260 M170 150 L10 120 M170 150 L60 60'/%3E%3Cpath d='M130 90 L110 55 M210 70 L235 35 M270 130 L310 105 M290 230 L330 250 M230 300 L250 340 M120 280 L90 310 M60 190 L25 200 M100 130 L70 110'/%3E%3Cpath d='M150 130 L190 120 L175 165 L150 130 M170 150 L190 175 L155 180 Z'/%3E%3C/g%3E%3C/svg%3E");
-    background-size:cover; background-position:center;
-    animation:eggGlassCrack 0.6s steps(1,end) forwards;
+    animation:eggGlassStrobe 0.6s steps(1,end) forwards;
   }
 
   /* does not compute：2026-08-21 加強版，原本的位移幅度只有 ±3px 太弱，改成兩波「大幅度突波」
@@ -1901,7 +1880,7 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 // 避免跟 CSS 動畫時長兩邊分開改、之後忘記同步）。同一個元素上的 class 彼此互斥，觸發前
 // 先清掉同組其他 class 再強制 reflow，避免兩個效果疊在一起打架（比如連續手滑打兩個指令）。
 const EGG_BODY_CLASSES = ["barrel-roll-effect", "shake-effect", "flip-table-effect",
-  "hyperspace-effect", "glass-shatter-effect", "glitch-effect"];
+  "glass-shatter-effect", "glitch-effect"];
 const EGG_HTML_CLASSES = ["trip-mode-effect"];
 
 function runEggClassEffect(el, className, siblingClasses) {
@@ -1920,8 +1899,22 @@ function triggerShake() { runEggClassEffect(document.body, "shake-effect", EGG_B
 function triggerFlipTable() { runEggClassEffect(document.body, "flip-table-effect", EGG_BODY_CLASSES); }
 // disco：全頁色相持續旋轉幾秒（套在 html 上，body 的 filter 不一定能蓋到最外層背景）
 function triggerTripMode() { runEggClassEffect(document.documentElement, "trip-mode-effect", EGG_HTML_CLASSES); }
-// punch it：光速跳躍放射光束
-function triggerHyperspace() { runEggClassEffect(document.body, "hyperspace-effect", EGG_BODY_CLASSES); }
+// punch it：巨大 emoji 從中心炸開 + 全螢幕白閃，2026-08-21 改成動態產生的 DOM 元素（不再是
+// body class），跟 triggerConfetti/triggerGandalfBlock 同一種寫法，清除交給 setTimeout。
+function triggerHyperspace() {
+  const burst = document.createElement("div");
+  burst.textContent = "🚀";
+  burst.style.cssText = "position:fixed;top:50%;left:50%;z-index:99998;pointer-events:none;"
+    + "font-size:18vw;line-height:1;opacity:0;animation:eggHyperspaceBurst 0.9s cubic-bezier(.2,.7,.3,1) forwards;";
+  document.body.appendChild(burst);
+
+  const flash = document.createElement("div");
+  flash.style.cssText = "position:fixed;inset:0;z-index:99999;pointer-events:none;background:#fff;"
+    + "opacity:0;animation:eggHyperspaceFlash 0.9s ease-out forwards;";
+  document.body.appendChild(flash);
+
+  setTimeout(() => { burst.remove(); flash.remove(); }, 950);
+}
 // break glass in case of emergency：玻璃裂痕 + 短暫震動
 function triggerGlassShatter() { runEggClassEffect(document.body, "glass-shatter-effect", EGG_BODY_CLASSES); }
 // does not compute：訊號故障閃爍
