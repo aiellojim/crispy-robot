@@ -4806,7 +4806,7 @@ export default function App() {
                   <div onClick={e=>{ e.stopPropagation(); triggerConfetti(); }}
                     title="全彩蛋達成 👑"
                     style={{ position:"absolute", top:-10, right:-6, fontSize:22, lineHeight:1,
-                      transform:"rotate(18deg)", filter:"drop-shadow(0 2px 3px rgba(0,0,0,0.35))",
+                      transform:"rotate(30deg)", filter:"drop-shadow(0 2px 3px rgba(0,0,0,0.35))",
                       cursor:"pointer", zIndex:1 }}>
                     👑
                   </div>
