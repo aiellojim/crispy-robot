@@ -2154,7 +2154,7 @@ const EGG_REGISTRY = [
 // `easter egg hints` 指令用：純 emoji 提示清單，跟成就報告不同，不管解不解鎖過都全部列出
 // （因為目的是給探索方向，不是記錄進度），不含 id 所以不算一個彩蛋、不計入成就總數。
 function buildEggHintsReport() {
-  const lines = [`## 🕵️ 彩蛋提示（共 ${EGG_REGISTRY.length} 個，純 emoji，不直接爆雷）`, ""];
+  const lines = [`## 🕵️ 彩蛋提示`, ""];
   EGG_REGISTRY.forEach((e, i) => { lines.push(`${i + 1}. ${e.hint}`); });
   return lines.join("\n");
 }
