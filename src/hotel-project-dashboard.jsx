@@ -2045,25 +2045,63 @@ const JIM_PERSONA_PROMPT =
   "很溫柔，偶爾會突然真心稱讚或鼓勵 Jim，反差萌一點，不要毒舌到底沒有溫度。用詞可以口語化、" +
   "帶點江湖氣，但底線是仍要根據下面的真實專案資料回答問題，不能因為換了人設就亂編數字。";
 
-// 🥚 彩蛋成就收集 — localStorage 記錄每個彩蛋「第一次觸發」的時間，打 `show achievements`
-// 才看得到；沒觸發過的一律顯示 ??? 不洩漏內容/暗語，維持探索感，只有解鎖過的才會顯示名稱。
+// 🥚 彩蛋成就收集 — 2026-08-21 從純 localStorage 改成 by-user 記錄在 Supabase
+// （dashboard_egg_unlocks 表），因為 Jim 要的「全部解鎖」皇冠徽章不能因為換瀏覽器/清快取就
+// 被洗掉。localStorage 還是保留當 fallback + 舊資料來源：initEggUnlocksForUser() 登入後跑一次，
+// 把 localStorage 裡「DB 還沒有」的項目補寫進 DB（upsert 天然去重，可以安全重跑），舊裝置上已
+// 解鎖的東西只要那台瀏覽器之後還會再打開一次新版就補得回來，不會憑空消失。
+// `show achievements` 沒觸發過的一律顯示 ???，不洩漏內容/暗語，維持探索感。
 const EGG_UNLOCKS_KEY = "hotel-dash-egg-unlocks";
+let eggUnlocksCache = {};       // { [eggId]: ISOString }，記憶體內快取，給同步讀取用（reply 組字串時用得到）
+let currentUserEmail = null;    // 目前登入者 email，recordEggUnlock 寫 DB 用
+let notifyEggUnlockChange = () => {}; // 橋接到 App 的計數 state，讓皇冠徽章能即時反應新解鎖
 
-function getEggUnlocks() {
+function getLocalEggUnlocks() {
   try {
     const raw = localStorage.getItem(EGG_UNLOCKS_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch { return {}; }
 }
 
+function saveLocalEggUnlocks(unlocked) {
+  try { localStorage.setItem(EGG_UNLOCKS_KEY, JSON.stringify(unlocked)); } catch { /* 安靜失敗 */ }
+}
+
+function getEggUnlocks() { return eggUnlocksCache; }
+
 function recordEggUnlock(id) {
-  if (!id) return;
-  try {
-    const unlocked = getEggUnlocks();
-    if (unlocked[id]) return; // 只記第一次觸發的時間
-    unlocked[id] = new Date().toISOString();
-    localStorage.setItem(EGG_UNLOCKS_KEY, JSON.stringify(unlocked));
-  } catch { /* localStorage 不可用時安靜失敗，不影響主功能 */ }
+  if (!id || eggUnlocksCache[id]) return; // 只記第一次觸發
+  const now = new Date().toISOString();
+  eggUnlocksCache = { ...eggUnlocksCache, [id]: now };
+  saveLocalEggUnlocks(eggUnlocksCache);
+  notifyEggUnlockChange(Object.keys(eggUnlocksCache).length);
+  if (currentUserEmail) {
+    sb.from("dashboard_egg_unlocks")
+      .upsert({ user_email: currentUserEmail, egg_id: id, unlocked_at: now }, { onConflict: "user_email,egg_id", ignoreDuplicates: true })
+      .then(({ error }) => { if (error) console.error("egg unlock sync failed", error); });
+  }
+}
+
+// App 登入後（session 確定）呼叫一次：先把這個 user 在 DB 裡已解鎖的項目讀進 cache，再把
+// localStorage 裡 DB 還沒有的項目補寫上去。用 upsert + ignoreDuplicates，重複呼叫也不會出錯。
+async function initEggUnlocksForUser(email) {
+  currentUserEmail = email;
+  const { data, error } = await sb.from("dashboard_egg_unlocks").select("egg_id, unlocked_at").eq("user_email", email);
+  const fromDb = {};
+  if (!error && data) data.forEach(row => { fromDb[row.egg_id] = row.unlocked_at; });
+
+  const fromLocal = getLocalEggUnlocks();
+  const missing = Object.keys(fromLocal).filter(id => !fromDb[id]);
+  if (missing.length) {
+    const rows = missing.map(id => ({ user_email: email, egg_id: id, unlocked_at: fromLocal[id] }));
+    sb.from("dashboard_egg_unlocks").upsert(rows, { onConflict: "user_email,egg_id", ignoreDuplicates: true })
+      .then(({ error: upErr }) => { if (upErr) console.error("egg unlock migration failed", upErr); });
+    missing.forEach(id => { fromDb[id] = fromLocal[id]; });
+  }
+
+  eggUnlocksCache = fromDb;
+  saveLocalEggUnlocks(eggUnlocksCache); // 順便同步回 local，離線/DB 打不到時還有得看
+  notifyEggUnlockChange(Object.keys(eggUnlocksCache).length);
 }
 
 // 這份清單是「彩蛋成就」的權威來源，跟 EASTER_EGGS 陣列是分開維護的獨立清單（EASTER_EGGS
@@ -4403,6 +4441,7 @@ export default function App() {
   const [eggFired,       setEggFired]       = useState(false); // 🥚 Konami code overlay
   const [logoEggFired,   setLogoEggFired]   = useState(false); // 🥚 連點 logo 7 下 overlay
   const [jimMode,        setJimMode]        = useState(() => localStorage.getItem("hotel-dash-jim-mode") === "1"); // 🥚 jim mode
+  const [eggUnlockCount, setEggUnlockCount] = useState(0); // 🥚 by-user 彩蛋解鎖數，全解鎖皇冠徽章用
   const logoClickRef = useRef({ count:0, lastTime:0 });
   // Auth
   const [session,      setSession]      = useState(null);
@@ -4420,12 +4459,12 @@ export default function App() {
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) loadProfile(session.user.id);
+      if (session) { loadProfile(session.user.id); initEggUnlocksForUser(session.user.email); }
       else setAuthLoading(false);
     });
     const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
       setSession(session);
-      if (session) loadProfile(session.user.id);
+      if (session) { loadProfile(session.user.id); initEggUnlocksForUser(session.user.email); }
       else { setProfile(null); setAuthLoading(false); }
     });
     return () => subscription.unsubscribe();
@@ -4503,6 +4542,12 @@ export default function App() {
   useEffect(() => {
     toggleJimModeEgg = () => setJimMode(p => !p);
     return () => { toggleJimModeEgg = () => {}; };
+  }, []);
+
+  // 🥚 由 recordEggUnlock/initEggUnlocksForUser 呼叫，讓皇冠徽章能即時反應新解鎖的彩蛋數量。
+  useEffect(() => {
+    notifyEggUnlockChange = (count) => setEggUnlockCount(count);
+    return () => { notifyEggUnlockChange = () => {}; };
   }, []);
 
   useEffect(() => {
@@ -4742,12 +4787,25 @@ export default function App() {
                 <Ico name="msgSquare" size={16} color="currentColor"/>
               </button>
               <button onClick={()=>setShowSettings(true)}
-                style={{ height:36, display:"flex", alignItems:"center", gap:9,
+                style={{ height:36, display:"flex", alignItems:"center", gap:9, position:"relative",
                   background:"var(--surface-raised)", border:"1px solid var(--border)",
                   borderRadius:10, padding:"0 12px 0 5px", cursor:"pointer",
                   fontFamily:"inherit", transition:"all 0.12s" }}
                 onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; }}
                 onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}>
+                {/* 🥚 全彩蛋達成皇冠徽章 — 2026-08-21，刻意跳脫系統既有的 CSS variable 配色/
+                    極簡風格（不管淺色深色主題都是同一個金色皇冠），純靜態、歪斜疊在右上角。
+                    只在 eggUnlockCount 等於彩蛋總數時 render；點擊噴 confetti，stopPropagation
+                    避免同時觸發外層按鈕的 setShowSettings。 */}
+                {eggUnlockCount === EGG_REGISTRY.length && (
+                  <div onClick={e=>{ e.stopPropagation(); triggerConfetti(); }}
+                    title="全彩蛋達成 👑"
+                    style={{ position:"absolute", top:-10, right:-6, fontSize:22, lineHeight:1,
+                      transform:"rotate(18deg)", filter:"drop-shadow(0 2px 3px rgba(0,0,0,0.35))",
+                      cursor:"pointer", zIndex:1 }}>
+                    👑
+                  </div>
+                )}
                 <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
                   background:"var(--accent)", display:"flex", alignItems:"center",
                   justifyContent:"center", fontSize:12, fontWeight:500, color:"#fff" }}>
