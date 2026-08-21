@@ -2014,6 +2014,23 @@ function triggerGandalfBlock() {
   }, 1500);
 }
 
+// this is fine：經典迷因梗圖，全螢幕半透明遮罩 + 置中圖片，2026-08-21 新增。圖片放
+// public/this-is-fine.png（Vite 靜態資源慣例，跟 aiello-logo.svg 等既有檔案同一個資料夾，
+// build 時原樣複製到輸出根目錄，不用 import）。撐 4 秒自動淡出，點一下也能提前關掉。
+function triggerThisIsFine() {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.55);"
+    + "display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity 0.3s ease;";
+  overlay.innerHTML = '<img src="/this-is-fine.png" alt="this is fine" style="max-width:80vw;max-height:80vh;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">';
+  document.body.appendChild(overlay);
+  const dismiss = () => {
+    overlay.style.opacity = "0";
+    setTimeout(() => overlay.remove(), 300);
+  };
+  overlay.onclick = dismiss;
+  setTimeout(dismiss, 4000);
+}
+
 // lumos / nox：真的切換 App 現有的深色/淺色主題（不是純文字/視覺效果）。EASTER_EGGS 是
 // module-level 陣列，摸不到 App 元件內的 setTheme，所以用這個可變的模組級函式當橋接——
 // App 掛載時會把真正的 setTheme 接上來，卸載時斷開（見 App 內對應的 useEffect）。
@@ -2149,6 +2166,7 @@ const EGG_REGISTRY = [
   { id:"ghostbusters", label:"who you gonna call", hint:"👻🚫📞" },
   { id:"breakingbad", label:"say my name", hint:"🧪🗣️💰" },
   { id:"mranderson", label:"there is no spoon → i know kung fu → wake up, mr. anderson（隱藏三段式）", hint:"🥄🥋👁️" },
+  { id:"thisisfine", label:"this is fine", hint:"🔥🐶☕" },
 ];
 
 // `easter egg hints` 指令用：純 emoji 提示清單，跟成就報告不同，不管解不解鎖過都全部列出
@@ -2224,6 +2242,7 @@ const EASTER_EGGS = [
   { id:"se7en",       match: (text) => /^what's in the box$/i.test(text), reply: () => "📦 你真的不會想知道。（Se7en）" },
   { id:"ghostbusters", match: (text) => /^who you gonna call$/i.test(text), reply: () => "👻 Ghostbusters!" },
   { id:"breakingbad", match: (text) => /^say my name$/i.test(text), reply: () => "🧪 You're God damn right.（Breaking Bad）" },
+  { id:"thisisfine", match: (text) => /^this is fine$/i.test(text), reply: () => "🔥🐶 This is fine.", effect: () => triggerThisIsFine() },
 
   // show achievements 本身刻意不給 id：查成就清單這個動作不算一個彩蛋
   { match: (text) => /^show achievements$/i.test(text), reply: () => buildAchievementsReport() },
