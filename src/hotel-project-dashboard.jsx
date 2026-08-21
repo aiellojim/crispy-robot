@@ -207,57 +207,108 @@ const GLOBAL_CSS = `
     to   { transform:translateY(105vh) rotate(720deg); opacity:0.9; }
   }
 
-  /* punch it：畫面中心放射狀光束快速外擴淡出，模擬跳躍光速。只在 ::after 上跑一個動畫，
-     不疊加 body 本身的 transform，避免兩個不同時長的動畫搶著觸發 animationend。 */
+  /* punch it：三層一起跑（放射狀光束外擴、中心到達閃光、body 本身輕微推進 punch），三個動畫
+     刻意都設成 1s，確保 animationend 幾乎同時觸發、不會互相截斷。2026-08-21 加強版：起始 scale
+     從幾乎 0 開始拉到 3.4（原本只到 2.4，線條外擴感太弱），中段拉長維持全亮，尾段補一次白閃
+     模擬「跳躍完成」的瞬間過曝，比原本單純淡出更有速度感。 */
   @keyframes eggHyperspace {
-    0%   { opacity:0; transform:scale(0.3); }
-    12%  { opacity:1; }
-    100% { opacity:0; transform:scale(2.4); }
+    0%   { opacity:0; transform:scale(0.05); }
+    8%   { opacity:1; }
+    70%  { opacity:1; transform:scale(2.2); }
+    100% { opacity:0; transform:scale(3.4); }
   }
+  @keyframes eggHyperspaceFlash {
+    0%,78% { opacity:0; }
+    88%    { opacity:0.9; }
+    100%   { opacity:0; }
+  }
+  @keyframes eggHyperspacePunch {
+    0%  { transform:scale(1); }
+    72% { transform:scale(1.05); }
+    100%{ transform:scale(1); }
+  }
+  body.hyperspace-effect { animation:eggHyperspacePunch 1s cubic-bezier(.2,.8,.2,1); }
   body.hyperspace-effect::after {
     content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
-    background:repeating-conic-gradient(rgba(255,255,255,0.9) 0deg 0.6deg, transparent 0.6deg 6deg);
-    mix-blend-mode:screen; animation:eggHyperspace 0.7s ease-out forwards;
+    background:repeating-conic-gradient(rgba(180,220,255,0.95) 0deg 0.4deg, transparent 0.4deg 4deg);
+    mix-blend-mode:screen; animation:eggHyperspace 1s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  body.hyperspace-effect::before {
+    content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,255,255,0.95), transparent 70%);
+    animation:eggHyperspaceFlash 1s ease-out forwards;
   }
 
-  /* break glass in case of emergency：裂痕疊圖 + 短暫震動，兩個動畫時長刻意對齊成一樣長
-     （0.5s），確保不管哪個先觸發 animationend 都不會把另一個提前截斷。 */
-  @keyframes eggGlassShake {
-    0%,100% { transform:translate(0,0); }
-    20% { transform:translate(-5px,3px); } 40% { transform:translate(4px,-3px); }
-    60% { transform:translate(-3px,2px); } 80% { transform:translate(3px,-2px); }
+  /* break glass in case of emergency：2026-08-21 加強版，原本的裂痕太簡單/太淡看起來不真實，
+     改成「衝擊白閃 → 瞬間出現的密集裂痕（含二次分支＋中心碎片）→ 更用力的震動」三層疊加，
+     三個動畫都對齊 0.6s，同樣避免 animationend 互相截斷。裂痕 SVG 白線疊一層偏移 1px 的黑色
+     陰影線條，在淺色主題背景下也看得出立體感，不會糊成一片。 */
+  @keyframes eggGlassImpactFlash {
+    0%  { opacity:0; } 14% { opacity:0.9; } 34% { opacity:0; } 100% { opacity:0; }
   }
   @keyframes eggGlassCrack {
-    0%  { opacity:0; } 12% { opacity:1; } 70% { opacity:1; } 100% { opacity:0; }
+    0%,9% { opacity:0; } 10% { opacity:1; } 75% { opacity:1; } 100% { opacity:0; }
   }
-  body.glass-shatter-effect { animation:eggGlassShake 0.5s ease-in-out; }
+  @keyframes eggGlassShake {
+    0%   { transform:translate(0,0); }
+    8%   { transform:translate(-11px,7px); }
+    16%  { transform:translate(10px,-8px); }
+    24%  { transform:translate(-9px,6px); }
+    34%  { transform:translate(8px,-5px); }
+    46%  { transform:translate(-5px,3px); }
+    60%  { transform:translate(3px,-2px); }
+    100% { transform:translate(0,0); }
+  }
+  body.glass-shatter-effect { animation:eggGlassShake 0.6s cubic-bezier(.36,.07,.19,.97); }
+  body.glass-shatter-effect::before {
+    content:""; position:fixed; inset:0; z-index:99996; pointer-events:none;
+    background:radial-gradient(circle at 44% 38%, rgba(255,255,255,0.95), transparent 55%);
+    animation:eggGlassImpactFlash 0.6s ease-out forwards;
+  }
   body.glass-shatter-effect::after {
     content:""; position:fixed; inset:0; z-index:99997; pointer-events:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg stroke='%23ffffff' stroke-width='2' fill='none' opacity='0.85'%3E%3Cpath d='M200 200 L120 60 M200 200 L260 40 M200 200 L340 140 M200 200 L360 260 M200 200 L280 360 M200 200 L140 380 M200 200 L40 300 M200 200 L30 160'/%3E%3Cpath d='M160 120 L140 90 M240 100 L260 70 M300 180 L340 160 M290 300 L320 330 M180 340 L160 370 M90 260 L60 280'/%3E%3C/g%3E%3C/svg%3E");
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg stroke='%23000000' stroke-width='3' fill='none' opacity='0.3' transform='translate(1,1)'%3E%3Cpath d='M170 150 L90 40 M170 150 L230 20 M170 150 L320 70 M170 150 L360 180 M170 150 L330 300 M170 150 L230 370 M170 150 L90 350 M170 150 L20 260 M170 150 L10 120 M170 150 L60 60'/%3E%3Cpath d='M130 90 L110 55 M210 70 L235 35 M270 130 L310 105 M290 230 L330 250 M230 300 L250 340 M120 280 L90 310 M60 190 L25 200 M100 130 L70 110'/%3E%3C/g%3E%3Cg stroke='%23ffffff' stroke-width='1.6' fill='none' opacity='0.95'%3E%3Cpath d='M170 150 L90 40 M170 150 L230 20 M170 150 L320 70 M170 150 L360 180 M170 150 L330 300 M170 150 L230 370 M170 150 L90 350 M170 150 L20 260 M170 150 L10 120 M170 150 L60 60'/%3E%3Cpath d='M130 90 L110 55 M210 70 L235 35 M270 130 L310 105 M290 230 L330 250 M230 300 L250 340 M120 280 L90 310 M60 190 L25 200 M100 130 L70 110'/%3E%3Cpath d='M150 130 L190 120 L175 165 L150 130 M170 150 L190 175 L155 180 Z'/%3E%3C/g%3E%3C/svg%3E");
     background-size:cover; background-position:center;
-    animation:eggGlassCrack 0.5s ease-out forwards;
+    animation:eggGlassCrack 0.6s steps(1,end) forwards;
   }
 
-  /* does not compute：VHS/訊號故障閃爍，body 位移抖動 + 雜訊條紋疊圖，同樣對齊 0.6s。 */
+  /* does not compute：2026-08-21 加強版，原本的位移幅度只有 ±3px 太弱，改成兩波「大幅度突波」
+     （最大到 14px，中間穿插靜止），中段加一次瞬間全黑 dropout 模擬訊號斷線，比連續小抖動更有
+     「故障」的感覺。body 位移／黑屏 dropout／雜訊疊圖三個動畫都對齊 0.8s。 */
   @keyframes eggGlitchShift {
     0%,100% { transform:translate(0,0); }
-    10% { transform:translate(-3px,0); } 20% { transform:translate(3px,0); }
-    30% { transform:translate(-2px,0); } 40% { transform:translate(2px,0); }
-    50% { transform:translate(-1px,0); } 60% { transform:translate(1px,0); }
-    70%,100% { transform:translate(0,0); }
+    4%  { transform:translate(-11px,3px); }
+    8%  { transform:translate(9px,-4px); }
+    12% { transform:translate(-7px,5px); }
+    16% { transform:translate(11px,-2px); }
+    20% { transform:translate(-4px,0); }
+    45% { transform:translate(0,0); }
+    50% { transform:translate(-15px,4px); }
+    54% { transform:translate(13px,-5px); }
+    58% { transform:translate(-9px,3px); }
+    62%,100% { transform:translate(0,0); }
   }
   @keyframes eggGlitchFlicker {
-    0% { opacity:0; } 5% { opacity:0.85; } 10% { opacity:0.15; } 15% { opacity:0.9; }
-    25% { opacity:0.2; } 35% { opacity:0.75; } 50% { opacity:0.1; } 65% { opacity:0.6; }
-    100% { opacity:0; }
+    0%  { opacity:0; }
+    4%  { opacity:0.9; }
+    9%  { opacity:0.15; }
+    14% { opacity:0.95; }
+    18% { opacity:0.2; }
+    30% { opacity:0.7; }
+    40% { opacity:0.05; }
+    50% { opacity:1; background-color:#000; }
+    52% { opacity:0; background-color:transparent; }
+    60% { opacity:0.6; }
+    75% { opacity:0.15; }
+    100%{ opacity:0; }
   }
-  body.glitch-effect { animation:eggGlitchShift 0.6s steps(2,end); }
+  body.glitch-effect { animation:eggGlitchShift 0.8s steps(1,end); }
   body.glitch-effect::after {
     content:""; position:fixed; inset:0; z-index:99997; pointer-events:none; mix-blend-mode:overlay;
-    background:
-      repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, rgba(0,0,0,0.1) 1px, transparent 2px, transparent 4px),
-      repeating-linear-gradient(90deg, rgba(0,255,255,0.06), rgba(255,0,255,0.06) 2px, transparent 4px);
-    animation:eggGlitchFlicker 0.6s steps(6,end) forwards;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.08) 0px, rgba(0,0,0,0.12) 1px, transparent 2px, transparent 4px),
+      repeating-linear-gradient(90deg, rgba(0,255,255,0.08), rgba(255,0,255,0.08) 2px, transparent 4px);
+    animation:eggGlitchFlicker 0.8s steps(1,end) forwards;
   }
 
   /* Manual theme overrides — higher specificity than media query */
