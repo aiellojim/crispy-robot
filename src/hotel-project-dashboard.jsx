@@ -2036,43 +2036,53 @@ function recordEggUnlock(id) {
 
 // 這份清單是「彩蛋成就」的權威來源，跟 EASTER_EGGS 陣列是分開維護的獨立清單（EASTER_EGGS
 // 專注在觸發比對邏輯，這份專注在成就顯示用的人類可讀名稱）——加新彩蛋時兩邊都要記得加。
+// hint 欄位是 2026-08-21 加的：`easter egg hints` 指令用，統一 3 個 emoji、不含文字，刻意不
+// 直接洩漏暗語本身，只給方向線索（見 buildEggHintsReport）。
 const EGG_REGISTRY = [
-  { id:"sandwich",   label:"sudo make me a sandwich" },
-  { id:"xyzzy",      label:"xyzzy" },
-  { id:"doom",       label:"IDDQD / IDKFA" },
-  { id:"answer42",   label:"42" },
-  { id:"barrelroll", label:"do a barrel roll" },
-  { id:"ping",       label:"ping" },
-  { id:"shrug",      label:"/shrug" },
-  { id:"overtime",   label:"/overtime" },
-  { id:"matrixrain", label:"wake up neo" },
-  { id:"earthquake", label:"earthquake" },
-  { id:"shipit",     label:"ship it" },
-  { id:"disco",      label:"disco" },
-  { id:"fliptable",  label:"flip table" },
-  { id:"illbeback",  label:"i'll be back" },
-  { id:"mordor",     label:"one does not simply" },
-  { id:"force",      label:"may the force be with you" },
-  { id:"gandalf",    label:"you shall not pass" },
-  { id:"dontpanic",  label:"don't panic" },
-  { id:"lumos",      label:"lumos" },
-  { id:"nox",        label:"nox" },
-  { id:"bigbrother", label:"big brother is watching" },
-  { id:"rickroll",   label:"never gonna give you up" },
-  { id:"jimmode",    label:"execute order 66" },
-  { id:"gorogue",    label:"go rogue" },
-  { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）" },
-  { id:"logoclick",  label:"連點 header logo 7 下" },
-  { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板" },
-  { id:"hyperspace", label:"punch it" },
-  { id:"glassshatter", label:"break glass in case of emergency" },
-  { id:"glitch",      label:"does not compute" },
-  { id:"basterds",    label:"that's a bingo" },
-  { id:"se7en",       label:"what's in the box" },
-  { id:"ghostbusters", label:"who you gonna call" },
-  { id:"breakingbad", label:"say my name" },
-  { id:"mranderson", label:"there is no spoon → i know kung fu → wake up, mr. anderson（隱藏三段式）" },
+  { id:"sandwich",   label:"sudo make me a sandwich", hint:"🥪💻🙏" },
+  { id:"xyzzy",      label:"xyzzy", hint:"🗝️✨🕹️" },
+  { id:"doom",       label:"IDDQD / IDKFA", hint:"🔫👹💀" },
+  { id:"answer42",   label:"42", hint:"🌌🔢❓" },
+  { id:"barrelroll", label:"do a barrel roll", hint:"🦊🔄🎮" },
+  { id:"ping",       label:"ping", hint:"🏓🌐⏱️" },
+  { id:"shrug",      label:"/shrug", hint:"🤷💬❓" },
+  { id:"overtime",   label:"/overtime", hint:"🌙💼😩" },
+  { id:"matrixrain", label:"wake up neo", hint:"💊🕶️🟢" },
+  { id:"earthquake", label:"earthquake", hint:"🌍〰️📳" },
+  { id:"shipit",     label:"ship it", hint:"🚀📦🎉" },
+  { id:"disco",      label:"disco", hint:"🕺💃🪩" },
+  { id:"fliptable",  label:"flip table", hint:"😤🪑🔄" },
+  { id:"illbeback",  label:"i'll be back", hint:"🤖👋🔙" },
+  { id:"mordor",     label:"one does not simply", hint:"🌋👁️🚶" },
+  { id:"force",      label:"may the force be with you", hint:"⚔️✨🌌" },
+  { id:"gandalf",    label:"you shall not pass", hint:"🧙🚫🌉" },
+  { id:"dontpanic",  label:"don't panic", hint:"📖✋😱" },
+  { id:"lumos",      label:"lumos", hint:"🪄💡✨" },
+  { id:"nox",        label:"nox", hint:"🪄🌑🔌" },
+  { id:"bigbrother", label:"big brother is watching", hint:"👁️📺🏨" },
+  { id:"rickroll",   label:"never gonna give you up", hint:"🎵🕺🚫" },
+  { id:"jimmode",    label:"execute order 66", hint:"🪖📻⚔️" },
+  { id:"gorogue",    label:"go rogue", hint:"🕶️😈🔓" },
+  { id:"konami",     label:"Konami Code（↑↑↓↓←→←→BA）", hint:"🎮⬆️⬇️" },
+  { id:"logoclick",  label:"連點 header logo 7 下", hint:"🖱️🔁😡" },
+  { id:"deepnight",  label:"凌晨 0-5 點打開 AI 面板", hint:"🌙💻😴" },
+  { id:"hyperspace", label:"punch it", hint:"🚀💫🌌" },
+  { id:"glassshatter", label:"break glass in case of emergency", hint:"🚨🔨🪟" },
+  { id:"glitch",      label:"does not compute", hint:"🤖⚡❌" },
+  { id:"basterds",    label:"that's a bingo", hint:"🎯🪖🎬" },
+  { id:"se7en",       label:"what's in the box", hint:"📦❓😰" },
+  { id:"ghostbusters", label:"who you gonna call", hint:"👻🚫📞" },
+  { id:"breakingbad", label:"say my name", hint:"🧪🗣️💰" },
+  { id:"mranderson", label:"there is no spoon → i know kung fu → wake up, mr. anderson（隱藏三段式）", hint:"🥄🥋👁️" },
 ];
+
+// `easter egg hints` 指令用：純 emoji 提示清單，跟成就報告不同，不管解不解鎖過都全部列出
+// （因為目的是給探索方向，不是記錄進度），不含 id 所以不算一個彩蛋、不計入成就總數。
+function buildEggHintsReport() {
+  const lines = [`## 🕵️ 彩蛋提示（共 ${EGG_REGISTRY.length} 個，純 emoji，不直接爆雷）`, ""];
+  EGG_REGISTRY.forEach((e, i) => { lines.push(`${i + 1}. ${e.hint}`); });
+  return lines.join("\n");
+}
 
 function buildAchievementsReport() {
   const unlocked = getEggUnlocks();
@@ -2142,6 +2152,8 @@ const EASTER_EGGS = [
 
   // show achievements 本身刻意不給 id：查成就清單這個動作不算一個彩蛋
   { match: (text) => /^show achievements$/i.test(text), reply: () => buildAchievementsReport() },
+  // easter egg hints 同樣不給 id，跟 show achievements 同規則，不計入彩蛋總數
+  { match: (text) => /^easter egg hints$/i.test(text), reply: () => buildEggHintsReport() },
 
   // 範例：指令式（比對開頭 /xxx），可以用 ctx 拿即時資料，自己再加
   // {
