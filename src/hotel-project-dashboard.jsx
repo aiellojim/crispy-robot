@@ -53,6 +53,11 @@ const avaUiSettingsUrl = (id, hash) => AVA_UI_SETTINGS_BASE_URL + "?p=" + id + (
 const SITECHAT_FORM_BASE_URL = "https://sitechat-settings.aiello.dev/";
 const sitechatFormUrl = (id) => SITECHAT_FORM_BASE_URL + "?p=" + id;
 
+// ACA Basic Settings 表單（Vercel 部署，獨立站，轉接部門/場景 + 歡迎詞 + KMS 權限）— 同一把
+// project.id 當連結權杖，跟上面幾個表單一樣的邏輯，只在有選 ACA 產品時顯示（2026-08-27 上線）。
+const ACA_FORM_BASE_URL = "https://aca-basic-settings.aiello.dev/";
+const acaFormUrl = (id) => ACA_FORM_BASE_URL + "?p=" + id;
+
 // Calendar event type colours — CSS var based for dark mode
 const CAL_COLORS = {
   launch:    { bg:"var(--cal-launch-bg)",  text:"var(--cal-launch-text)",  border:"var(--cal-launch-border)" },
@@ -4139,9 +4144,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 其他卡片，一個表單一列，用 Grid 固定欄寬取代原生 table；長網址一樣靠 ScrollFadeText
                 單行捲動+溢出才淡出，取代手動去 Supabase 複製 project id（Jim, 2026-08-13）。
                 同一把 project.id 當連結權杖，裡面的分頁依 products 各自顯示/隱藏，所以只要有
-                AVA / GuestWeb / TMS Pro / SiteChat 任一項，就該顯示這張卡；複選時對應的列會
-                自動同時出現，不需要額外處理。 */}
-            {info.name && (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP") || info.products.includes("SiteChat")) && (
+                AVA / GuestWeb / TMS Pro / SiteChat / ACA 任一項，就該顯示這張卡；複選時對應的列會
+                自動同時出現，不需要額外處理。ACA 是獨立表單（不是 AVA basic settings 的分頁），
+                2026-08-27 上線後補上這一列（Jim）。 */}
+            {info.name && (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP") || info.products.includes("SiteChat") || info.products.includes("ACA")) && (
               <Card>
                 <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="link" size={13} color="currentColor"/>飯店填寫表單連結</div>
                 {[
@@ -4156,6 +4162,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   info.products.includes("SiteChat") && {
                     key:"sitechat", label:"SiteChat 設定", url:sitechatFormUrl(project.id),
                     copyTitle:"複製 SiteChat 設定表單連結", openTitle:"在新分頁開啟 SiteChat 設定表單",
+                  },
+                  info.products.includes("ACA") && {
+                    key:"aca", label:"ACA 設定", url:acaFormUrl(project.id),
+                    copyTitle:"複製 ACA 設定表單連結", openTitle:"在新分頁開啟 ACA 設定表單",
                   },
                 ].filter(Boolean).map(({ key, label, url, copyTitle, openTitle })=>(
                   <div key={key} style={{ display:"grid", gridTemplateColumns:"92px 1fr auto", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
