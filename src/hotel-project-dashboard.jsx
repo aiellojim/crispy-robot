@@ -4159,13 +4159,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     key:"ui", label:"介面設定", url:avaUiSettingsUrl(project.id),
                     copyTitle:"複製 UI 設定表單連結", openTitle:"在新分頁開啟 UI 設定表單",
                   },
-                  info.products.includes("SiteChat") && {
-                    key:"sitechat", label:"SiteChat 設定", url:sitechatFormUrl(project.id),
-                    copyTitle:"複製 SiteChat 設定表單連結", openTitle:"在新分頁開啟 SiteChat 設定表單",
-                  },
                   info.products.includes("ACA") && {
                     key:"aca", label:"ACA 設定", url:acaFormUrl(project.id),
                     copyTitle:"複製 ACA 設定表單連結", openTitle:"在新分頁開啟 ACA 設定表單",
+                  },
+                  info.products.includes("SiteChat") && {
+                    key:"sitechat", label:"SiteChat 設定", url:sitechatFormUrl(project.id),
+                    copyTitle:"複製 SiteChat 設定表單連結", openTitle:"在新分頁開啟 SiteChat 設定表單",
                   },
                 ].filter(Boolean).map(({ key, label, url, copyTitle, openTitle })=>(
                   <div key={key} style={{ display:"grid", gridTemplateColumns:"92px 1fr auto", alignItems:"center", gap:10, padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
