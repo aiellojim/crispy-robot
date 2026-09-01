@@ -2779,18 +2779,23 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
 // ─── SiteChatEbConsolePanel ─────────────────────────────────────
 // 一次性設定：把 SiteChat 的 Greeting（含 2026-09-01 起三語 bot_name）+ Theme 推送到內部
 // eb-console。推送前強制人工審核（打開面板看完預覽才按「確認推送」），避免飯店端頻繁改動觸發
-// 連動更新。2026-09-01 拿到內部 API 規格後接上真正的 `ebconsole-proxy` Edge Function（比照
-// jira-proxy 的模式，eb-admin 的 X-API-Key 密鑰留在後端，前端只帶 Supabase session token）；
-// 推送結果（含失敗）由 Edge Function 自己寫一筆進 `sitechat_ebconsole_pushes`，這裡推送完只需要
-// 重新查一次紀錄。這張表刻意沒有 anon policy，只有 `@aiello.ai` 的 authenticated 使用者能讀寫，
-// 所以這裡的 sb 查詢跟 fetch 都帶登入的 session，不是像表單那樣走 anon key。
+// 連動更新。
+//
+// 2026-09-01 架構改版：原本規劃走 `ebconsole-proxy` Edge Function 直接打 eb-admin.aiello.ai，
+// 但實測 Supabase Edge Function 沒有固定對外 IP，會被 eb-admin 的防火牆擋下（TCP connect
+// timeout，日誌證實是網路層擋，不是應用層認證問題）。改成工作佇列模式：這裡「確認推送」只是
+// 在 `sitechat_ebconsole_pushes` insert 一筆 status='pending' 的列（RLS 已限制只有 @aiello.ai
+// 帳號能寫，不需要再經過任何 Edge Function），真正打 eb-admin 那一步由 Jim 在已連 VPN 的電腦上
+// 跑的常駐 script（`scripts/ebconsole-push-agent.mjs`）輪詢認領、執行、寫回結果。`ebconsole-proxy`
+// 這支 Edge Function 目前保留部署但不再被呼叫（未來如果有固定 IP 出口的內網代理可以考慮換回來）。
+// 這裡改成輪詢 `loadHistory()`：只要還有 pending/processing 的列，就每 3 秒自動重新查一次，
+// 不需要手動重新整理就能看到 agent 處理完的結果。
 const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
   const [settings, setSettings] = useState(null);
   const [history,  setHistory]  = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [pushing,  setPushing]  = useState(false);
   const [pushError, setPushError] = useState("");
-  const [pushOk,   setPushOk]   = useState(false);
 
   const loadHistory = async () => {
     const { data: h } = await sb.from("sitechat_ebconsole_pushes").select("id, pushed_at, pushed_by, status, response").eq("project_id", projectId).order("pushed_at", { ascending:false }).limit(20);
@@ -2810,21 +2815,25 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
     })();
   }, [projectId]);
 
+  const hasInFlight = history.some(h => h.status === "pending" || h.status === "processing");
+
+  // 只要還有任務在跑（pending/processing），就每 3 秒自動刷新一次紀錄——不需要值班的人一直手動
+  // 按重新整理，agent 什麼時候處理完（尤其是斷線退回 pending 又重試的情況）都會自動反映出來。
+  useEffect(() => {
+    if (!hasInFlight) return;
+    const timer = setInterval(loadHistory, 3000);
+    return () => clearInterval(timer);
+  }, [hasInFlight, projectId]);
+
   const handlePush = async () => {
-    if (pushing) return;
-    setPushing(true); setPushError(""); setPushOk(false);
-    try {
-      const res = await fetch(EBCONSOLE_PROXY, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) setPushOk(true);
-      else setPushError(data.error || `推送失敗（HTTP ${res.status}）`);
-    } catch (e) {
-      setPushError(e.message || "network error");
-    }
+    if (pushing || hasInFlight) return;
+    setPushing(true); setPushError("");
+    const { error } = await sb.from("sitechat_ebconsole_pushes").insert({
+      project_id: projectId,
+      pushed_by: session?.user?.email ?? "",
+      status: "pending",
+    });
+    if (error) setPushError(error.message || "建立推送任務失敗");
     await loadHistory();
     setPushing(false);
   };
@@ -2909,21 +2918,21 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
                   {pushError}
                 </div>
               )}
-              {pushOk && (
-                <div style={{ padding:"9px 12px", background:"var(--green-light)", border:"1px solid var(--green)", borderRadius:9, fontSize:11.5, color:"var(--green)", marginBottom:8 }}>
-                  推送成功。
+              {hasInFlight && (
+                <div style={{ padding:"9px 12px", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:9, fontSize:11.5, color:"var(--amber)", marginBottom:8 }}>
+                  推送處理中——內網 agent 正在或即將認領這筆任務，下方紀錄會自動更新，不用手動重新整理。
                 </div>
               )}
-              <button onClick={handlePush} disabled={pushing}
+              <button onClick={handlePush} disabled={pushing || hasInFlight}
                 style={{ width:"100%", padding:"10px 0", borderRadius:10, border:"none",
-                  background: pushing ? "var(--border)" : "var(--accent)",
-                  color: pushing ? "var(--text-subtle)" : "#fff", fontFamily:"inherit",
-                  fontSize:13, fontWeight:500, cursor: pushing ? "default" : "pointer", display:"flex",
+                  background: (pushing || hasInFlight) ? "var(--border)" : "var(--accent)",
+                  color: (pushing || hasInFlight) ? "var(--text-subtle)" : "#fff", fontFamily:"inherit",
+                  fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
                   alignItems:"center", justifyContent:"center", gap:6 }}>
-                {pushing
+                {(pushing || hasInFlight)
                   ? <div style={{ width:13, height:13, border:"2px solid rgba(255,255,255,0.4)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
                   : <Ico name="send" size={13} color="currentColor"/>}
-                確認推送
+                {hasInFlight ? "推送處理中…" : "確認推送"}
               </button>
             </>
           )}
@@ -2933,17 +2942,24 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
             <div style={{ fontSize:12, color:"var(--text-subtle)", padding:"6px 0" }}>尚無推送紀錄</div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-              {history.map(h => (
-                <div key={h.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
-                  <span style={{ fontSize:10, padding:"2px 7px", borderRadius:5, fontWeight:500,
-                    background: h.status==="success" ? "var(--green-light)" : "var(--red-light)",
-                    color: h.status==="success" ? "var(--green)" : "var(--red)" }}>
-                    {h.status==="success" ? "成功" : "失敗"}
-                  </span>
-                  <span style={{ fontSize:12, color:"var(--text)" }}>{new Date(h.pushed_at).toLocaleString("zh-TW")}</span>
-                  <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:"auto" }}>{h.pushed_by || "—"}</span>
-                </div>
-              ))}
+              {history.map(h => {
+                const STATUS_STYLE = {
+                  success:    { bg:"var(--green-light)", color:"var(--green)", label:"成功" },
+                  error:      { bg:"var(--red-light)",   color:"var(--red)",   label:"失敗" },
+                  processing: { bg:"var(--accent-subtle)", color:"var(--accent)", label:"處理中" },
+                  pending:    { bg:"var(--border)",      color:"var(--text-subtle)", label:"等待中" },
+                }[h.status] || { bg:"var(--border)", color:"var(--text-subtle)", label:h.status };
+                return (
+                  <div key={h.id} title={h.status==="error" ? h.response : undefined}
+                    style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
+                    <span style={{ fontSize:10, padding:"2px 7px", borderRadius:5, fontWeight:500, background:STATUS_STYLE.bg, color:STATUS_STYLE.color }}>
+                      {STATUS_STYLE.label}
+                    </span>
+                    <span style={{ fontSize:12, color:"var(--text)" }}>{new Date(h.pushed_at).toLocaleString("zh-TW")}</span>
+                    <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:"auto" }}>{h.pushed_by || "—"}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -2955,6 +2971,9 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
 // ─── JiraTab ──────────────────────────────────────────────────
 const JIRA_PROXY              = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
 const CUSTOMER_ACCESS_MANAGE  = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-access-manage`;
+// 2026-09-01：目前沒有任何地方呼叫這支（改成 sitechat_ebconsole_pushes 工作佇列 + 本機 agent，
+// 見 SiteChatEbConsolePanel 上方註解）。Edge Function 本身還留著部署，保留這個常數只是為了未來
+// 如果換成有固定出口 IP 的內網代理、要改回直接呼叫時方便，不是死碼誤留。
 const EBCONSOLE_PROXY         = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebconsole-proxy`;
 const JIRA_ANON  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

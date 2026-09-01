@@ -87,16 +87,24 @@
   5. `npm run build`／`npx eslint` 都跑過，確認沒有新增的錯誤（既有的 17 個 lint error 都在這次沒碰過的既有程式碼裡）。
 - 未解決的殘餘風險（設計上無法完全避免，範圍已大幅縮小）：兩人真的在同一個 debounce 視窗內（800ms）編輯「同一個欄位」還是後寫的贏；但「改了不相關欄位、把別人剛存的其他欄位蓋掉」這個 Jim 實際遇到的情境已經解決。
 
-### 11. ~~SiteChat → eb-console 推送~~ **前端+Edge Function 已接上（2026-09-01），等 Jim 補 API Key**
+### 11. ~~SiteChat → eb-console 推送~~ **架構定案並實作完成（2026-09-01）：工作佇列 + 內網常駐 agent**
 - 需求：SiteChat 的問候語＋主題色彩要能推送進內部真正的 eb-console 設定系統；原本規劃匯出 Excel 手動比對/謄寫，改成內部團隊開一支 API，Jim 打這支 API 指定飯店做更新。Jim 明確交代：**這功能不能做在現在完全開放的 SiteChat 表單裡**，改做在 hotel-dashboard（內部、需登入）。
-- 資料模型（2026-08-27）：新表 `sitechat_ebconsole_pushes`（`project_id`／`pushed_at`／`pushed_by`／`payload` jsonb／`status`／`response`）——**刻意不開 anon policy**，只有 `@aiello.ai` 的 authenticated 使用者能讀寫，是這個表單家族目前唯一從一開始就不套用「anon: edit via link」開放模式的表。
-- 前端（2026-08-27 建、2026-09-01 接上真實呼叫）：`hotel-project-dashboard.jsx` 的 `SiteChatEbConsolePanel`（緊接在 `CustomerAccessPanel` 之後、`JiraTab` 之前）：開面板讀 `sitechat_settings`（bot_name 三語 jsonb／bot_icon_url／theme／greeting，**不含 FAQ 卡片**——Jim 確認過範圍）做預覽，人工審核過才按「確認推送」，避免飯店端頻繁改動觸發連動更新；`handlePush()` 帶登入 session 的 access_token 打 `ebconsole-proxy`，成功/失敗都會重新讀一次 `sitechat_ebconsole_pushes` 更新推送紀錄列表。觸發按鈕是 `ProjectDetail`「飯店填寫表單連結」卡片後面的 Card，`info.products.includes("SiteChat")` 才顯示。
-- 後端（2026-09-01，Jim 提供 eb-admin.aiello.ai 的 Swagger 規格後新增）：`ebconsole-proxy` Edge Function（比照 `jira-proxy` 模式，`X-API-Key` 留在後端 env `EB_ADMIN_API_KEY`）。流程是**先 GET 再 POST** `/api/admin/settings/by-kms-org`（`kms_org_name` = `projects.hotel_id`）——GET 現況、把 SiteChat 算出來的欄位 merge 進去、整包 POST 回去，刻意不用「只送我們的欄位」蓋掉 eb-console 既有但我們不認得的欄位（例如 `fontScale`）。呼叫前會再檢查一次呼叫者 email 是 `@aiello.ai`（跟 RLS policy 同一條件，不只靠 `verify_jwt`），呼叫的成功/失敗都會寫一筆進 `sitechat_ebconsole_pushes`。
-- 欄位對照表（SiteChat theme key → eb-console widget_custom_colors key，共 26 組，依 SiteChat granular 卡片由上而下排序）、locale 對照（en→en-US／zh→zh-TW／ja→ja-JP）、`--welcome-bg` 漸層取第一色碼的理由，都寫在 `ebconsole-proxy/index.ts` 檔頭註解跟 SiteChat Settings 的 `CLAUDE.md` 裡，不重複貼在這裡。**Advanced 分組的 14 個 SiteChat 專屬色彩欄位（User Messages／FAQ Cards／Destructive Action／Secondary & Feedback）跟 Text Size 都確認丟棄不送**（Jim：這些在 eb-console 端已經被 brand color／其他控制項決定，不需要對應）。
+- **2026-09-01 重大架構轉折**：原計畫是 hotel-dashboard 前端直接呼叫 `ebconsole-proxy` Edge Function，由它直接打 `eb-admin.aiello.ai`。加了 `EB_ADMIN_API_KEY` secret 後實測失敗，查 Edge Function log 拿到明確錯誤：
+  ```
+  TypeError: error sending request for url (https://eb-admin.aiello.ai/...): client error (Connect):
+  tcp connect error: Connection timed out (os error 110)
+  ```
+  這是**網路層 TCP 連線逾時**（連 TLS 握手都沒發生），不是應用層的認證問題。原因是 `eb-admin.aiello.ai` 的防火牆限制只有 Aiello 內網/VPN 能連（Jim 確認），而 Supabase Edge Function 跑在 Deno Deploy 的全球分散式機房，**官方文件證實完全沒有固定的 outbound IP**，防火牆沒辦法針對它加白名單。討論過三個方向：(1) 請 eb-admin 那邊放寬白名單、(2) 導入第三方固定 IP proxy 服務（QuotaGuard 等，要付費+改防火牆規則）、(3) 改成工作佇列 + 內網常駐 agent。Jim 選了方案 (3)，先用他自己的電腦跑 agent（明確接受這是單點故障——他離線時全公司這個功能會停擺，佇列會排隊等他回來，之後再找專門的常駐主機取代）。
+- **最終架構**：
+  1. `sitechat_ebconsole_pushes` 表從「純推送結果紀錄」升級成「工作佇列」（migration `sitechat_ebconsole_pushes_add_job_queue_states`）：`status` 從只能是 `success`/`error` 改成 `pending`/`processing`/`success`/`error`（預設值也從 `success` 改成 `pending`），新增 `claimed_at` 欄位。RLS 不變（只有 `@aiello.ai` authenticated 能讀寫，無 anon policy）。
+  2. `hotel-project-dashboard.jsx` 的 `SiteChatEbConsolePanel`：「確認推送」現在只是單純 `insert` 一筆 `status='pending'` 的列（不再呼叫任何 Edge Function），有進行中任務（pending/processing）時每 3 秒自動輪詢 `loadHistory()`，agent 處理完會自動反映結果，不用手動重新整理。按鈕在有進行中任務時會停用並顯示「推送處理中…」，避免同一個專案同時排多筆重複任務。
+  3. **`scripts/ebconsole-push-agent.mjs`**（新增，這次一起 commit 進 repo；`.env` 走 `scripts/.env`，已被既有的 `.gitignore` 的 `.env` 規則排除）：Jim 在自己已連 VPN 的電腦上跑 `node --env-file=scripts/.env scripts/ebconsole-push-agent.mjs`，常駐輪詢（預設 5 秒一次）`sitechat_ebconsole_pushes`，原子認領最舊的 pending 任務（`update ... where status=eq.pending` 確保就算之後多開一台 agent 也不會搶同一筆），執行「先 GET 再 POST」`/api/admin/settings/by-kms-org` 的合併寫入邏輯（跟原本 `ebconsole-proxy` 同一套顏色/語系對照表，兩邊要一起改），把結果寫回同一筆列。**失敗分兩種處理**（針對 Jim 明確問過的「斷線後會不會自動恢復」設計）：GET/POST 這兩個 `fetch` 如果直接丟例外（網路層失敗，例如電腦離開內網）→ 退回 `pending`，下一輪自動重試，不需要人工介入；如果 eb-admin 真的回應了但是非 200（例如 404 找不到組織）→ 判定為確定性失敗，標記 `error` 並記下回應內容，不會自動重試。另外每輪也會把卡住超過 2 分鐘的 `processing` 任務（agent 中途當掉的情況）退回 `pending`。用的是 `SUPABASE_SERVICE_ROLE_KEY`（本機 `.env`，不進 git、不進 Supabase secrets、不進瀏覽器）+ `EB_ADMIN_API_KEY`。
+  4. `ebconsole-proxy` Edge Function **保留部署但目前沒有任何地方呼叫它**——留著是因為如果之後真的架了一台有固定出口 IP 的內網代理，可以把「打 eb-admin」那段邏輯搬回 Edge Function 直接呼叫這台代理，不用整個重寫；`EBCONSOLE_PROXY` 這個前端常數也留著同樣理由，不是死碼誤留。
+  5. **已知風險（Jim 明確接受、之後再處理）**：agent 目前掛在 Jim 個人筆電上，等於單點故障——他離開內網/電腦睡眠時，所有人的推送任務都會卡在 `pending` 排隊，直到他的電腦重新連線；佇列本身不會遺失資料，只是會延遲處理。長期應該搬到一台不會離開內網、24 小時開著的專用主機上跑同一支 script。
+- 資料模型其餘部分、欄位對照表（SiteChat theme key → eb-console widget_custom_colors key，共 26 組）、locale 對照（en→en-US／zh→zh-TW／ja→ja-JP）、`--welcome-bg` 漸層取第一色碼的理由、Advanced 分組 14 個欄位 + Text Size 確認丟棄不送，都寫在 `scripts/ebconsole-push-agent.mjs`／`ebconsole-proxy/index.ts` 的檔頭註解裡，兩邊邏輯要保持同步，不重複貼在這裡。
 - bot_name 為了跟 eb-console 對齊，2026-09-01 從單一字串改成三語 jsonb，見 SiteChat Settings 的 `CLAUDE.md`。
 - git 還原點：hotel-dashboard `pre-ebconsole-push-2026-08-27`、SiteChat Settings `pre-botname-i18n-2026-09-01`。
-- **唯一剩下的事**：`EB_ADMIN_API_KEY` 這個 Supabase secret 還沒設定，Jim 會自己去 Supabase 加，加之前這個功能打下去一定會拿到「EB_ADMIN_API_KEY not configured yet」的錯誤（Edge Function 有先擋這個情況，不會裸奔打一個沒有 key 的請求出去）。
-- `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`），Jim 收到後建議自己本機跑一次完整 build + 實際點開面板確認。
+- `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`），Jim 收到後建議自己本機跑一次完整 build + 實際點開面板 + 跑一次 agent script 端對端確認。
 
 ## 長期方向
 
