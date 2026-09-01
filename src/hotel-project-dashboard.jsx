@@ -4343,13 +4343,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 才會接上，面板目前先把預覽/審核/歷史紀錄搭好，「確認推送」按鈕先停用。 */}
             {info.name && info.products.includes("SiteChat") && (
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:12, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="send" size={13} color="currentColor"/>SiteChat → eb-console</div>
-                <div style={{ fontSize:12.5, color:C.textMid, marginBottom:14 }}>把這個專案的 SiteChat 問候語與主題色彩推送到內部 eb-console，推送前會先顯示預覽供人工審核。</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="send" size={13} color="currentColor"/>SiteChat → eb-console</div>
+                <div style={{ fontSize:13, color:C.textMid, marginBottom:14, lineHeight:1.6 }}>把這個專案的 SiteChat 問候語與主題色彩推送到內部 eb-console，推送前會先顯示預覽供人工審核。</div>
                 <button onClick={()=>setShowEbConsolePush(true)}
-                  style={{ padding:"8px 16px", borderRadius:9, border:`1px solid ${C.accent}`,
-                    background:"transparent", color:C.accent, fontFamily:"inherit", fontSize:13,
-                    fontWeight:500, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:6 }}>
-                  <Ico name="send" size={13} color="currentColor"/> 開啟推送面板
+                  style={{ display:"inline-flex", alignItems:"center", gap:5,
+                    fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:400,
+                    background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
+                    borderRadius:6, padding:"4px 10px", fontFamily:"inherit", cursor:"pointer" }}>
+                  <Ico name="send" size={12} color="currentColor"/> 開啟推送面板
                 </button>
               </Card>
             )}
