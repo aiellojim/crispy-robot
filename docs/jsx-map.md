@@ -2,6 +2,8 @@
 
 > 產出基準：commit `1046d95`（2026-07-03，由 scanner subagent 實掃；當日全檔 3,979 行）。
 > **行號會隨改動漂移，一律以「名稱」欄的字串 grep 定位，行號僅供判斷位置量級。**
+> 2026-08-27 補充：全檔已成長到 ~5,117 行（多次表單連結/KMS/eb-console 相關新增），下方多數行號
+> 已是量級參考而非精確值；下次有空建議整檔重掃一次更新此表。
 > 用法：查表 → `grep -n "<名稱>" src/hotel-project-dashboard.jsx` → 只讀該區段（Read 加 offset/limit）。**禁止整檔讀取。**
 > 本檔可由模型自行更新：大幅改動 jsx 後，重掃並更新對應列與檔頭 commit hash。
 
@@ -37,6 +39,7 @@
 | `HomePage` | 1312–1622 | 首頁：專案列表、地區/PIC 篩選、統計 |
 | `GEMINI_API_KEY` / `renderMarkdown` / `AiPanel` | 1623–1908 | **Gemini AI 區**：AI 助理面板（fetch Gemini API） |
 | `CustomerAccessPanel` | 1909–2072 | 客戶後台帳號管理（呼叫 `customer-access-manage`） |
+| `SiteChatEbConsolePanel` | ~2615–2780（`CustomerAccessPanel` 之後、`JiraTab` 之前） | 2026-08-27 新增：內部限定的 SiteChat→eb-console 推送面板（預覽 `sitechat_settings` 的 greeting/theme + 人工審核 + 讀 `sitechat_ebconsole_pushes` 推送紀錄）。「確認推送」按鈕目前停用（`ebconsole-proxy` Edge Function 待內部 API 規格到位後才會接上）。觸發按鈕是 `ProjectDetail` 裡緊接在「飯店填寫表單連結」卡片後面、`info.products.includes("SiteChat")` 才顯示的新 Card；狀態 `showEbConsolePush` 宣告處緊鄰既有的 `showCustomerAccess`。 |
 | `JIRA_PROXY` `CUSTOMER_ACCESS_MANAGE` `JIRA_ANON` `JIRA_STATUSES` `statusStyle` `jiraFetch` `parseEpicId` | 2073–2115 | **Jira 設定/函式區**：endpoint、狀態樣式、共用請求 |
 | `JiraTab` | 2116–2329 | Jira 分頁；內含 `fetchIssues`(≈2127)、`handleUpdateDescription`(≈2136)、`openDropdown`(≈2157)、`doTransition`(≈2166) |
 | `TasksTab` | 2330–2552 | 任務分頁；CRUD `tasks` 表 |

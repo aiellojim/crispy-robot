@@ -2776,6 +2776,139 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
   );
 };
 
+// ─── SiteChatEbConsolePanel ─────────────────────────────────────
+// 一次性設定：把 SiteChat 的 Greeting + Theme 推送到內部 eb-console。推送前強制人工審核
+// （不是打開就直接推，要看過預覽內容再按確認），避免飯店端頻繁改動觸發連動更新。
+// API 規格尚未拿到（2026-08-27，Jim：「文件在準備中，但前端可以先搭起來」），所以這裡先把
+// 預覽/審核/歷史紀錄的 UI 搭好，「確認推送」按鈕先停用並註明原因——不要因為規格未到就整個
+// 功能都不做，也不要在規格到之前假造一個會打到不存在 endpoint 的 fetch。
+// 真正呼叫外部 API 時要走新的 `ebconsole-proxy` Edge Function（比照 jira-proxy 的模式，密鑰留在
+// 後端），並把結果（含失敗）寫一筆進 `sitechat_ebconsole_pushes`，此面板的「推送紀錄」區塊即讀
+// 這張表（project_id + pushed_at desc）。這張表刻意沒有 anon policy，只有 `@aiello.ai` 的
+// authenticated 使用者能讀寫，所以這裡的 sb 查詢會用登入的 session，不是像表單那樣走 anon key。
+const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
+  const [settings, setSettings] = useState(null);
+  const [history,  setHistory]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+
+  useEffect(() => {
+    if (!projectId) return;
+    (async () => {
+      setLoading(true);
+      const [{ data: s }, { data: h }] = await Promise.all([
+        sb.from("sitechat_settings").select("bot_name, bot_icon_url, theme, greeting").eq("project_id", projectId).maybeSingle(),
+        sb.from("sitechat_ebconsole_pushes").select("id, pushed_at, pushed_by, status, response").eq("project_id", projectId).order("pushed_at", { ascending:false }).limit(20),
+      ]);
+      setSettings(s ?? null);
+      setHistory(h ?? []);
+      setLoading(false);
+    })();
+  }, [projectId]);
+
+  const LANG_LABEL = { en:"English", zh:"中文", ja:"日本語" };
+  const theme = settings?.theme ?? {};
+  const greeting = settings?.greeting ?? {};
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:440, background:"var(--surface)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+        zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
+
+        {/* Header */}
+        <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
+          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>推送到 eb-console</div>
+            <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>SiteChat 問候語 + 主題色彩（不含 FAQ 卡片）</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
+            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
+            color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+        </div>
+
+        <div style={{ flex:1, overflowY:"auto", padding:20 }}>
+          {loading ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
+              <div style={{ width:24, height:24, border:"2.5px solid var(--border)",
+                borderTopColor:"var(--accent)", borderRadius:"50%",
+                animation:"spin 0.7s linear infinite", margin:"0 auto 10px" }}/>
+              載入中…
+            </div>
+          ) : !settings ? (
+            <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)", fontSize:13 }}>
+              尚未填寫 SiteChat 設定，無內容可預覽
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>推送前預覽（人工審核）</div>
+
+              <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:10, marginBottom:12 }}>
+                {settings.bot_icon_url
+                  ? <img src={settings.bot_icon_url} alt="" style={{ width:32, height:32, borderRadius:8, objectFit:"cover", flexShrink:0 }}/>
+                  : <div style={{ width:32, height:32, borderRadius:8, background:C.border, flexShrink:0 }}/>}
+                <div style={{ fontSize:13, color:"var(--text)", fontWeight:500 }}>{settings.bot_name || "（未命名 Bot）"}</div>
+              </div>
+
+              <div style={{ fontSize:11, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>主題色彩（{Object.keys(theme).length} 個變數）</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(90px, 1fr))", gap:6, marginBottom:16 }}>
+                {Object.entries(theme).map(([k,v]) => (
+                  <div key={k} title={`${k}: ${v}`} style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 6px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:6, overflow:"hidden" }}>
+                    <div style={{ width:12, height:12, borderRadius:3, flexShrink:0, border:"1px solid var(--border)", background:/^linear-gradient/.test(v)?v:v }}/>
+                    <span style={{ fontSize:10, color:"var(--text-subtle)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.replace(/^--/,"")}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ fontSize:11, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>問候語</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
+                {["en","zh","ja"].map(lang => (
+                  <div key={lang} style={{ padding:"8px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
+                    <div style={{ fontSize:10, letterSpacing:1, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:4 }}>{LANG_LABEL[lang]}</div>
+                    <div style={{ fontSize:12, color:"var(--text)", marginBottom:2 }}>{greeting?.[lang]?.welcome || "—"}</div>
+                    <div style={{ fontSize:12, color:"var(--text-subtle)" }}>{greeting?.[lang]?.hint || "—"}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding:"9px 12px", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:9, fontSize:11.5, color:"var(--amber)", marginBottom:8 }}>
+                內部 API 規格尚未提供，「確認推送」暫時停用；規格到位後會改接 `ebconsole-proxy`。
+              </div>
+              <button disabled
+                style={{ width:"100%", padding:"10px 0", borderRadius:10, border:"none",
+                  background:"var(--border)", color:"var(--text-subtle)", fontFamily:"inherit",
+                  fontSize:13, fontWeight:500, cursor:"default", display:"flex",
+                  alignItems:"center", justifyContent:"center", gap:6 }}>
+                <Ico name="send" size={13} color="currentColor"/> 確認推送
+              </button>
+            </>
+          )}
+
+          <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", margin:"20px 0 10px", fontWeight:500 }}>推送紀錄</div>
+          {history.length === 0 ? (
+            <div style={{ fontSize:12, color:"var(--text-subtle)", padding:"6px 0" }}>尚無推送紀錄</div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {history.map(h => (
+                <div key={h.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
+                  <span style={{ fontSize:10, padding:"2px 7px", borderRadius:5, fontWeight:500,
+                    background: h.status==="success" ? "var(--green-light)" : "var(--red-light)",
+                    color: h.status==="success" ? "var(--green)" : "var(--red)" }}>
+                    {h.status==="success" ? "成功" : "失敗"}
+                  </span>
+                  <span style={{ fontSize:12, color:"var(--text)" }}>{new Date(h.pushed_at).toLocaleString("zh-TW")}</span>
+                  <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:"auto" }}>{h.pushed_by || "—"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── JiraTab ──────────────────────────────────────────────────
 const JIRA_PROXY              = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/jira-proxy`;
 const CUSTOMER_ACCESS_MANAGE  = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-access-manage`;
@@ -3268,6 +3401,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [tasks,         setTasks]         = useState(project.tasks || []);
   const [saveStatus,       setSaveStatus]       = useState("idle");
   const [showCustomerAccess, setShowCustomerAccess] = useState(false);
+  const [showEbConsolePush, setShowEbConsolePush] = useState(false);
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
   const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
@@ -4202,6 +4336,23 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 ))}
               </Card>
             )}
+            {/* SiteChat → eb-console 推送：內部限定，不做在對外開放的 SiteChat 表單裡（Jim，
+                2026-08-27 明確交代）。一次性設定，推送前強制人工審核（開面板看預覽，不是打開就送），
+                避免飯店端頻繁改動觸發連動更新；歷史紀錄讀 `sitechat_ebconsole_pushes`（內部限定表，
+                無 anon policy）。實際打 API 的 `ebconsole-proxy` Edge Function 待內部規格文件到位後
+                才會接上，面板目前先把預覽/審核/歷史紀錄搭好，「確認推送」按鈕先停用。 */}
+            {info.name && info.products.includes("SiteChat") && (
+              <Card>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:12, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="send" size={13} color="currentColor"/>SiteChat → eb-console</div>
+                <div style={{ fontSize:12.5, color:C.textMid, marginBottom:14 }}>把這個專案的 SiteChat 問候語與主題色彩推送到內部 eb-console，推送前會先顯示預覽供人工審核。</div>
+                <button onClick={()=>setShowEbConsolePush(true)}
+                  style={{ padding:"8px 16px", borderRadius:9, border:`1px solid ${C.accent}`,
+                    background:"transparent", color:C.accent, fontFamily:"inherit", fontSize:13,
+                    fontWeight:500, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:6 }}>
+                  <Ico name="send" size={13} color="currentColor"/> 開啟推送面板
+                </button>
+              </Card>
+            )}
             {/* Batch 1 checklists */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 }}>
               {hasAva&&(
@@ -4281,6 +4432,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
           projectId={project.id}
           session={session}
           onClose={()=>setShowCustomerAccess(false)}/>
+      )}
+      {showEbConsolePush && (
+        <SiteChatEbConsolePanel
+          projectId={project.id}
+          session={session}
+          onClose={()=>setShowEbConsolePush(false)}/>
       )}
     </div>
   );

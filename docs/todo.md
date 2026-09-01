@@ -87,6 +87,18 @@
   5. `npm run build`／`npx eslint` 都跑過，確認沒有新增的錯誤（既有的 17 個 lint error 都在這次沒碰過的既有程式碼裡）。
 - 未解決的殘餘風險（設計上無法完全避免，範圍已大幅縮小）：兩人真的在同一個 debounce 視窗內（800ms）編輯「同一個欄位」還是後寫的贏；但「改了不相關欄位、把別人剛存的其他欄位蓋掉」這個 Jim 實際遇到的情境已經解決。
 
+### 11. SiteChat → eb-console 推送（2026-08-27 開工，進行中）
+- 需求：SiteChat 的問候語＋主題色彩要能推送進內部真正的 eb-console 設定系統；原本規劃匯出 Excel 手動比對/謄寫，改成內部團隊開一支 API，Jim 打這支 API 指定飯店做更新。Jim 明確交代：**這功能不能做在現在完全開放的 SiteChat 表單裡**，改做在 hotel-dashboard（內部、需登入）。
+- 已完成：
+  1. 新表 `sitechat_ebconsole_pushes`（`project_id`／`pushed_at`／`pushed_by`／`payload` jsonb／`status`／`response`）——**刻意不開 anon policy**，只有 `@aiello.ai` 的 authenticated 使用者能讀寫，是這個表單家族目前唯一從一開始就不套用「anon: edit via link」開放模式的表。
+  2. `hotel-project-dashboard.jsx` 新增 `SiteChatEbConsolePanel`（緊接在 `CustomerAccessPanel` 之後、`JiraTab` 之前）：一次性設定，開面板時讀 `sitechat_settings`（bot_name/bot_icon_url/theme/greeting，**不含 FAQ 卡片**——Jim 確認過範圍）做預覽，要求人工審核過才能推送（不是打開就直接送），避免飯店端頻繁改動觸發連動更新；同時讀 `sitechat_ebconsole_pushes` 顯示推送紀錄。觸發按鈕是 `ProjectDetail`「飯店填寫表單連結」卡片後面新增的 Card，`info.products.includes("SiteChat")` 才顯示。
+  3. git 還原點：`pre-ebconsole-push-2026-08-27`。
+- **尚未完成（卡在外部依賴）**：內部 API 規格文件還在準備中（Jim：「文件在準備中，但前端可以先搭起來」），所以面板裡的「確認推送」按鈕目前是**停用狀態**，只做好預覽/審核/歷史紀錄 UI。規格文件到位後要做：
+  1. 新增 `ebconsole-proxy` Edge Function（比照 `jira-proxy` 的模式：內部 API 的密鑰留在後端，前端不碰），實際打內部 API。
+  2. 呼叫成功/失敗都要寫一筆進 `sitechat_ebconsole_pushes`（含 `payload`／`status`／`response`），面板的推送紀錄區塊才有東西可讀。
+  3. 把「確認推送」按鈕從停用改成真正呼叫 `ebconsole-proxy`。
+  4. `node --check`／實際打開 hotel-dashboard 頁面確認面板渲染正常（這次改動因為沙盒 FUSE 限制無法完整跑 `npm run build`，只用 `@babel/parser` 做過 AST 語法檢查，Jim 收到後建議自己本機跑一次完整 build 確認）。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
