@@ -87,17 +87,16 @@
   5. `npm run build`／`npx eslint` 都跑過，確認沒有新增的錯誤（既有的 17 個 lint error 都在這次沒碰過的既有程式碼裡）。
 - 未解決的殘餘風險（設計上無法完全避免，範圍已大幅縮小）：兩人真的在同一個 debounce 視窗內（800ms）編輯「同一個欄位」還是後寫的贏；但「改了不相關欄位、把別人剛存的其他欄位蓋掉」這個 Jim 實際遇到的情境已經解決。
 
-### 11. SiteChat → eb-console 推送（2026-08-27 開工，進行中）
+### 11. ~~SiteChat → eb-console 推送~~ **前端+Edge Function 已接上（2026-09-01），等 Jim 補 API Key**
 - 需求：SiteChat 的問候語＋主題色彩要能推送進內部真正的 eb-console 設定系統；原本規劃匯出 Excel 手動比對/謄寫，改成內部團隊開一支 API，Jim 打這支 API 指定飯店做更新。Jim 明確交代：**這功能不能做在現在完全開放的 SiteChat 表單裡**，改做在 hotel-dashboard（內部、需登入）。
-- 已完成：
-  1. 新表 `sitechat_ebconsole_pushes`（`project_id`／`pushed_at`／`pushed_by`／`payload` jsonb／`status`／`response`）——**刻意不開 anon policy**，只有 `@aiello.ai` 的 authenticated 使用者能讀寫，是這個表單家族目前唯一從一開始就不套用「anon: edit via link」開放模式的表。
-  2. `hotel-project-dashboard.jsx` 新增 `SiteChatEbConsolePanel`（緊接在 `CustomerAccessPanel` 之後、`JiraTab` 之前）：一次性設定，開面板時讀 `sitechat_settings`（bot_name/bot_icon_url/theme/greeting，**不含 FAQ 卡片**——Jim 確認過範圍）做預覽，要求人工審核過才能推送（不是打開就直接送），避免飯店端頻繁改動觸發連動更新；同時讀 `sitechat_ebconsole_pushes` 顯示推送紀錄。觸發按鈕是 `ProjectDetail`「飯店填寫表單連結」卡片後面新增的 Card，`info.products.includes("SiteChat")` 才顯示。
-  3. git 還原點：`pre-ebconsole-push-2026-08-27`。
-- **尚未完成（卡在外部依賴）**：內部 API 規格文件還在準備中（Jim：「文件在準備中，但前端可以先搭起來」），所以面板裡的「確認推送」按鈕目前是**停用狀態**，只做好預覽/審核/歷史紀錄 UI。規格文件到位後要做：
-  1. 新增 `ebconsole-proxy` Edge Function（比照 `jira-proxy` 的模式：內部 API 的密鑰留在後端，前端不碰），實際打內部 API。
-  2. 呼叫成功/失敗都要寫一筆進 `sitechat_ebconsole_pushes`（含 `payload`／`status`／`response`），面板的推送紀錄區塊才有東西可讀。
-  3. 把「確認推送」按鈕從停用改成真正呼叫 `ebconsole-proxy`。
-  4. `node --check`／實際打開 hotel-dashboard 頁面確認面板渲染正常（這次改動因為沙盒 FUSE 限制無法完整跑 `npm run build`，只用 `@babel/parser` 做過 AST 語法檢查，Jim 收到後建議自己本機跑一次完整 build 確認）。
+- 資料模型（2026-08-27）：新表 `sitechat_ebconsole_pushes`（`project_id`／`pushed_at`／`pushed_by`／`payload` jsonb／`status`／`response`）——**刻意不開 anon policy**，只有 `@aiello.ai` 的 authenticated 使用者能讀寫，是這個表單家族目前唯一從一開始就不套用「anon: edit via link」開放模式的表。
+- 前端（2026-08-27 建、2026-09-01 接上真實呼叫）：`hotel-project-dashboard.jsx` 的 `SiteChatEbConsolePanel`（緊接在 `CustomerAccessPanel` 之後、`JiraTab` 之前）：開面板讀 `sitechat_settings`（bot_name 三語 jsonb／bot_icon_url／theme／greeting，**不含 FAQ 卡片**——Jim 確認過範圍）做預覽，人工審核過才按「確認推送」，避免飯店端頻繁改動觸發連動更新；`handlePush()` 帶登入 session 的 access_token 打 `ebconsole-proxy`，成功/失敗都會重新讀一次 `sitechat_ebconsole_pushes` 更新推送紀錄列表。觸發按鈕是 `ProjectDetail`「飯店填寫表單連結」卡片後面的 Card，`info.products.includes("SiteChat")` 才顯示。
+- 後端（2026-09-01，Jim 提供 eb-admin.aiello.ai 的 Swagger 規格後新增）：`ebconsole-proxy` Edge Function（比照 `jira-proxy` 模式，`X-API-Key` 留在後端 env `EB_ADMIN_API_KEY`）。流程是**先 GET 再 POST** `/api/admin/settings/by-kms-org`（`kms_org_name` = `projects.hotel_id`）——GET 現況、把 SiteChat 算出來的欄位 merge 進去、整包 POST 回去，刻意不用「只送我們的欄位」蓋掉 eb-console 既有但我們不認得的欄位（例如 `fontScale`）。呼叫前會再檢查一次呼叫者 email 是 `@aiello.ai`（跟 RLS policy 同一條件，不只靠 `verify_jwt`），呼叫的成功/失敗都會寫一筆進 `sitechat_ebconsole_pushes`。
+- 欄位對照表（SiteChat theme key → eb-console widget_custom_colors key，共 26 組，依 SiteChat granular 卡片由上而下排序）、locale 對照（en→en-US／zh→zh-TW／ja→ja-JP）、`--welcome-bg` 漸層取第一色碼的理由，都寫在 `ebconsole-proxy/index.ts` 檔頭註解跟 SiteChat Settings 的 `CLAUDE.md` 裡，不重複貼在這裡。**Advanced 分組的 14 個 SiteChat 專屬色彩欄位（User Messages／FAQ Cards／Destructive Action／Secondary & Feedback）跟 Text Size 都確認丟棄不送**（Jim：這些在 eb-console 端已經被 brand color／其他控制項決定，不需要對應）。
+- bot_name 為了跟 eb-console 對齊，2026-09-01 從單一字串改成三語 jsonb，見 SiteChat Settings 的 `CLAUDE.md`。
+- git 還原點：hotel-dashboard `pre-ebconsole-push-2026-08-27`、SiteChat Settings `pre-botname-i18n-2026-09-01`。
+- **唯一剩下的事**：`EB_ADMIN_API_KEY` 這個 Supabase secret 還沒設定，Jim 會自己去 Supabase 加，加之前這個功能打下去一定會拿到「EB_ADMIN_API_KEY not configured yet」的錯誤（Edge Function 有先擋這個情況，不會裸奔打一個沒有 key 的請求出去）。
+- `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`），Jim 收到後建議自己本機跑一次完整 build + 實際點開面板確認。
 
 ## 長期方向
 

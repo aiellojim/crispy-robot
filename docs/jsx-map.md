@@ -39,7 +39,7 @@
 | `HomePage` | 1312–1622 | 首頁：專案列表、地區/PIC 篩選、統計 |
 | `GEMINI_API_KEY` / `renderMarkdown` / `AiPanel` | 1623–1908 | **Gemini AI 區**：AI 助理面板（fetch Gemini API） |
 | `CustomerAccessPanel` | 1909–2072 | 客戶後台帳號管理（呼叫 `customer-access-manage`） |
-| `SiteChatEbConsolePanel` | ~2615–2780（`CustomerAccessPanel` 之後、`JiraTab` 之前） | 2026-08-27 新增：內部限定的 SiteChat→eb-console 推送面板（預覽 `sitechat_settings` 的 greeting/theme + 人工審核 + 讀 `sitechat_ebconsole_pushes` 推送紀錄）。「確認推送」按鈕目前停用（`ebconsole-proxy` Edge Function 待內部 API 規格到位後才會接上）。觸發按鈕是 `ProjectDetail` 裡緊接在「飯店填寫表單連結」卡片後面、`info.products.includes("SiteChat")` 才顯示的新 Card；狀態 `showEbConsolePush` 宣告處緊鄰既有的 `showCustomerAccess`。 |
+| `SiteChatEbConsolePanel` | ~2615–2860（`CustomerAccessPanel` 之後、`JiraTab` 之前） | 2026-08-27 新增、2026-09-01 接上真實推送：內部限定的 SiteChat→eb-console 推送面板（預覽 `sitechat_settings` 的三語 bot_name/greeting/theme + 人工審核 + 讀 `sitechat_ebconsole_pushes` 推送紀錄）。「確認推送」`handlePush()` 帶 session token 打 `EBCONSOLE_PROXY`（`ebconsole-proxy` Edge Function，常數宣告處緊鄰 `JIRA_PROXY`/`CUSTOMER_ACCESS_MANAGE`）。觸發按鈕是 `ProjectDetail` 裡緊接在「飯店填寫表單連結」卡片後面、`info.products.includes("SiteChat")` 才顯示的新 Card；狀態 `showEbConsolePush` 宣告處緊鄰既有的 `showCustomerAccess`。 |
 | `JIRA_PROXY` `CUSTOMER_ACCESS_MANAGE` `JIRA_ANON` `JIRA_STATUSES` `statusStyle` `jiraFetch` `parseEpicId` | 2073–2115 | **Jira 設定/函式區**：endpoint、狀態樣式、共用請求 |
 | `JiraTab` | 2116–2329 | Jira 分頁；內含 `fetchIssues`(≈2127)、`handleUpdateDescription`(≈2136)、`openDropdown`(≈2157)、`doTransition`(≈2166) |
 | `TasksTab` | 2330–2552 | 任務分頁；CRUD `tasks` 表 |
