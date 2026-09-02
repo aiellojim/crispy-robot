@@ -81,7 +81,27 @@ const COLOR_KEY_MAP = [
   ["--launcher-icon", "launcherIconColor"],
   ["--hint-bg", "hintBubbleBg"],
   ["--hint-text", "hintBubbleText"],
+  // 2026-09-02：原本的 14 個「SiteChat 有、eb-console 沒有」欄位，工程端已在
+  // widget_custom_colors 補上對應項目（查 https://eb-admin.aiello.ai/api-docs/ 的
+  // UpsertSettingsByKmsOrg example 確認過，14 個新欄位一一對上，數量剛好吻合），比對依據是
+  // SiteChat 側每個欄位卡片自帶的英文 label/sub（見 index.html 的 COLOR_FIELDS 定義），不是純
+  // 猜名字：
+  ["--user-bg", "userBubbleBg"],
+  ["--user-text", "userBubbleText"],
+  ["--faq-body", "cardBg"],
+  ["--faq-header", "cardHeaderBg"],
+  ["--faq-headertext", "cardHeaderText"],
+  ["--faq-link", "cardLinkColor"],
+  ["--faq-related", "cardTitleColor"],
+  ["--faq-nav", "navBtnBg"],
+  ["--destructive-btn", "endChatConfirmColor"],
+  ["--fb-timestamp", "timeColor"],
+  ["--fb-up", "feedbackPositiveColor"],
+  ["--fb-down", "feedbackNegativeColor"],
+  ["--fb-spinner", "imgSpinnerAccent"],
+  ["--fb-spinner-track", "imgSpinnerBorder"],
 ];
+// fontScale／--text-scale 仍然刻意不送（Jim 2026-09-01 的決定沒有變，這次只是補「顏色」欄位的缺口）。
 const LOCALE_MAP = { en: "en-US", zh: "zh-TW", ja: "ja-JP" };
 
 function extractFirstHex(value) {
