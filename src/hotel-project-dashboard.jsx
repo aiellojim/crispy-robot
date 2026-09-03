@@ -631,8 +631,8 @@ const MiniBar = ({ pct, color }) => (
   </div>
 );
 
-const Card = ({ children, style={} }) => (
-  <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+const Card = ({ children, style={}, ...rest }) => (
+  <div {...rest} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
     padding:24, marginBottom:16, ...style }}>
     {children}
   </div>
@@ -3422,12 +3422,15 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [filterMode, setFilterMode] = useState("all"); // all | active | done
   const [sortByDate, setSortByDate] = useState(false);
+  const [expanded, setExpanded] = useState({}); // task.id -> bool，收合列表沿用 Jira 子任務頁的展開互動
 
   const toggleSelect = (id) => setSelectedIds(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
     return next;
   });
+
+  const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
   // 篩選只影響顯示，全選／批次刪除都改成只作用在目前看得到的這份清單，避免篩選後「全選」
   // 誤刪到被篩掉、畫面上看不到的任務。已完成的任務在「全部」篩選下永遠沉到清單最下面；
@@ -3456,6 +3459,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   const addTask = () => {
     const t = { ...newTask(), project_id:projectId };
     onTasksChange([...tasks, t]);
+    setExpanded(prev => ({ ...prev, [t.id]: true })); // 新增的任務預設展開，方便直接填寫
     // Insert to DB
     sb.from("tasks").insert({
       id:t.id, project_id:projectId, name:"", description:"",
@@ -3568,12 +3572,19 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           {visibleTasks.map((task, idx) => {
             const isSelected = selectedIds.has(task.id);
+            const isOpen = !!expanded[task.id];
+            const dueRaw = task.type==="period" ? task.period_end : task.deadline;
+            const isTaskOverdue = !task.completed && dueRaw && daysUntil(dueRaw) < 0;
+            const dateLabel = task.type==="period"
+              ? (task.period_start && task.period_end ? `${fmtDate(task.period_start)} – ${fmtDate(task.period_end)}` : "尚未設定期間")
+              : (task.deadline ? fmtDate(task.deadline) : "尚未設定期限");
             return (
-            <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : C.white, opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:16 }}>
+            <Card key={task.id} onClick={()=>toggleExpand(task.id)}
+              style={{ padding:20, cursor:"pointer", border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : C.white, opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isOpen?16:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
                   {/* 完成狀態 */}
-                  <button onClick={()=>updateTask(task.id,"completed",!task.completed)}
+                  <button onClick={(e)=>{e.stopPropagation(); updateTask(task.id,"completed",!task.completed);}}
                     title={task.completed?"標記為進行中":"標記為已完成"}
                     style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, cursor:"pointer", padding:0,
                       border:`2px solid ${task.completed?C.green:C.borderMid}`,
@@ -3582,7 +3593,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                     {task.completed && <Ico name="check" size={12} color="#fff" strokeWidth={3}/>}
                   </button>
                   {/* Checkbox */}
-                  <div onClick={()=>toggleSelect(task.id)}
+                  <div onClick={(e)=>{e.stopPropagation(); toggleSelect(task.id);}}
                     style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
                       border:`2px solid ${isSelected ? C.accent : C.borderMid}`,
                       background:isSelected ? C.accent : C.white,
@@ -3591,17 +3602,30 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   </div>
                   <span style={{ fontSize:11, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
+                    onClick={e=>e.stopPropagation()}
                     placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:400, padding:"8px 12px",
                       textDecoration:task.completed?"line-through":"none", color:task.completed?"var(--text-subtle)":C.text }}
                     onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
-                <button onClick={()=>removeTask(task.id)}
-                  style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
-                    cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}><Ico name="trash" size={14} color="currentColor"/></button>
+                <div style={{ display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
+                  {/* 收合時也看得到的到期日摘要，逾期會標紅 */}
+                  <span style={{ fontSize:12, color: isTaskOverdue ? C.red : C.textLight, fontWeight:isTaskOverdue?500:400,
+                    whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:4 }}>
+                    <Ico name={task.type==="period"?"repeat":"pin"} size={12} color="currentColor"/>
+                    {dateLabel}{isTaskOverdue && "（逾期）"}
+                  </span>
+                  <Ico name="chevronR" size={14} color="var(--text-subtle)"
+                    style={{ transform: isOpen ? "rotate(90deg)" : "none", transition:"transform 0.2s", flexShrink:0 }}/>
+                  <button onClick={(e)=>{e.stopPropagation(); removeTask(task.id);}}
+                    style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
+                      cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
+                    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}><Ico name="trash" size={14} color="currentColor"/></button>
+                </div>
               </div>
 
+              {isOpen && (
+              <div onClick={e=>e.stopPropagation()}>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>內容概述</label>
                 <textarea value={task.description} onChange={e=>updateTask(task.id,"description",e.target.value)}
@@ -3694,6 +3718,8 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   }}/>
                 </button>
               </div>
+              </div>
+              )}
             </Card>
             );
           })}
