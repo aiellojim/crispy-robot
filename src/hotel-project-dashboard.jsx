@@ -3266,6 +3266,8 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             const trans = transitions[issue.key] ?? [];
             const isOpen = activeKey===issue.key;
             const isUpdating = !!updating[issue.key];
+            // Issue 徽章逾期變色：用偏灰、不飽和的磚紅，跟月曆的做法一樣避免太刺眼
+            const isIssueOverdue = issue.dueDate && issue.statusCategory !== "done" && daysUntil(issue.dueDate) < 0;
             return (
               <div key={issue.key} onClick={()=>toggleExpand(issue.key)}
                 style={{ background:C.white, border:`1px solid ${C.border}`,
@@ -3275,9 +3277,13 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                   {/* Key */}
                   <a href={`https://aiello-eng.atlassian.net/browse/${issue.key}`}
                     target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                    style={{ fontSize:12, fontWeight:500, color:"#0052cc", textDecoration:"none",
-                      fontFamily:"'DM Mono',monospace", background:"#e9f0ff",
-                      border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 8px",
+                    title={isIssueOverdue ? `已逾期（到期日：${fmtDate(issue.dueDate)}）` : undefined}
+                    style={{ fontSize:12, fontWeight:500, textDecoration:"none",
+                      fontFamily:"'DM Mono',monospace",
+                      color: isIssueOverdue ? "#A15252" : "#0052cc",
+                      background: isIssueOverdue ? "#F5E9E9" : "#e9f0ff",
+                      border: isIssueOverdue ? "1px solid #D9BDBD" : "1px solid #b3c7f7",
+                      borderRadius:6, padding:"3px 8px",
                       display:"inline-block", whiteSpace:"nowrap" }}>
                     {issue.key}
                   </a>
