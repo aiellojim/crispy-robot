@@ -374,7 +374,7 @@ const GLOBAL_CSS = `
   .jira-desc-html th, .jira-desc-html td { border:1px solid var(--border); padding:6px 10px; text-align:left; }
   .jira-desc-html th { background:var(--surface-raised); font-weight:500; }
   .jira-desc-html ul, .jira-desc-html ol { margin:0 0 8px; padding-left:20px; }
-  .jira-desc-html img { max-width:100%; border-radius:6px; }
+  .jira-desc-html .jira-img-placeholder { display:inline-flex; align-items:center; gap:4px; background:var(--surface-raised); border:1px dashed var(--border-mid); color:var(--text-subtle); font-size:12px; padding:3px 8px; border-radius:6px; margin:2px 0; }
   .jira-desc-html code { background:var(--surface-raised); padding:1px 5px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
 `;
 
@@ -3086,6 +3086,14 @@ function sanitizeJiraHtml(html) {
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
     doc.querySelectorAll("script,style,iframe,object,embed,form,link,meta").forEach(el => el.remove());
+    // Jira 的圖片（含附件截圖與裝飾小圖示）需要登入 Jira 的 session 才能載入，
+    // 直接嵌入儀表板必定破圖，因此先以簡潔的示意文字取代，不嘗試載入原圖。
+    doc.querySelectorAll("img").forEach(img => {
+      const placeholder = doc.createElement("span");
+      placeholder.className = "jira-img-placeholder";
+      placeholder.textContent = "🖼 圖片暫不支援顯示";
+      img.replaceWith(placeholder);
+    });
     doc.querySelectorAll("*").forEach(el => {
       [...el.attributes].forEach(attr => {
         const name  = attr.name.toLowerCase();
