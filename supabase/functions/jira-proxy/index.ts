@@ -73,8 +73,13 @@ Deno.serve(async (req) => {
     }
 
     // JQL: 只用 parent 查詢，避免 "Epic Link" 在新版 Jira 觸發 410
+    // 2026-09-03：擴充子任務詳細資訊面板，一次多要 duedate/created/updated/reporter/subtasks——
+    // 這些欄位在 /search/jql 這支批次端點上跟其他欄位一樣不用多花一次 API 呼叫。description
+    // 刻意不在這裡要（ADF 結構化 JSON，這支批次端點也證實不支援 expand=renderedFields，見
+    // /issueDescription 那個新端點），改成前端展開卡片時才 lazy 打一次單一 issue 的端點去拿
+    // Jira 算好的 HTML，避免列表初次載入時間被拖慢。
     const jql    = `parent = ${epicId} ORDER BY created ASC`;
-    const fields = ["summary","status","assignee","issuetype","priority"];
+    const fields = ["summary","status","assignee","issuetype","priority","duedate","created","updated","reporter","subtasks"];
     const apiUrl = `${JIRA_BASE}/rest/api/3/search/jql`;
 
     const res = await fetch(apiUrl, {
@@ -100,9 +105,48 @@ Deno.serve(async (req) => {
       statusCategory: issue.fields.status?.statusCategory?.key ?? "new",
       assignee: issue.fields.assignee?.displayName ?? null,
       type:     issue.fields.issuetype?.name ?? "",
+      priority: issue.fields.priority?.name ?? null,
+      priorityIconUrl: issue.fields.priority?.iconUrl ?? null,
+      dueDate:  issue.fields.duedate ?? null,
+      created:  issue.fields.created ?? null,
+      updated:  issue.fields.updated ?? null,
+      reporter: issue.fields.reporter?.displayName ?? null,
+      subtasks: (issue.fields.subtasks ?? []).map((st: any) => ({
+        key:            st.key,
+        summary:        st.fields?.summary ?? "",
+        status:         st.fields?.status?.name ?? "",
+        statusCategory: st.fields?.status?.statusCategory?.key ?? "new",
+      })),
     }));
 
     return new Response(JSON.stringify({ issues }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // ── GET /issueDescription?issueKey=AHP-456 ─────────────────────────────────
+  // 2026-09-03 新增：子任務詳細資訊面板展開時才 lazy 呼叫。description 是 ADF 結構化 JSON，
+  // 批次端點 /search/jql 實測不支援 expand=renderedFields（回 400 Invalid request payload，
+  // 跟社群回報的新版搜尋端點限制一致），只有這支單一 issue 的舊端點支援，回傳 Jira 自己算好、
+  // 跟 Jira 網頁上看到的一模一樣的 HTML（含表格、mention 連結等），不用自己刻 ADF 轉換器。
+  if (req.method === "GET" && action === "issueDescription") {
+    const issueKey = url.searchParams.get("issueKey");
+    if (!issueKey) {
+      return new Response(JSON.stringify({ error: "issueKey required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const res = await fetch(
+      `${JIRA_BASE}/rest/api/3/issue/${issueKey}?fields=description&expand=renderedFields`,
+      { headers: { Authorization: authHeader, Accept: "application/json" } }
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      return new Response(JSON.stringify({ error: data }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ descriptionHtml: data.renderedFields?.description ?? null }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

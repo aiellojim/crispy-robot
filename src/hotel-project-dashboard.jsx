@@ -360,6 +360,19 @@ const GLOBAL_CSS = `
     content:""; position:fixed; inset:0; z-index:99990; pointer-events:none;
     background:repeating-linear-gradient(0deg, rgba(0,255,65,0.04) 0px, rgba(0,255,65,0.04) 1px, transparent 1px, transparent 3px);
   }
+
+  /* Jira description 展開面板：後端回傳 Jira 原生 renderedFields HTML（含表格、清單、mention 連結等），
+     這裡只做最基本的排版收斂，不動內容本身。 */
+  .jira-desc-html { font-size:13px; line-height:1.6; color:var(--text); }
+  .jira-desc-html p { margin:0 0 8px; }
+  .jira-desc-html p:last-child { margin-bottom:0; }
+  .jira-desc-html a { color:var(--accent); }
+  .jira-desc-html table { border-collapse:collapse; width:100%; margin:8px 0; font-size:12px; }
+  .jira-desc-html th, .jira-desc-html td { border:1px solid var(--border); padding:6px 10px; text-align:left; }
+  .jira-desc-html th { background:var(--surface-raised); font-weight:500; }
+  .jira-desc-html ul, .jira-desc-html ol { margin:0 0 8px; padding-left:20px; }
+  .jira-desc-html img { max-width:100%; border-radius:6px; }
+  .jira-desc-html code { background:var(--surface-raised); padding:1px 5px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
 `;
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -3014,6 +3027,33 @@ function parseEpicId(epicUrl) {
   return m ? m[1].toUpperCase() : null;
 }
 
+// Jira 的 renderedFields.description 是 Jira 自己算好的 HTML（跟 Jira 網頁上看到的一樣），理論上是
+// 可信任來源，但終究內容最終出自使用者在 Jira 上打的字，塞進頁面前還是做一層最小消毒。專案目前刻意
+// 不依賴外部 sanitize 套件（package.json 沒有 DOMPurify），這裡手刻一個最小可用版本：拿掉危險標籤、
+// 拿掉 on* 事件屬性和 javascript: 連結，並強制所有連結在新分頁開啟。
+function sanitizeJiraHtml(html) {
+  if (!html) return "";
+  try {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("script,style,iframe,object,embed,form,link,meta").forEach(el => el.remove());
+    doc.querySelectorAll("*").forEach(el => {
+      [...el.attributes].forEach(attr => {
+        const name  = attr.name.toLowerCase();
+        const value = attr.value.trim().toLowerCase();
+        if (name.startsWith("on")) el.removeAttribute(attr.name);
+        if ((name === "href" || name === "src") && value.startsWith("javascript:")) el.removeAttribute(attr.name);
+      });
+      if (el.tagName === "A") {
+        el.setAttribute("target", "_blank");
+        el.setAttribute("rel", "noreferrer noopener");
+      }
+    });
+    return doc.body.innerHTML;
+  } catch {
+    return "";
+  }
+}
+
 const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken }) => {
   const epicId = parseEpicId(epicUrl);
   const [issues,      setIssues]      = useState([]);
@@ -3024,6 +3064,8 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
   const [updating,    setUpdating]    = useState({});
   const [descLoading, setDescLoading] = useState(false);
   const [descSuccess, setDescSuccess] = useState(false);
+  const [expanded,     setExpanded]     = useState({});
+  const [descriptions, setDescriptions] = useState({});
 
   const fetchIssues = async () => {
     if (!epicId) return;
@@ -3084,6 +3126,22 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
     setUpdating(prev => ({ ...prev, [issueKey]: false }));
   };
 
+  // 點擊卡片展開/收合詳細資訊；description 是唯一需要額外打一次 API 的欄位，
+  // 第一次展開時才 lazy 抓，之後切換只是單純的 UI 狀態，不重打
+  const toggleExpand = async (issueKey) => {
+    setExpanded(prev => ({ ...prev, [issueKey]: !prev[issueKey] }));
+    if (!descriptions[issueKey]) {
+      setDescriptions(prev => ({ ...prev, [issueKey]: { loading:true, html:null, error:false } }));
+      const data = await jiraFetch("issueDescription", { issueKey }, null, accessToken);
+      setDescriptions(prev => ({
+        ...prev,
+        [issueKey]: data.error
+          ? { loading:false, html:null, error:true }
+          : { loading:false, html:data.descriptionHtml ?? null, error:false },
+      }));
+    }
+  };
+
   const st = (issue) => statusStyle(issue.statusCategory ?? "new");
 
   return (
@@ -3138,10 +3196,10 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
       {!loading && issues.length>0 && (
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:8 }}>
           {/* Header */}
-          <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px",
+          <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px 20px",
             gap:12, padding:"6px 16px", fontSize:11, fontWeight:500,
             color:C.textLight, letterSpacing:"0.08em", textTransform:"uppercase" }}>
-            <span>Issue</span><span>名稱</span><span>負責人</span><span>狀態</span>
+            <span>Issue</span><span>名稱</span><span>負責人</span><span>狀態</span><span/>
           </div>
           {issues.map(issue => {
             const s = st(issue);
@@ -3149,13 +3207,14 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             const isOpen = activeKey===issue.key;
             const isUpdating = !!updating[issue.key];
             return (
-              <div key={issue.key} style={{ background:C.white, border:`1px solid ${C.border}`,
-                borderRadius:12, padding:"12px 16px", position:"relative" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px",
+              <div key={issue.key} onClick={()=>toggleExpand(issue.key)}
+                style={{ background:C.white, border:`1px solid ${C.border}`,
+                borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px 20px",
                   gap:12, alignItems:"center" }}>
                   {/* Key */}
                   <a href={`https://aiello-eng.atlassian.net/browse/${issue.key}`}
-                    target="_blank" rel="noreferrer"
+                    target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
                     style={{ fontSize:12, fontWeight:500, color:"#0052cc", textDecoration:"none",
                       fontFamily:"'DM Mono',monospace", background:"#e9f0ff",
                       border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 8px",
@@ -3171,7 +3230,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                   </span>
                   {/* Status dropdown trigger */}
                   <div style={{ position:"relative" }}>
-                    <button onClick={()=>openDropdown(issue.key)} disabled={isUpdating}
+                    <button onClick={(e)=>{e.stopPropagation(); openDropdown(issue.key);}} disabled={isUpdating}
                       style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 10px",
                         borderRadius:8, border:`1px solid ${s.color}44`,
                         background:s.bg, color:s.color, fontSize:12, fontWeight:500,
@@ -3204,7 +3263,77 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                       </div>
                     )}
                   </div>
+                  {/* Chevron indicator */}
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <Ico name="chevronR" size={14} color="var(--text-subtle)"
+                      style={{ transform: expanded[issue.key] ? "rotate(90deg)" : "none", transition:"transform 0.2s" }}/>
+                  </div>
                 </div>
+
+                {expanded[issue.key] && (
+                  <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}`,
+                    display:"flex", flexDirection:"column", gap:12 }}>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                      <span style={{ padding:"3px 10px", borderRadius:7, fontSize:11, fontWeight:500,
+                        background:C.bg, color:C.textMid, border:`1px solid ${C.border}` }}>{issue.type || "—"}</span>
+                      {issue.priority && (
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px",
+                          borderRadius:7, fontSize:11, fontWeight:500, background:C.bg, color:C.textMid,
+                          border:`1px solid ${C.border}` }}>
+                          {issue.priorityIconUrl && <img src={issue.priorityIconUrl} width={12} height={12} alt=""/>}
+                          {issue.priority}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(150px,1fr))",
+                      gap:8, fontSize:12, color:C.textMid }}>
+                      <div><span style={{ color:C.textLight }}>到期日：</span>{fmtDate(issue.dueDate)}</div>
+                      <div><span style={{ color:C.textLight }}>建立時間：</span>{fmtDate(issue.created)}</div>
+                      <div><span style={{ color:C.textLight }}>更新時間：</span>{fmtDate(issue.updated)}</div>
+                      <div><span style={{ color:C.textLight }}>報告人：</span>{issue.reporter ?? "—"}</div>
+                    </div>
+
+                    {issue.subtasks?.length > 0 && (
+                      <div>
+                        <div style={{ fontSize:11, fontWeight:500, color:C.textLight, marginBottom:6,
+                          textTransform:"uppercase", letterSpacing:"0.06em" }}>子任務</div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                          {issue.subtasks.map(sub => {
+                            const subS = statusStyle(sub.statusCategory ?? "new");
+                            return (
+                              <div key={sub.key} style={{ display:"flex", alignItems:"center", gap:8, fontSize:12 }}>
+                                <span style={{ fontFamily:"'DM Mono',monospace", color:"#0052cc",
+                                  background:"#e9f0ff", border:"1px solid #b3c7f7", borderRadius:6,
+                                  padding:"2px 6px", whiteSpace:"nowrap" }}>{sub.key}</span>
+                                <span style={{ flex:1, color:C.text }}>{sub.summary}</span>
+                                <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:500,
+                                  background:subS.bg, color:subS.color, whiteSpace:"nowrap" }}>{sub.status}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <div style={{ fontSize:11, fontWeight:500, color:C.textLight, marginBottom:6,
+                        textTransform:"uppercase", letterSpacing:"0.06em" }}>描述</div>
+                      {descriptions[issue.key]?.loading && (
+                        <div style={{ fontSize:12, color:C.textLight }}>載入中…</div>
+                      )}
+                      {descriptions[issue.key]?.error && (
+                        <div style={{ fontSize:12, color:C.red }}>無法讀取描述內容，請稍後再試。</div>
+                      )}
+                      {!descriptions[issue.key]?.loading && !descriptions[issue.key]?.error && (
+                        descriptions[issue.key]?.html
+                          ? <div className="jira-desc-html"
+                              dangerouslySetInnerHTML={{ __html: sanitizeJiraHtml(descriptions[issue.key].html) }}/>
+                          : <div style={{ fontSize:12, color:C.textLight }}>（無描述內容）</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
