@@ -65,6 +65,7 @@ const CAL_COLORS = {
   batch2:    { bg:"var(--cal-batch2-bg)",  text:"var(--cal-batch2-text)",  border:"var(--cal-batch2-border)" },
   taskDL:    { bg:"var(--cal-task-bg)",    text:"var(--cal-task-text)",    border:"var(--cal-task-border)"   },
   taskPeriod:{ bg:"var(--cal-period-bg)",  text:"var(--cal-period-text)",  border:"var(--cal-period-border)" },
+  jira:      { bg:"var(--cal-jira-bg)",    text:"var(--cal-jira-text)",    border:"var(--cal-jira-border)"   },
 };
 
 // ─── Theme — all values are CSS variable references ───────────
@@ -314,6 +315,7 @@ const GLOBAL_CSS = `
     --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
     --cal-task-bg: #FEF3C7; --cal-task-text: #92400E; --cal-task-border: #FCD34D;
     --cal-period-bg: #FFE4E6; --cal-period-text: #9F1239; --cal-period-border: #FCA5A5;
+    --cal-jira-bg: #CFFAFE; --cal-jira-text: #155E75; --cal-jira-border: #67E8F9;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
   }
@@ -334,6 +336,7 @@ const GLOBAL_CSS = `
     --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
     --cal-task-bg: #2A1C00; --cal-task-text: #FCD34D; --cal-task-border: #78350F;
     --cal-period-bg: #2D0A14; --cal-period-text: #FCA5A5; --cal-period-border: #881337;
+    --cal-jira-bg: #083344; --cal-jira-text: #67E8F9; --cal-jira-border: #155E75;
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
   }
@@ -414,7 +417,7 @@ const newTask = () => ({
   id: crypto.randomUUID(), project_id: null,
   name:"", description:"", type:"deadline",
   deadline:"", period_start:"", period_end:"", url:"",
-  is_internal: true,
+  is_internal: true, completed: false,
 });
 
 // ─── DB ↔ UI ──────────────────────────────────────────────────
@@ -1218,11 +1221,47 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
 };
 
 // ─── Calendar Page ─────────────────────────────────────────────
-const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
+const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessToken }) => {
   const today = new Date();
   const [year,        setYear]        = useState(today.getFullYear());
   const [month,       setMonth]       = useState(today.getMonth());
-  const [filters,     setFilters]     = useState({ launch:true, batch:true, task:true });
+  const [filters,     setFilters]     = useState({ launch:true, batch:true, task:true, jira:true });
+  const [jiraEvents,  setJiraEvents]  = useState([]);
+  const [jiraLoading, setJiraLoading] = useState(false);
+
+  // Jira 到期日：這個月曆是儀表板裡隨時會點進來看的頁面，跟單一專案的「Jira 子任務」分頁不同，
+  // 不能每次開都對 29+ 個專案的 epic 各打一次 Jira。2026-09-03 決定先簡化成「只在打開月曆頁時
+  // 才批次抓一次、存在這個頁面自己的 state 裡」，不做跨頁快取——每次進月曆看到的都是當下最新
+  // 資料，但離開頁面重進來會重抓一次；之後如果 Jim 覺得需要更即時的儀表內部通知提醒，再評估要
+  // 不要另外做持久化快取。
+  useEffect(() => {
+    const epics = [...new Set(
+      projects.map(p => parseEpicId(p.info.jiraEpic)).filter(Boolean)
+    )];
+    if (epics.length === 0) return;
+    setJiraLoading(true);
+    (async () => {
+      const results = await Promise.all(
+        epics.map(epicId => jiraFetch("issues", { epicId }, null, accessToken))
+      );
+      const list = [];
+      results.forEach((res, i) => {
+        const epicId = epics[i];
+        const proj = projects.find(p => parseEpicId(p.info.jiraEpic) === epicId);
+        const name = proj?.info.name || "（未命名）";
+        (res.issues ?? []).forEach(issue => {
+          if (!issue.dueDate) return;
+          list.push({
+            date: issue.dueDate, label: name, sub: `Jira：${issue.summary}`,
+            ...CAL_COLORS.jira, taskId: null,
+            jiraUrl: `https://aiello-eng.atlassian.net/browse/${issue.key}`,
+          });
+        });
+      });
+      setJiraEvents(list);
+      setJiraLoading(false);
+    })();
+  }, [projects, accessToken]);
   const [expandedDay, setExpandedDay] = useState(null);
   const [expandedPos, setExpandedPos] = useState(null);
   const gridRef = useRef(null);
@@ -1286,8 +1325,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
         }
       });
     }
+    if (filters.jira) {
+      jiraEvents.forEach(ev => { if (inMonth(ev.date)) list.push(ev); });
+    }
     return list;
-  }, [projects, allTasks, year, month, filters]);
+  }, [projects, allTasks, year, month, filters, jiraEvents]);
 
   const firstDay=new Date(year,month,1).getDay(), daysInMonth=new Date(year,month+1,0).getDate();
   const cells=[];
@@ -1410,12 +1452,13 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
           <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-          {[{ k:"launch", label:"上線日", ...CAL_COLORS.launch },{ k:"batch", label:"資料期限", ...CAL_COLORS.batch1 },{ k:"task", label:"任務", ...CAL_COLORS.taskDL }].map(({ k, label, bg, text, border })=>(
+          {[{ k:"launch", label:"上線日", ...CAL_COLORS.launch },{ k:"batch", label:"資料期限", ...CAL_COLORS.batch1 },{ k:"task", label:"任務", ...CAL_COLORS.taskDL },{ k:"jira", label:"Jira 到期日", ...CAL_COLORS.jira }].map(({ k, label, bg, text, border })=>(
             <button key={k} onClick={()=>toggleFilter(k)}
               style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:400, transition:"all 0.15s", background:filters[k]?bg:C.bg, border:`1.5px solid ${filters[k]?border:C.border}`, color:filters[k]?text:C.textLight, opacity:filters[k]?1:0.6 }}>
               <span style={{ width:8, height:8, borderRadius:"50%", background:filters[k]?text:C.borderMid, flexShrink:0 }}/>{label}
             </button>
           ))}
+          {jiraLoading && <span style={{ fontSize:11, color:C.textLight }}>Jira 資料讀取中…</span>}
         </div>
       </div>
 
@@ -1469,12 +1512,12 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                       <div style={{ display:"flex", flexDirection:"column", gap:3, flex:1, overflow:"hidden" }}>
                         {dayEvents.slice(0,2).map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                            onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); }}
-                            style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:ev.taskId?"pointer":"default", transition:"opacity 0.15s" }}
-                            onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                            onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); else if(ev.jiraUrl) window.open(ev.jiraUrl,"_blank","noopener"); }}
+                            style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default", transition:"opacity 0.15s" }}
+                            onMouseEnter={e=>{ if(ev.taskId||ev.jiraUrl) e.currentTarget.style.opacity="0.7"; }}
                             onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
                             <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                              {ev.sub}{ev.taskId?" ✎":""}
+                              {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                             </div>
                             <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
@@ -1507,12 +1550,12 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                 {dayEvs.map((ev,ei)=>(
                   <div key={ei} title={`${ev.label} — ${ev.sub}`}
                     style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, flexShrink:0, display:"flex", alignItems:"flex-start", gap:4 }}>
-                    <div style={{ flex:1, minWidth:0, cursor:ev.taskId?"pointer":"default" }}
-                      onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); }}}
-                      onMouseEnter={e=>{ if(ev.taskId) e.currentTarget.style.opacity="0.7"; }}
+                    <div style={{ flex:1, minWidth:0, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default" }}
+                      onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); } else if(ev.jiraUrl){ window.open(ev.jiraUrl,"_blank","noopener"); }}}
+                      onMouseEnter={e=>{ if(ev.taskId||ev.jiraUrl) e.currentTarget.style.opacity="0.7"; }}
                       onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
                       <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                        {ev.sub}{ev.taskId?" ✎":""}
+                        {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                       </div>
                       <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                     </div>
@@ -1566,6 +1609,13 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted }) => {
                       onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
                       title="刪除任務"><Ico name="trash" size={13} color="currentColor"/></button>
                   </div>
+                )}
+                {ev.jiraUrl && !ev.taskId && (
+                  <button onClick={()=>window.open(ev.jiraUrl,"_blank","noopener")}
+                    style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s", flexShrink:0 }}
+                    onMouseEnter={e=>{ e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--surface-raised)"; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
+                    title="在 Jira 開啟"><Ico name="link" size={13} color="currentColor"/></button>
                 )}
               </div>
             ))}
@@ -3360,14 +3410,38 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
 const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   const taskTimer = useRef({});
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [filterMode, setFilterMode] = useState("all"); // all | active | done
+  const [sortByDate, setSortByDate] = useState(false);
 
   const toggleSelect = (id) => setSelectedIds(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
     return next;
   });
-  const isAllSelected = tasks.length > 0 && selectedIds.size === tasks.length;
-  const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(tasks.map(t => t.id)));
+
+  // 篩選只影響顯示，全選／批次刪除都改成只作用在目前看得到的這份清單，避免篩選後「全選」
+  // 誤刪到被篩掉、畫面上看不到的任務。已完成的任務在「全部」篩選下永遠沉到清單最下面；
+  // 排序開關只決定「進行中」跟「已完成」各自內部要不要按到期日排。
+  const visibleTasks = useMemo(() => {
+    let list = filterMode==="active" ? tasks.filter(t=>!t.completed)
+      : filterMode==="done" ? tasks.filter(t=>t.completed)
+      : tasks;
+    if (sortByDate) {
+      const dateKey = (t) => t.type==="period" ? t.period_start : t.deadline;
+      list = [...list].sort((a,b) => {
+        const ka=dateKey(a), kb=dateKey(b);
+        if (!ka && !kb) return 0;
+        if (!ka) return 1;
+        if (!kb) return -1;
+        return ka.localeCompare(kb);
+      });
+    }
+    if (filterMode==="all") list = [...list].sort((a,b)=> (a.completed===b.completed)?0:a.completed?1:-1);
+    return list;
+  }, [tasks, filterMode, sortByDate]);
+
+  const isAllSelected = visibleTasks.length > 0 && visibleTasks.every(t=>selectedIds.has(t.id));
+  const toggleSelectAll = () => setSelectedIds(isAllSelected ? new Set() : new Set(visibleTasks.map(t => t.id)));
 
   const addTask = () => {
     const t = { ...newTask(), project_id:projectId };
@@ -3406,7 +3480,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       await sb.from("tasks").upsert({
         id:t.id, project_id:t.project_id, name:t.name, description:t.description,
         type:t.type, deadline:t.deadline||null, period_start:t.period_start||null, period_end:t.period_end||null,
-        url:t.url||"", is_internal:t.is_internal??true,
+        url:t.url||"", is_internal:t.is_internal??true, completed:t.completed??false,
       });
     }, 800);
   };
@@ -3432,6 +3506,31 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
         </div>
       </div>
 
+      {/* 篩選 + 排序 */}
+      {tasks.length > 0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between",
+          gap:12, marginBottom:16 }}>
+          <div style={{ display:"flex", gap:8 }}>
+            {[{ v:"all", text:"全部" }, { v:"active", text:"進行中" }, { v:"done", text:"已完成" }].map(({ v, text }) => (
+              <button key={v} onClick={()=>setFilterMode(v)}
+                style={{ padding:"6px 14px", borderRadius:20, fontFamily:"inherit", fontSize:12, fontWeight:400,
+                  cursor:"pointer", transition:"all 0.15s",
+                  border:`1px solid ${filterMode===v?C.accent:C.border}`,
+                  background:filterMode===v?C.accent:C.white, color:filterMode===v?"#fff":C.textMid }}>
+                {text}
+              </button>
+            ))}
+          </div>
+          <button onClick={()=>setSortByDate(v=>!v)}
+            style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8,
+              fontFamily:"inherit", fontSize:12, cursor:"pointer", transition:"all 0.15s",
+              border:`1px solid ${sortByDate?C.accent:C.border}`,
+              background:sortByDate?C.accentLight:C.white, color:sortByDate?C.accent:C.textMid }}>
+            <Ico name="sort" size={13} color="currentColor"/>依到期日排序
+          </button>
+        </div>
+      )}
+
       {/* 批次操作列 */}
       {selectedIds.size > 0 && (
         <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
@@ -3450,14 +3549,28 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
           <div style={{ marginBottom:10 }}><Ico name="clipboardList" size={32} color="var(--text-subtle)"/></div>
           <div style={{ fontSize:14, fontWeight:400 }}>尚無任務，點擊右上角「新增任務」開始</div>
         </div>
+      ) : visibleTasks.length===0 ? (
+        <div style={{ textAlign:"center", padding:"50px 0", color:C.textLight }}>
+          <div style={{ marginBottom:10 }}><Ico name="clipboardList" size={32} color="var(--text-subtle)"/></div>
+          <div style={{ fontSize:14, fontWeight:400 }}>{filterMode==="done"?"還沒有已完成的任務":"目前沒有進行中的任務"}</div>
+        </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-          {tasks.map((task, idx) => {
+          {visibleTasks.map((task, idx) => {
             const isSelected = selectedIds.has(task.id);
             return (
-            <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : C.white }}>
+            <Card key={task.id} style={{ padding:20, border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : C.white, opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:16 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
+                  {/* 完成狀態 */}
+                  <button onClick={()=>updateTask(task.id,"completed",!task.completed)}
+                    title={task.completed?"標記為進行中":"標記為已完成"}
+                    style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, cursor:"pointer", padding:0,
+                      border:`2px solid ${task.completed?C.green:C.borderMid}`,
+                      background:task.completed?C.green:C.white,
+                      display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    {task.completed && <Ico name="check" size={12} color="#fff" strokeWidth={3}/>}
+                  </button>
                   {/* Checkbox */}
                   <div onClick={()=>toggleSelect(task.id)}
                     style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
@@ -3468,7 +3581,8 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   </div>
                   <span style={{ fontSize:11, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
-                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:400, padding:"8px 12px" }}
+                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:400, padding:"8px 12px",
+                      textDecoration:task.completed?"line-through":"none", color:task.completed?"var(--text-subtle)":C.text }}
                     onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
                 <button onClick={()=>removeTask(task.id)}
@@ -4948,7 +5062,7 @@ export default function App() {
         const tasksByProject = {};
         (taskRows??[]).forEach(t => {
           if (!tasksByProject[t.project_id]) tasksByProject[t.project_id]=[];
-          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"", is_internal:t.is_internal??true });
+          tasksByProject[t.project_id].push({ id:t.id, project_id:t.project_id, name:t.name||"", description:t.description||"", type:t.type||"deadline", deadline:t.deadline||"", period_start:t.period_start||"", period_end:t.period_end||"", url:t.url||"", is_internal:t.is_internal??true, completed:t.completed??false });
         });
         const projs = (rows??[]).map(r=>({ ...dbToUi(r,progMap[r.id]), tasks:tasksByProject[r.id]||[] }));
         setProjects(projs);
@@ -5284,7 +5398,7 @@ export default function App() {
       {isDetailView
         ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session} profile={profile}/>
         : page==="calendar"
-          ? <CalendarPage projects={projects} allTasks={allTasks} onTaskAdded={(task, isEdit) => {
+          ? <CalendarPage projects={projects} allTasks={allTasks} accessToken={session?.access_token} onTaskAdded={(task, isEdit) => {
               setAllTasks(prev => isEdit
                 ? prev.map(t => t.id===task.id ? { ...t, ...task } : t)
                 : [...prev, task]
