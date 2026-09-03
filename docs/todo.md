@@ -40,7 +40,8 @@
   - **方案 A（`x-project-id` 自訂 header + RLS 用 `current_setting('request.headers')` 檢查）**：REST 讀寫可行，但 **Realtime 的 `postgres_changes` 不吃自訂 header**，只認 JWT claim（`supabase.realtime.setAuth()`），查證見 Supabase 官方文件 Realtime > Postgres Changes > Custom tokens 段落。套用後會讓即時同步整個失效，已在正式環境 canary 測試（`welcome_messages` 表）後確認並復原，不能用。
   - **方案 B（推薦）：短效自訂 JWT，帶 `project_id` claim**，REST 用 `Authorization: Bearer <jwt>`、Realtime 用 `supabase.realtime.setAuth(jwt)`，RLS 統一用 `(auth.jwt()->>'project_id')::uuid = project_id` 判斷。REST 跟 Realtime 都吃同一份 JWT，理論上兩邊體驗都不受影響。
   - 方案 B 需要：(1) 新 Edge Function 簽發短效 JWT（給 project_id、驗證存在後簽發）；(2) Jim 手動把專案的 **JWT Secret**（Dashboard → Settings → API keys → JWT Secret）加進 Supabase Secrets 供該 function 簽章用——這把密鑰我這邊沒有工具能讀取，必須 Jim 手動處理；(3) 表單前端要在拿到 JWT 前先擋一下渲染（bootstrap 變非同步）。
-- **狀態：等 Jim 決定要不要做方案 B（有明確的額外成本：新 function + 新 secret + 前端 bootstrap 改非同步），再繼續動工。**
+  - **2026-09-03 補充：JWT 續期（推演出來的隱藏成本，todo 原文沒明講）**——JWT 是短效設計，飯店端常見「分頁開一整天慢慢填」的用法，超過 JWT 效期後，即使是既有的 debounce 自動存檔也會被 RLS 判定 JWT 過期而寫入失敗。單純換 JWT 這個動作本身不影響單次讀寫的速度（換到之後每次 REST/Realtime 呼叫都直接帶同一份 JWT，跟現在帶 anon key 一樣，不會每次寫入都重新驗證），但需要額外設計續期機制：(a) 前端在 JWT 快過期前背景偷偷重新呼叫簽發 function 換一份新的（使用者無感），或 (b) 寫入失敗時偵測是 JWT 過期、自動換新後重試一次。這段還沒設計，方案 B 動工時要一併考慮，不然長時間開著分頁填表會無預警存檔失敗。
+- **狀態：等 Jim 決定要不要做方案 B（有明確的額外成本：新 function + 新 secret + 前端 bootstrap 改非同步 + JWT 續期機制），再繼續動工。**
 
 ### 7. AVA 表單「自訂分頁」功能（2026-07-22 討論，尚未動工）
 - 需求：PIN 解鎖後的人員可以像 Excel 加分頁一樣，自行在 AVA 表單新增分頁與欄位，不需要每次都改 code。
