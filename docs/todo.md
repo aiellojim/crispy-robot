@@ -116,5 +116,4 @@
 1. Google Drive MCP 停用需 Jim 在 `/mcp` 介面手動操作（帳號層級 connector，CLI 停不掉）；在那之前依 CLAUDE.md 硬規則忽略即可。
 2. ~~`customer-portal/Dashboard.jsx` 程式碼不在本 repo，實際位置待 Jim 確認~~ **已釐清（2026-07-21，Jim 確認）**：`customer-auth`、`customer-check` 這兩個 Edge Function、`customer_access.hotel_id`、`customer_checklist_log` 都屬於**另一個正在開發中的專案**，原始碼不在 Jim 能給這個 session 讀取的資料夾裡；該服務**尚未上線，目前算停用狀態**，之後遇到可以忽略，不用當成本專案的缺口處理。
 3. 任務狀態追蹤的方案 A/B 落選原因待 Jim 補述（見上方待辦 #1）。
-4. 建議 Jim 把 `mcp__claude_ai_Supabase__get_logs` 加進 `.claude/settings.json` 的 allow——
-   deploy commands 每次都要查 log，目前會跳權限提示（權限設定依維護協議須由 Jim 決定，模型不自行修改）。
+4. ~~建議 Jim 把 `mcp__claude_ai_Supabase__get_logs` 加進 `.claude/settings.json` 的 allow~~ **已解決（2026-09-03，Jim 同意後加入）**：加進 `.claude/settings.local.json`（跟既有的 `get_advisors`／`execute_sql` 同一份清單），deploy commands 查 log 不用再跳權限提示。
