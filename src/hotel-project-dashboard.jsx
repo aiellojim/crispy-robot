@@ -130,7 +130,7 @@ const GLOBAL_CSS = `
     --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
     --cal-task-bg:   #FEF3C7; --cal-task-text:   #92400E; --cal-task-border:   #FCD34D;
     --cal-period-bg: #FFE4E6; --cal-period-text:  #9F1239; --cal-period-border: #FCA5A5;
-    --cal-jira-bg: #F1F5F9; --cal-jira-text: #334155; --cal-jira-border: #CBD5E1;
+    --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
   }
@@ -168,7 +168,7 @@ const GLOBAL_CSS = `
       --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
       --cal-task-bg:   #2A1C00; --cal-task-text:   #FCD34D; --cal-task-border:   #78350F;
       --cal-period-bg: #2D0A14; --cal-period-text:  #FCA5A5; --cal-period-border: #881337;
-      --cal-jira-bg: #1E293B; --cal-jira-text: #CBD5E1; --cal-jira-border: #475569;
+      --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
       --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
       --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
     }
@@ -317,7 +317,7 @@ const GLOBAL_CSS = `
     --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
     --cal-task-bg: #FEF3C7; --cal-task-text: #92400E; --cal-task-border: #FCD34D;
     --cal-period-bg: #FFE4E6; --cal-period-text: #9F1239; --cal-period-border: #FCA5A5;
-    --cal-jira-bg: #F1F5F9; --cal-jira-text: #334155; --cal-jira-border: #CBD5E1;
+    --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
   }
@@ -338,7 +338,7 @@ const GLOBAL_CSS = `
     --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
     --cal-task-bg: #2A1C00; --cal-task-text: #FCD34D; --cal-task-border: #78350F;
     --cal-period-bg: #2D0A14; --cal-period-text: #FCA5A5; --cal-period-border: #881337;
-    --cal-jira-bg: #1E293B; --cal-jira-text: #CBD5E1; --cal-jira-border: #475569;
+    --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
   }
