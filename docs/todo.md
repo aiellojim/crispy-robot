@@ -44,7 +44,8 @@
 - **2026-09-03 決定：分階段做，不一次做完 20 張表**。Jim 選擇先只針對 `AVA basic settings`（主表，填的資料敏感度較高——含 `floor_wifi_rooms` 明碼 WiFi 密碼）套用方案 B，跑出實際效果（含上面補充的 JWT 續期機制）後，有信心了再擴大到其他表單（`AVA UI settings`、`SiteChat Settings` 等）。
   - 待確認：`AVA basic settings` 實際涵蓋哪幾張表——依現有記錄推斷應包含 `hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`tmsp_room_rows`、`room_types`、`room_type_images`、`welcome_messages`、`pending_confirmation_items`、`reference_documents`，但這是從 todo #5／#9 的敘述反推的，還沒有直接讀過 `AVA basic settings` 的原始碼確認 bootstrap 邏輯跟完整表清單——**這個 session 目前沒有連到那個 repo 的資料夾，需要 Jim 提供路徑才能繼續**。
   - `projects`（UPDATE）、`project_progress`（SELECT）兩張表 hotel-dashboard／AVA 總覽頁也會用到，方案 B 上線時要一併決定這兩張是否跟著 basic settings 這一波做，還是留到之後。
-- **狀態：方向已定（先做 AVA basic settings 這批表），下一步等 Jim 提供 `AVA basic settings` 原始碼資料夾路徑後開始動工（新 Edge Function + Jim 手動加 JWT Secret + 前端 bootstrap 改非同步 + JWT 續期機制）。**
+- **2026-09-03 再更新：暫緩動工**。Jim 顧慮現在飯店端正有人在填表單，這時候動 RLS／bootstrap 邏輯萬一出錯會直接影響正在使用的客戶，風險太高，決定先不碰，等找到合適時機（例如離峰時段、或先有更完整的測試環境）再開始。**範圍決定不變**：真的動工時先從 `AVA basic settings` 開始，其他表單之後再擴大。
+- **狀態：暫緩，先不動工**。方向已定（`AVA basic settings` 優先），但實際開始的時間點由 Jim 決定；下一步一樣是需要 Jim 提供 `AVA basic settings` 原始碼資料夾路徑，但這件事也先不急著要，等 Jim 說可以開始再要。
 
 ### 7. AVA 表單「自訂分頁」功能（2026-07-22 討論，尚未動工）
 - 需求：PIN 解鎖後的人員可以像 Excel 加分頁一樣，自行在 AVA 表單新增分頁與欄位，不需要每次都改 code。
