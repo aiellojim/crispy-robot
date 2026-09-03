@@ -87,7 +87,7 @@
   5. `npm run build`／`npx eslint` 都跑過，確認沒有新增的錯誤（既有的 17 個 lint error 都在這次沒碰過的既有程式碼裡）。
 - 未解決的殘餘風險（設計上無法完全避免，範圍已大幅縮小）：兩人真的在同一個 debounce 視窗內（800ms）編輯「同一個欄位」還是後寫的贏；但「改了不相關欄位、把別人剛存的其他欄位蓋掉」這個 Jim 實際遇到的情境已經解決。
 
-### 11. ~~SiteChat → eb-console 推送~~ **架構定案並實作完成（2026-09-01）：工作佇列 + 內網常駐 agent**
+### 11. ~~SiteChat → eb-console 推送~~ **已解決（2026-09-03，端對端測試通過）：工作佇列 + 內網常駐 agent**
 - 需求：SiteChat 的問候語＋主題色彩要能推送進內部真正的 eb-console 設定系統；原本規劃匯出 Excel 手動比對/謄寫，改成內部團隊開一支 API，Jim 打這支 API 指定飯店做更新。Jim 明確交代：**這功能不能做在現在完全開放的 SiteChat 表單裡**，改做在 hotel-dashboard（內部、需登入）。
 - **2026-09-01 重大架構轉折**：原計畫是 hotel-dashboard 前端直接呼叫 `ebconsole-proxy` Edge Function，由它直接打 `eb-admin.aiello.ai`。加了 `EB_ADMIN_API_KEY` secret 後實測失敗，查 Edge Function log 拿到明確錯誤：
   ```
@@ -104,7 +104,7 @@
 - 資料模型其餘部分、欄位對照表（SiteChat theme key → eb-console widget_custom_colors key）、locale 對照（en→en-US／zh→zh-TW／ja→ja-JP）、`--welcome-bg` 漸層取第一色碼的理由，都寫在 `scripts/ebconsole-push-agent.mjs`／`ebconsole-proxy/index.ts` 的檔頭註解裡，兩邊邏輯要保持同步，不重複貼在這裡。**2026-09-02 更新**：原本 Advanced 分組（User Messages／FAQ Cards & Links／Destructive Action／Secondary & Feedback）的 14 個欄位因為 eb-console 端沒有對應項目而刻意不送，工程端已在 `widget_custom_colors` 補上這 14 個欄位（`userBubbleBg`／`userBubbleText`／`cardBg`／`cardHeaderBg`／`cardHeaderText`／`cardLinkColor`／`cardTitleColor`／`navBtnBg`／`endChatConfirmColor`／`timeColor`／`feedbackPositiveColor`／`feedbackNegativeColor`／`imgSpinnerAccent`／`imgSpinnerBorder`），已比對確認並加入兩邊的 `COLOR_KEY_MAP`（現在共 40 組），跟著一起送。只有 `fontScale`／`--text-scale`（Text Size）仍然刻意不送，這個決定沒變。
 - bot_name 為了跟 eb-console 對齊，2026-09-01 從單一字串改成三語 jsonb，見 SiteChat Settings 的 `CLAUDE.md`。
 - git 還原點：hotel-dashboard `pre-ebconsole-push-2026-08-27`、SiteChat Settings `pre-botname-i18n-2026-09-01`。
-- `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`），Jim 收到後建議自己本機跑一次完整 build + 實際點開面板 + 跑一次 agent script 端對端確認。
+- `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`）。**2026-09-03 Jim 確認**：本機完整 build、面板實際操作、`ebconsole-push-agent.mjs` 端對端跑過，推送結果正確寫回 `sitechat_ebconsole_pushes`，待辦 #11 全部收尾。
 
 ## 長期方向
 
