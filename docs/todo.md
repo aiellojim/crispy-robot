@@ -111,6 +111,13 @@
 - git 還原點：hotel-dashboard `pre-ebconsole-push-2026-08-27`、SiteChat Settings `pre-botname-i18n-2026-09-01`。
 - `node --check`／`@babel/parser` AST 檢查都過（沙盒 FUSE 限制無法完整跑 `npm run build`）。**2026-09-03 Jim 確認**：本機完整 build、面板實際操作、`ebconsole-push-agent.mjs` 端對端跑過，推送結果正確寫回 `sitechat_ebconsole_pushes`，待辦 #11 全部收尾。
 
+### 12. hotel-dashboard：任務紀錄完成狀態、月曆加入 Jira 到期日（2026-09-03）
+- 背景：跟 Jim 討論 hotel-dashboard 優化方向後，先做兩項低風險、立即可用的擴充。
+- **任務紀錄完成狀態**：`tasks` 表其實早就有 `completed` 欄位（預設 false），只是前端從未接上，這次直接接上、不需要新 migration。TasksTab 新增圓形打勾切換（完成後任務淡化、名稱加刪除線並沉到清單底部）、篩選 pill（全部／進行中／已完成）、依到期日排序開關；全選／批次刪除改成只作用在目前篩選後看得到的清單，避免篩選時誤刪隱藏的任務。assignee 欄位依 Jim 指示不做，負責人沿用專案本身的 PIC。
+- **月曆加入 Jira 到期日**：CalendarPage 新增第四種事件類型，開啟月曆頁時才批次對所有掛了 Jira epic 的專案（目前 29 個）平行呼叫既有的 `/issues` 端點抓 dueDate，不快取、不影響月曆以外頁面的載入速度；新增「Jira 到期日」篩選 pill 跟對應顏色分類，點擊會開新分頁到 Jira issue（非任務編輯視窗）。
+- **明確排除、之後再評估**：儀表內部通知鈴鐺（`urgentNotifs`）目前沒有一併加 Jira 到期日——那個鈴鐺在每個非詳情頁都會渲染，要做到「不影響全站載入速度」需要另外設計持久化快取（例如開 Jira 分頁時順便寫快取表），這次 Jim 決定先只做月曆、通知鈴鐺之後再加。Email 提醒（`push_subscriptions`／NotificationPanel）也刻意不串 Jira 到期日，Jim 認為會跟 Jira 自己的通知重複。
+- `@babel/parser` AST 檢查、`npx eslint` 都過（沒有新增的 lint 錯誤，既有的 `EBCONSOLE_PROXY` unused 和其他既有 error 都是這次沒碰過的舊程式碼）；沙盒 FUSE 限制這次一樣沒能跑完整 `npm run build`（`node_modules` 的 rolldown native binding 既有問題，跟這次改動無關）。commit `223a3c8`。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
