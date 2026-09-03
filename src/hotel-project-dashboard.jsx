@@ -3280,9 +3280,10 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                     title={isIssueOverdue ? `已逾期（到期日：${fmtDate(issue.dueDate)}）` : undefined}
                     style={{ fontSize:12, fontWeight:500, textDecoration:"none",
                       fontFamily:"'DM Mono',monospace",
-                      color: isIssueOverdue ? "#A15252" : "#0052cc",
-                      background: isIssueOverdue ? "#F5E9E9" : "#e9f0ff",
-                      border: isIssueOverdue ? "1px solid #D9BDBD" : "1px solid #b3c7f7",
+                      // 逾期直接沿用儀表板既有的警示紅（跟刪除垃圾桶 hover 同一組變數），視覺一致
+                      color: isIssueOverdue ? "var(--red)" : "#0052cc",
+                      background: isIssueOverdue ? "var(--red-subtle)" : "#e9f0ff",
+                      border: isIssueOverdue ? "1px solid var(--red)" : "1px solid #b3c7f7",
                       borderRadius:6, padding:"3px 8px",
                       display:"inline-block", whiteSpace:"nowrap" }}>
                     {issue.key}
