@@ -4249,16 +4249,18 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", alignItems:"flex-end", gap:24 }}>
-                    <div style={{ width:140, flexShrink:0 }}>
-                      <FInput label="線路數" value={info.acaLines} onChange={v=>setInfo(p=>({ ...p, acaLines:v }))} placeholder="例：4" type="number"/>
-                    </div>
-                    {/* 目前只有 3 個方案，同一行放得下；之後方案數量增加、擠不下時再考慮換行版型。 */}
-                    <div style={{ flex:1, minWidth:220, marginBottom:16 }}>
-                      <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>ACA 方案</label>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
-                        {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
-                      </div>
+                  {/* 50/50 兩欄，跟 TMSP 房間數/最大空間數那個 grid 同一套版型；兩個 label 各自佔
+                      第一列自然對齊，alignItems:"center" 讓第二列較矮的方案 pill 群跟較高的線路數
+                      輸入框沿水平中線對齊，不用猜像素偏移量。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, alignItems:"center" }}>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
+                    <input type="number" value={info.acaLines} onChange={e=>setInfo(p=>({ ...p, acaLines:e.target.value }))}
+                      placeholder="例：4" style={baseInput}
+                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                      onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
                     </div>
                   </div>
                 </div>
