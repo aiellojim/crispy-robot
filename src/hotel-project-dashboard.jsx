@@ -3813,6 +3813,15 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   const setInfo     = useCallback(fn => setInfoLocal(p=>fn(p)), []);
   const toggleArr   = useCallback((key,val) => setInfo(p=>({ ...p, [key]:p[key].includes(val)?p[key].filter(x=>x!==val):[...p[key],val] })), [setInfo]);
+  // ACA 首次被選上、方案還沒設定過時，直接預設帶入 Original——避免「未選方案」跟「選 Original」
+  // 在畫面上長期並存成兩種容易混淆的狀態（2026-09-04，Jim 確認舊專案本質上都是 Original）。
+  // 取消勾選 ACA 不會清空 acaPlan，跟其他產品欄位（例如取消 AVA 不會清空 avaUnits）的既有慣例一致。
+  const toggleProduct = useCallback((p) => setInfo(prev => {
+    const turningOn = !prev.products.includes(p);
+    const products = turningOn ? [...prev.products, p] : prev.products.filter(x=>x!==p);
+    const acaPlan = (p==="ACA" && turningOn && !prev.acaPlan) ? "Original" : prev.acaPlan;
+    return { ...prev, products, acaPlan };
+  }), [setInfo]);
   const toggleCheck = useCallback((setter, key, field) => {
     setter(p => {
       const newVal = !p[key];
@@ -4202,7 +4211,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <Card>
               <SectionLabel title="購置產品" icon="package"/>
               <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:14 }}>
-                {PRODUCTS.map(p=><Chip key={p} label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.accent} onClick={()=>toggleArr("products",p)}/>)}
+                {PRODUCTS.map(p=><Chip key={p} label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.accent} onClick={()=>toggleProduct(p)}/>)}
               </div>
               {/* AVA only → blue box */}
               {info.products.includes("AVA")&&!info.products.includes("AVT")&&(
@@ -4240,13 +4249,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
-                  <div style={{ maxWidth:"50%", marginBottom:16 }}>
-                    <FInput label="線路數" value={info.acaLines} onChange={v=>setInfo(p=>({ ...p, acaLines:v }))} placeholder="例：4" type="number"/>
-                  </div>
-                  <div>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>ACA 方案</label>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
-                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
+                  <div style={{ display:"flex", flexWrap:"wrap", alignItems:"flex-end", gap:24 }}>
+                    <div style={{ width:140, flexShrink:0 }}>
+                      <FInput label="線路數" value={info.acaLines} onChange={v=>setInfo(p=>({ ...p, acaLines:v }))} placeholder="例：4" type="number"/>
+                    </div>
+                    {/* 目前只有 3 個方案，同一行放得下；之後方案數量增加、擠不下時再考慮換行版型。 */}
+                    <div style={{ flex:1, minWidth:220, marginBottom:16 }}>
+                      <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>ACA 方案</label>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+                        {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
+                      </div>
                     </div>
                   </div>
                 </div>
