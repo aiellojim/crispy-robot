@@ -10,6 +10,11 @@ const sb = createClient(
 // ─── Constants ────────────────────────────────────────────────
 const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS", "SiteChat"];
 const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV", "RSVN", "Robot"];
+// ACA 方案分級（2026-09-04）：同一個 ACA 產品換方案要重新簽約，但不會有一家飯店同時持有兩種
+// ACA 方案，所以刻意不比照 PRODUCTS 另開 "ACA Pro" 這種標籤——方案本身是 projects.aca_plan 的
+// 值，跟 products 陣列是否包含 "ACA" 是兩個獨立欄位，邏輯上比照 tmsp_max_spaces/installing_rooms
+// 那類「已選 ACA 之後才追問的細節欄位」，不是新的 product。
+const ACA_PLANS    = ["Original", "SuperLite", "SuperPro"];
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 // PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
 // 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
@@ -432,7 +437,7 @@ const dbToUi = (row, prog) => ({
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
     products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
     installingRooms: row.installing_rooms ?? "", tmspMaxSpaces: row.tmsp_max_spaces ?? "",
-    tmspRoomCount: row.tmsp_room_count ?? "",
+    tmspRoomCount: row.tmsp_room_count ?? "", acaLines: row.aca_lines ?? "", acaPlan: row.aca_plan ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -460,7 +465,7 @@ const uiToDb = (p) => ({
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
     products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
     installing_rooms: p.info.installingRooms, tmsp_max_spaces: p.info.tmspMaxSpaces,
-    tmsp_room_count: p.info.tmspRoomCount,
+    tmsp_room_count: p.info.tmspRoomCount, aca_lines: p.info.acaLines, aca_plan: p.info.acaPlan,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -490,7 +495,7 @@ const newProject = () => {
   createdAt: new Date().toISOString(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", acaLines:"", acaPlan:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -4230,9 +4235,25 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                 </div>
               )}
-              {/* TMSP → blue box, same style as AVA/AVT */}
-              {info.products.includes("TMSP")&&(
+              {/* ACA → same style box. 方案是單選 pill，直接沿用購置產品/串接功能已經在用的 Chip
+                  元件，只是 onClick 改成直接指定值（不是 toggleArr 的多選邏輯）。 */}
+              {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
+                  <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
+                  <div style={{ maxWidth:"50%", marginBottom:16 }}>
+                    <FInput label="線路數" value={info.acaLines} onChange={v=>setInfo(p=>({ ...p, acaLines:v }))} placeholder="例：4" type="number"/>
+                  </div>
+                  <div>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>ACA 方案</label>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
+                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* TMSP → blue box, same style as AVA/AVT/ACA */}
+              {info.products.includes("TMSP")&&(
+                <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>TMSP 空間數量</div>
                   {/* TMSP 房間數 is independent from AVA's installingRooms and from tmspMaxSpaces
                       (license/space cap) - see docs/todo.md room-count design discussion. Software
