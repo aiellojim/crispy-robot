@@ -118,6 +118,15 @@
 - **明確排除、之後再評估**：儀表內部通知鈴鐺（`urgentNotifs`）目前沒有一併加 Jira 到期日——那個鈴鐺在每個非詳情頁都會渲染，要做到「不影響全站載入速度」需要另外設計持久化快取（例如開 Jira 分頁時順便寫快取表），這次 Jim 決定先只做月曆、通知鈴鐺之後再加。Email 提醒（`push_subscriptions`／NotificationPanel）也刻意不串 Jira 到期日，Jim 認為會跟 Jira 自己的通知重複。
 - `@babel/parser` AST 檢查、`npx eslint` 都過（沒有新增的 lint 錯誤，既有的 `EBCONSOLE_PROXY` unused 和其他既有 error 都是這次沒碰過的舊程式碼）；沙盒 FUSE 限制這次一樣沒能跑完整 `npm run build`（`node_modules` 的 rolldown native binding 既有問題，跟這次改動無關）。commit `223a3c8`。
 
+### 13. ~~AVA UI settings：Showcase/Ads/Marketing Event 全部無法存檔、資料遺失事故~~ **已找到根因並修正（2026-09-15）**
+- 現象：Jim 在「Residence on Langley Park」專案的 AVA UI settings 填 Showcase 內容，header 有顯示存檔成功的時間戳，但離開再回來內容消失；後來發現不只 Showcase，Ads／Marketing Event 三個分頁同時都無法真正寫入資料庫。
+- 排查過程淘汰掉的假設（過程記錄，避免以後重踩）：250ms debounce 沒送出去（Jim 實測重新輸入後停留一段時間、且看到真正帶時間戳的 Saved，排除）、跨專案 realtime 訂閱漏 filter（`showcase_cards` 的 `postgres_changes` 訂閱確實漏了 `project_id` filter，這是真實存在的獨立小 bug 但不是這次主因，因為 Ads/QR 的訂閱本來就有正確 filter，範圍對不上）、瀏覽器擴充功能攔截寫入請求（同瀏覽器編輯另一個專案存檔正常，排除）。
+- **真正根因**：`init()` 載入資料時，`state = withFriendlyDefaults(rowsToState(project, children)); lastSynced = snapshot(state);`——友善預設的示範區塊（畫面上顯示成「Untitled Section」，帶一張空白示範卡片）是純前端產生、資料庫裡從來沒有這筆資料，但因為它在拍 `lastSynced` 快照*之前*就已經混進 `state`，`diffRepeater()` 之後永遠會誤判它「已經存過」，不會真的幫它送出 INSERT。使用者在這個幽靈區塊底下新增卡片時，卡片是貨真價實的新資料會正常送出 INSERT，但它的 `section_id` 外鍵指向一個資料庫裡不存在的區塊，整批寫入失敗（`showcase_cards_section_id_fkey` 違反）。更嚴重的是 `syncToSupabase()` 把 Showcase／Ads／Marketing Event 四張表包在同一次呼叫裡，`lastSynced = cur` 只在全部都成功之後才整包更新一次——這次失敗讓 `lastSynced` 永遠卡在舊版本，之後不管在哪個分頁做任何存檔動作都會重複觸發同一個錯誤，看起來整個表單完全無法存檔。Jim 自己實測抓到關鍵線索：把這個示範區塊改名稱還是會跳錯（因為送出的其實是更新一筆不存在資料列的 UPDATE，靜默無效果）、但刪掉重建一個新區塊就恢復正常（新區塊的 `_id` 是全新的、不在卡住的 `lastSynced` 裡，能被正確 INSERT）。
+- **修正**：`AVA UI settings`／`ACA basic settings`（`aca_faq_documents` 有同一個較輕量版本的地雷，沒有子表外鍵依賴、風險小很多但邏輯同源，一併修掉）都改成先用「資料庫真實現況」拍 `lastSynced` 快照，友善預設列在快照*之後*才套用進 `state`。`AVA basic settings` 原本就是這個正確寫法（`withFriendlyDefaults()` 檔頭本來就有解釋這個陷阱的註解），是這次抓錯的重要參照範本；`SiteChat Settings` 沒有這個模式，不受影響。規則已寫進 `aiello-forms-spec.md` 第 4 節，往後新表單都要照這個順序寫。
+- 還沒修的小 bug（風險已知、低優先）：`AVA UI settings` 的 `showcase_cards` realtime 訂閱漏了 `project_id` filter，理論上會讓任一專案的卡片變動觸發全站所有開著的分頁重新整理，之後有空再補。
+- **無法復原的損失**：Langley Park 這個專案原本存在的 Showcase／Ads／Marketing Event 內容已經遺失，Jim 需要重新輸入；這次的修正能防止未來再發生同一種遺失，但不能挽回已經沒了的資料。
+- 還原點：`AVA UI settings`／`ACA basic settings` 皆為 `pre-friendly-defaults-lastsynced-fix-2026-09-15`。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。

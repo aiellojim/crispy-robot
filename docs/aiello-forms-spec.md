@@ -153,6 +153,27 @@ banner 文字三語版本（三個表單目前逐字一致，新表單直接照�
   Function 寄通知信，帶 `source` 標籤區分是哪個表單（見第 6 節表格）。Function 失敗要 fire-and-forget
   （只 log，不擋住/覆蓋剛顯示的存檔狀態）。
 
+**⚠️ 硬性規則：`lastSynced`（比對存檔用的基準快照）一律只能用「資料庫真實現況」拍照，絕對不能包含
+任何純前端產生、還沒真正寫進資料庫的「友善預設列」（例如新專案第一次打開時塞的示範區塊/示範列，讓
+畫面不要一片空白）。** 這是 2026-09-15 在 AVA UI settings 的 Showcase 分頁實際發生過的資料遺失事故
+的根因，值得每個新表單都記住：
+
+- 錯誤示範：`state = withFriendlyDefaults(rowsToState(project, children)); lastSynced = snapshot(state);`
+  ——友善預設列在拍快照*之前*就混進 `state`，導致 `lastSynced` 誤以為這些列本來就存在資料庫裡。
+- 正確做法：`const loaded = rowsToState(project, children); lastSynced = snapshot(loaded); state =
+  withFriendlyDefaults(loaded);`——友善預設列一定要在拍完快照*之後*才套用，這樣 `diffRepeater()`
+  才會正確判斷這些列「還沒存過」，使用者第一次存檔時才會真的把它們 INSERT 進資料庫。
+- 為什麼這麼嚴重：一旦友善預設列被誤判成「已存過」，之後對它的任何編輯送出的都是「更新一筆不存在
+  資料列」的 UPDATE（Postgres/PostgREST 對這種操作不會報錯，只是靜默無效果，很難察覺）；如果表單
+  架構是巢狀的（例如卡片依附在區塊底下，卡片表對區塊表有外鍵），在這個「幽靈區塊」底下新增的子資料
+  會因為外鍵指向不存在的父列而整批寫入失敗——如果存檔函式是像多數表單這樣把好幾張表包在同一次
+  `syncToSupabase()`／`saveToSupabase()` 呼叫裡送出、且 `lastSynced` 只在全部都成功之後才整包更新
+  一次，這一次失敗會讓 `lastSynced` 永遠卡在舊版本，之後不管使用者在哪個分頁做任何存檔動作都會重複
+  觸發同一個錯誤，整個表單看起來完全無法存檔——實測範圍甚至會波及同一次呼叫裡完全不相關的其他分頁
+  資料。
+- AVA basic settings 的 `withFriendlyDefaults()`／`rowsToState()` 已經是這個規則的正確範本（連同解釋
+  這個陷阱的檔頭註解），新表單可以直接照抄那份的順序寫法。
+
 ## 5. 驗收流程（改完 code 一定要跑）
 
 1. Tag 配對：用 python regex 數 `div`/`svg`/`button`/`span` 等開合標籤數量一致。
