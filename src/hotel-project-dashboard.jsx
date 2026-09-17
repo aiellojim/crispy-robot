@@ -3896,7 +3896,19 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   };
 
   const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(info.products, info.integrations);
-  const jiraTaskCount = (hasAva ? 51 : 0) + (hasAca ? (hasAva ? 4 : 5) : 0) || 51;
+  // Preview count for the "建立 Jira Epic 與任務" button - must stay in sync with jira-proxy's
+  // TEMPLATES (createTasks action, supabase/functions/jira-proxy/index.ts). AVA/AVT/ACA's template
+  // lists all start with the identical "(TAC)({{N}}) Portal Creation (建立)" summary, which the
+  // backend's summary-text dedup collapses into a single ticket no matter how many of the three are
+  // selected - so for every product beyond the first of {AVA,AVT,ACA} that's selected, subtract one
+  // duplicate Portal Creation ticket. TMSP/GW/KMS have no templates yet (contribute 0).
+  // 2026-09-17, Jim: replaced the old hardcoded `(hasAva?51:0)+(hasAca?...:0) || 51` formula, which
+  // didn't know about AVT at all and whose `|| 51` fallback wrongly showed 51 for an AVT-only
+  // project with no AVA/ACA selected.
+  const JIRA_TEMPLATE_COUNTS = { AVA: 51, AVT: 4, ACA: 5 };
+  const jiraTemplateProducts = ["AVA","AVT","ACA"].filter(p => info.products.includes(p));
+  const jiraTaskCount = jiraTemplateProducts.length === 0 ? 0 :
+    jiraTemplateProducts.reduce((sum,p)=> sum + JIRA_TEMPLATE_COUNTS[p], 0) - (jiraTemplateProducts.length - 1);
   const canBatch1 = hasAva||hasAca||hasGw||hasTmsp, canBatch2 = hasAva||hasGw;
   const activeFaq = FAQ_ITEMS.filter(item => item!==FAQ_TV_ITEM||hasIptv);
 
