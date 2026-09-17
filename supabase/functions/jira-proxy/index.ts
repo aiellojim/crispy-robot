@@ -502,6 +502,7 @@ Deno.serve(async (req) => {
       AVT: [
         { s: "(TAC)({{N}}) Portal Creation (建立)" },
         { s: "(FE)({{N}}) AVT config" },
+        { s: "(FE)({{N}}) AVT 語言清單順序調整" },
         { s: "(TAC)({{N}}) AVT 機台綁定" },
       ],
       ACA: [
