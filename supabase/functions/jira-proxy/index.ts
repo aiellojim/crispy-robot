@@ -497,6 +497,13 @@ Deno.serve(async (req) => {
       { s: "(PJM) {{N}} (Doc) Customized Customer Specification Table Update(客製客規表更新)" },
       { s: "(PJM) {{N}} (Doc) Acceptance Form Update(驗收單更新)" },
       ],
+      // 2026-09-17, Jim: Portal Creation 故意跟 AVA/ACA 用一模一樣的字串（見下方的
+      // dedup 邏輯 by summary 文字），一個專案同時選多個產品時只會建一張，不會重複。
+      AVT: [
+        { s: "(TAC)({{N}}) Portal Creation (建立)" },
+        { s: "(FE)({{N}}) AVT config" },
+        { s: "(TAC)({{N}}) AVT 機台綁定" },
+      ],
       ACA: [
         { s: "(TAC)({{N}}) Portal Creation (建立)" },
         { s: "(BE)({{N}}) ACA 基礎設定 (測試用分機)" },
