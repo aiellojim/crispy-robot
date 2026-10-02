@@ -1232,9 +1232,13 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 // ─── InAppNotifModal ──────────────────────────────────────────
 const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen }) => {
   const totalBadge = urgentNotifs.length + customerNotifs.length;
-  return (
+  // 用 Portal 掛到 document.body：這個元件固定從全域 Header 的鈴鐺按鈕觸發，而 Header 本身
+  // 有 ...GLASS（backdropFilter），巢狀在它底下會讓這裡自己的 backdropFilter 採樣不到真正的
+  // 頁面背景、糊成一片看起來「特別透明」（2026-10-02 跟 UserSettingsPanel 一起踩到、一起修，
+  // 同一類根因見 Jira Epic bootstrap modal 當初的 containing-block 問題，見 architecture.md）。
+  return createPortal(
   <>
-    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9997 }}/>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:9997 }}/>
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
       ...GLASS,
       border:"1px solid var(--border)", borderRadius:14,
@@ -1323,7 +1327,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
       </div>
     </div>
   </>
-  );
+  , document.body);
 };
 
 // ─── Calendar Page ─────────────────────────────────────────────
@@ -1554,9 +1558,24 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ ...GLASS, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
+          {/* 月份切換按鈕：原本是純文字 ‹/› glyph，沒有 hover 高亮、也沒設文字顏色（inherit 預設黑色，
+              深色模式玻璃底下幾乎看不到），2026-10-02 改用 chevronR 圖示（左邊旋轉 180 度）+
+              固定尺寸置中 + 比照其他玻璃按鈕（例如 Header 鈴鐺按鈕）的 hover 慣例 */}
+          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }}
+            style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
+              border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+            <Ico name="chevronR" size={16} color="currentColor" style={{ transform:"rotate(180deg)" }}/>
+          </button>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
-          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ ...GLASS, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
+          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }}
+            style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
+              border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+            <Ico name="chevronR" size={16} color="currentColor"/>
+          </button>
           <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
@@ -5093,7 +5112,11 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
 
   const logout = async () => { await sb.auth.signOut(); onClose(); };
 
-  return (
+  // 用 Portal 掛到 document.body：這個側邊欄固定從全域 Header 內的按鈕觸發，而 Header 本身有
+  // ...GLASS（backdropFilter），巢狀在它底下會讓這裡自己的 backdropFilter 採樣不到真正的頁面背景、
+  // 糊成一片看起來「特別透明」（2026-10-02 跟 InAppNotifModal 一起踩到、一起修，同一類根因見
+  // Jira Epic bootstrap modal 當初的 containing-block 問題，見 architecture.md）。
+  return createPortal(
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
@@ -5160,7 +5183,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
         </div>
       </div>
     </>
-  );
+  , document.body);
 };
 
 // ─── Root ─────────────────────────────────────────────────────

@@ -189,6 +189,30 @@ from "react-dom"`，`react-dom` 本來就是既有相依套件，沒有新增套
   如果覺得不夠醒目，可以考慮幫逾期卡片加一圈淡紅色邊框或左側色條，跟 TasksTab 卡片已經有的
   「選取態＝實色強調」邏輯呼應。
 
+#### 2026-10-02 追修：Header 內兩個面板「特別透明」+ 月曆切換按鈕
+
+Jim 回報「個人設定」側邊欄跟右上角鈴鐺的「通知」下拉，玻璃效果比 AI 助理／通知設定（Email 提醒）
+明顯更透明、看不清楚。查證後發現根因跟當初 Jira Epic bootstrap modal 的 bug 是同一類：
+`UserSettingsPanel`／`InAppNotifModal` 這兩個是全站**唯一**被巢狀渲染在 App 全域 Header 內部的
+`position:fixed` 面板（Header 自己有 `...GLASS`，也就是有 `backdropFilter`）。CSS 規範裡
+`backdrop-filter` 不是 `none` 的元素，會幫底下的 `position:fixed` 子孫元素建立新的 containing
+block／stacking context，子孫自己的 `backdropFilter` 這時採樣不到真正的頁面背景，疊加合成後
+視覺上就「糊成一片、特別透明」。AI 助理（`AiPanel`）、通知設定（`NotificationPanel`，Email 提醒
+訂閱）都是渲染在 `HomePage`／App 根層級，不在任何有 `backdropFilter` 的祖先元素底下，所以才會
+「看起來清楚」——不是這兩個面板的程式碼寫得不一樣（`...GLASS` 完全相同），純粹是巢狀位置的問題。
+修法比照 Jira Epic modal：兩個元件自己的 `return` 改成 `createPortal(..., document.body)`，
+直接把這兩個面板掛到 `document.body`，脫離 Header 的 stacking context。另外也發現
+`InAppNotifModal` 的背景遮罩 `<div onClick={onClose}>` 原本完全沒設 `background`（其餘面板都是
+`rgba(0,0,0,0.08)`），一併補上以跟其他面板一致。已確認 `CustomerAccessPanel`／
+`SiteChatEbConsolePanel`（渲染在 `ProjectDetail` 裡）跟 ProjectDetail 自己的本地 sticky header
+（它也有 `...GLASS`）沒有巢狀關係，是平行的 sibling，不受影響，不需要跟著改。
+
+同一輪也修了 CalendarPage 月份切換的 `‹`/`›` 按鈕——這兩個是全站唯一還在用純文字 glyph、沒有
+`onMouseEnter`/`onMouseLeave`、也沒設 `color`（inherit 預設黑色，深色模式玻璃底下幾乎看不到）的
+按鈕，推測是玻璃化那幾批巡檢時被漏掉。已改成固定 32×32、`display:flex` 置中、套用 `chevronR`
+圖示（左邊用 `transform:rotate(180deg)`）、`color:"var(--text-subtle)"` + hover 時變
+`var(--accent)`，跟 Header 鈴鐺按鈕同一套 hover 慣例。
+
 ## 資料表
 
 | 資料表 | 說明 |
