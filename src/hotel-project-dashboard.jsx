@@ -139,6 +139,7 @@ const GLOBAL_CSS = `
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
+    --glass-surface-hover: rgba(255,255,255,0.78);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -178,6 +179,7 @@ const GLOBAL_CSS = `
       --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
       --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
       --glass-surface: rgba(33,33,43,0.55);
+      --glass-surface-hover: rgba(42,42,54,0.72);
     }
   }
 
@@ -340,6 +342,7 @@ const GLOBAL_CSS = `
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
+    --glass-surface-hover: rgba(255,255,255,0.78);
   }
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
@@ -362,6 +365,7 @@ const GLOBAL_CSS = `
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
     --glass-surface: rgba(33,33,43,0.55);
+    --glass-surface-hover: rgba(42,42,54,0.72);
   }
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
@@ -1831,12 +1835,46 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 
             return (
               <div key={proj.id}
-                style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
-                  padding:20, cursor:"pointer", transition:"border-color 0.15s, box-shadow 0.15s",
+                style={{ position:"relative", overflow:"hidden",
+                  background:"var(--glass-surface)",
+                  backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                  border:"1px solid var(--border)", borderRadius:12,
+                  padding:20, cursor:"pointer",
+                  boxShadow:"var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+                  transition:"border-color 0.15s, box-shadow 0.25s, background 0.25s, transform 0.45s cubic-bezier(0.34,1.56,0.64,1)",
                   animation:"fadeIn 0.2s ease" }}
                 onClick={()=>onOpen(proj.id)}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent-border)"; e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.08)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.boxShadow="none"; }}>
+                onMouseEnter={e=>{
+                  e.currentTarget.style.borderColor="var(--accent-border)";
+                  e.currentTarget.style.boxShadow="var(--shadow), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.06)";
+                  e.currentTarget.style.background="var(--glass-surface-hover)";
+                  const glow = e.currentTarget.querySelector(".card-glow");
+                  if (glow) glow.style.opacity = "1";
+                }}
+                onMouseMove={e=>{
+                  // 毛玻璃光斑跟著滑鼠走＋輕微 3D 傾斜 — 比照 liquid-glass demo 定版的做法，
+                  // 光斑位置/卡片角度都是即時算出來的，不是播放固定動畫，才會感覺像實體玻璃。
+                  const r = e.currentTarget.getBoundingClientRect();
+                  const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+                  const glow = e.currentTarget.querySelector(".card-glow");
+                  if (glow) glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.22) 30%, transparent 62%)`;
+                  const MAX_TILT = 5;
+                  const rx = (0.5 - py) * MAX_TILT * 2, ry = (px - 0.5) * MAX_TILT * 2;
+                  e.currentTarget.style.transform = `translateY(-4px) perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+                }}
+                onMouseLeave={e=>{
+                  e.currentTarget.style.borderColor="var(--border)";
+                  e.currentTarget.style.boxShadow="var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)";
+                  e.currentTarget.style.background="var(--glass-surface)";
+                  e.currentTarget.style.transform="translateY(0) perspective(900px) rotateX(0deg) rotateY(0deg)";
+                  const glow = e.currentTarget.querySelector(".card-glow");
+                  if (glow) glow.style.opacity = "0";
+                }}>
+
+                {/* 毛玻璃聚光光斑 — 絕對定位的第一個子元素，後面的內容會自然疊在它上面，
+                    不需要額外設 zIndex。inset:-20% + blur() 避免模糊在元素自己邊界上留下硬邊。 */}
+                <div className="card-glow" style={{ position:"absolute", inset:"-20%", pointerEvents:"none",
+                  filter:"blur(22px)", opacity:0, transition:"opacity 0.45s ease", mixBlendMode:"soft-light" }}/>
 
                 {/* Row 1 */}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
