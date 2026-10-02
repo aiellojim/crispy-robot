@@ -50,6 +50,43 @@ Global Header、Overview 專案卡片已換成毛玻璃材質（`background:"var
 一個區塊會導致「手動選淺色、但作業系統本身是深色」這類情境下變數值跑掉（已踩過一次：
 `--glass-surface` 最初只放了前兩個區塊，導致淺色模式下 Header 顯示錯誤顏色）。
 
+**全站鋪開進度（分批進行，Jim 每 3 批手動檢查一次）**：
+- Batch 1：ProjectDetail 自己的 Header（跟 Global Header 是不同元件，要分開改）。
+- Batch 2：共用的 `Card`／`OvCard`／`ProgressCard` 元件、HomePage 的統計卡＋篩選列（原本漏做，
+  跟專案卡片一起補上）、Overview 專案卡片的光斑+傾斜互動。
+- Batch 3：所有 modal／側邊欄（NotificationPanel、InAppNotifModal、CalendarPage 任務 modal、
+  CustomerAccessPanel、SiteChatEbConsolePanel、Jira Epic bootstrap modal、UserSettingsPanel、
+  AiPanel）。
+- Batch 4：ProjectDetail 的 tab nav bar、「客戶存取」按鈕、Overview 分頁內兩個沒有套用
+  `Card`/`OvCard` 元件、徒手寫 `background:C.white` 的區塊（第二批資料、任務紀錄）；JiraTab
+  的 issue 卡片、狀態切換浮動選單、「更新 Epic Description」/「同步 Jira」按鈕；TasksTab 的
+  任務卡片（這裡原本用了 `<Card>` 但自己又在 `style` prop 覆寫了 `background:C.white`，把
+  Card 本身帶的玻璃背景蓋掉，等於有 `backdropFilter` 卻完全看不出模糊——這是為什麼即使用了
+  共用元件也要檢查有沒有在呼叫端被覆寫）、篩選/排序/類型切換按鈕。LoginPage 的登入卡片一併補上
+  （不在原始批次規劃內，是順手做的一致性修正）。
+- Batch 5：CalendarPage 的整月格線外層容器、展開日期的浮動清單、月份事件清單容器、上下月按鈕、
+  任務 modal 的取消按鈕跟類型切換按鈕。**個別日期格子本身維持不透明純色**（`isToday`/平日/非本月
+  三種底色是功能性狀態標示，不是「卡片」，而且 42 個格子各自套 `backdrop-filter` 在效能跟視覺
+  密度上都不合理，比照其他地方「列表內的個別 row 維持純色、只有外層容器玻璃化」的既有判斷）。
+- Batch 6（跟 Batch 4/5 合併執行，沒有另外切）：次要/外框按鈕（原本 `background:C.white` 的
+  secondary button）全部換成玻璃；**主色/CTA 按鈕（純色 accent 填色，例如「下一步」「確認建立」
+  「新增任務」）維持不透明純色，不玻璃化**——Jim 明確決定主色按鈕要保持清晰標示，不納入這次改版。
+  同理，各種「選中態＝純色填滿」的切換元件（Chip、篩選/排序/類型切換按鈕的「已選中」那一態、
+  checkbox/完成狀態圓點）維持不透明，只有「未選中」的外框態才換成玻璃——這些純色填滿本身是功能
+  性的狀態指示，跟主色按鈕是同一類，不是裝飾性的卡片/按鈕底色。
+- 另外修了 Jira Epic bootstrap modal 的 overlay 被困在「飯店資訊」`Card` 裡的 bug：`Card` 在
+  Batch 2 加上 `backdropFilter` 後，依 CSS 規範會替內部 `position:fixed` 的後代元素建立新的
+  containing block，困住原本應該貼齊 viewport 的 modal 遮罩——修法是用 `ReactDOM.createPortal`
+  把這個 modal 掛到 `document.body`，不要再巢狀在 `Card` 底下。**之後如果還有 modal 被包在
+  帶 `backdropFilter`/`transform`/`filter`/`perspective` 的祖先元素裡、又用 `position:fixed`，
+  一律用這個方法處理**，不要只調整 zIndex（zIndex 解不了 containing block 被困住的問題）。
+- 刻意不玻璃化的範圍：輸入框（input/textarea，包含 `baseInput`／`NoteArea`／`FInput`）維持
+  不透明——玻璃底的面板上如果輸入框也半透明，會讓使用者分不清哪裡能打字，這點 Jim 在 Batch 3
+  的 overlay 變灰回饋裡也間接提過（「只有輸入欄和按鈕維持高亮」）；小型色塊徽章/標籤（整合服務
+  標籤、Jira issue key 膠囊、狀態 badge）維持原樣，這些是資訊標示不是卡片；modal/卡片內部用來
+  跟外層做對比的巢狀小面板（例如 Jira Epic modal 的錯誤訊息框、SheetLink 的連結輸入框底色）
+  維持不透明，因為它們本身的功能就是在已經半透明的外層容器裡提供一塊實色的視覺對比。
+
 ## 資料表
 
 | 資料表 | 說明 |

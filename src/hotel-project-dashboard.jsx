@@ -554,7 +554,9 @@ const LinearProgress = ({ pct, color }) => (
 const ProgressCard = ({ label, checked, total, color }) => {
   const pct = total===0 ? 0 : Math.round((checked/total)*100);
   return (
-    <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+    <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      border:"1px solid var(--border)", borderRadius:12,
+      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
       padding:"16px 20px", flex:1, minWidth:150 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
         <span style={{ fontSize:11, letterSpacing:1.2, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>{label}</span>
@@ -1444,7 +1446,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <div style={{ display:"flex", gap:8 }}>
             {[{ v:"deadline", ico:"pin", text:"期限" },{ v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text })=>(
               <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, background:draft.type===v?C.accent:C.white, color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, background:draft.type===v?C.accent:"var(--glass-surface)", backdropFilter:draft.type===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:draft.type===v?"none":"blur(20px) saturate(160%)", color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
             ))}
           </div>
         </div>
@@ -1487,7 +1489,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           </button>
         </div>
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-          <button onClick={closeModal} style={{ background:C.white, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
+          <button onClick={closeModal} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving}
             style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
@@ -1504,9 +1506,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
+          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
-          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
+          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
           <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
@@ -1523,7 +1525,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Calendar grid */}
       <div ref={gridRef} style={{ border:`1px solid ${C.border}`, borderRadius:12, position:"relative", overflow:"visible" }}
         onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}>
-        <div style={{ background:C.white, borderRadius:12, overflow:"hidden" }}>
+        <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", borderRadius:12, overflow:"hidden" }}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
           {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:500, color:d==="日"?C.red:d==="六"?C.accent:C.textMid }}>{d}</div>)}
         </div>
@@ -1601,8 +1603,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
             <div onClick={e=>e.stopPropagation()}
               style={{ position:"absolute", top:expandedPos.top, left:expandedPos.left,
                 width:Math.max(expandedPos.width, 180), height:dropH,
-                background:C.white, border:`1px solid ${C.accentBorder}`,
-                borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15)",
+                background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                border:`1px solid ${C.accentBorder}`,
+                borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)",
                 zIndex:9999, display:"flex", flexDirection:"column" }}>
               <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
                 {dayEvs.map((ev,ei)=>(
@@ -1640,7 +1643,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {events.length>0 && (
         <div style={{ marginTop:24 }}>
           <h3 style={{ fontSize:15, fontWeight:500, color:C.text, marginBottom:12 }}>本月事件</h3>
-          <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden" }}>
+          <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+            border:"1px solid var(--border)", borderRadius:12, overflow:"hidden",
+            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
               <div key={i}
                 style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px",
@@ -1767,11 +1772,11 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
         {stats.map(({ label, value, icon, color, sub, onClick, isActive }) => (
           <div key={label} onClick={onClick}
-            style={{ background:"var(--surface)",
+            style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
               border:`1px solid ${isActive ? color : "var(--border)"}`,
               borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease",
               cursor:onClick?"pointer":"default",
-              boxShadow:isActive?`0 0 0 3px ${color}22`:"none",
+              boxShadow:isActive?`0 0 0 3px ${color}22, inset 0 1px 0 rgba(255,255,255,0.5)`:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
               transition:"border-color 0.2s, box-shadow 0.2s" }}>
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
               <span style={{ fontSize:12, color:"var(--text-mid)", fontWeight:400, lineHeight:1.4 }}>{label}</span>
@@ -1790,7 +1795,9 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       </div>
 
       {/* 篩選欄（含通知設定，統一外框） */}
-      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        border:"1px solid var(--border)",
+        boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
         borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
           {/* 搜尋 */}
@@ -3322,14 +3329,15 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
           <div style={{ display:"flex", gap:8 }}>
             <button onClick={handleUpdateDescription} disabled={descLoading}
               style={{ display:"flex", alignItems:"center", gap:6,
-                background:descSuccess?C.greenLight:C.white,
+                background:descSuccess?C.greenLight:"var(--glass-surface)",
+                backdropFilter:descSuccess?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:descSuccess?"none":"blur(20px) saturate(160%)",
                 border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:descLoading?"wait":"pointer", fontSize:13,
                 color:descSuccess?C.green:C.textMid, fontFamily:"inherit", transition:"all 0.2s" }}>
               {descLoading?"更新中…":descSuccess?"✓ 已更新":<><Ico name="fileText" size={13} color="currentColor"/> 更新 Epic Description</>}
             </button>
             <button onClick={fetchIssues} disabled={loading}
-              style={{ display:"flex", alignItems:"center", gap:6, background:C.white,
+              style={{ display:"flex", alignItems:"center", gap:6, background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
                 border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
               {loading ? "同步中…" : <><Ico name="refresh" size={13} color="currentColor"/> 同步 Jira</>}
@@ -3375,7 +3383,9 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             const isIssueOverdue = issue.dueDate && issue.statusCategory !== "done" && daysUntil(issue.dueDate) < 0;
             return (
               <div key={issue.key} onClick={()=>toggleExpand(issue.key)}
-                style={{ background:C.white, border:`1px solid ${C.border}`,
+                style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                border:`1px solid ${C.border}`,
+                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
                 borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px 20px",
                   gap:12, alignItems:"center" }}>
@@ -3414,8 +3424,9 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                     {/* Dropdown */}
                     {isOpen && trans.length>0 && (
                       <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0,
-                        background:C.white, border:`1px solid ${C.border}`, borderRadius:10,
-                        boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:100, overflow:"hidden" }}>
+                        background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                        border:`1px solid ${C.border}`, borderRadius:10,
+                        boxShadow:"0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
                           const ts = statusStyle(t.statusCategory ?? "new");
                           return (
@@ -3642,7 +3653,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 style={{ padding:"6px 14px", borderRadius:20, fontFamily:"inherit", fontSize:12, fontWeight:400,
                   cursor:"pointer", transition:"all 0.15s",
                   border:`1px solid ${filterMode===v?C.accent:C.border}`,
-                  background:filterMode===v?C.accent:C.white, color:filterMode===v?"#fff":C.textMid }}>
+                  background:filterMode===v?C.accent:"var(--glass-surface)",
+                  backdropFilter:filterMode===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:filterMode===v?"none":"blur(20px) saturate(160%)",
+                  color:filterMode===v?"#fff":C.textMid }}>
                 {text}
               </button>
             ))}
@@ -3651,7 +3664,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
             style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8,
               fontFamily:"inherit", fontSize:12, cursor:"pointer", transition:"all 0.15s",
               border:`1px solid ${sortByDate?C.accent:C.border}`,
-              background:sortByDate?C.accentLight:C.white, color:sortByDate?C.accent:C.textMid }}>
+              background:sortByDate?C.accentLight:"var(--glass-surface)",
+              backdropFilter:sortByDate?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:sortByDate?"none":"blur(20px) saturate(160%)",
+              color:sortByDate?C.accent:C.textMid }}>
             <Ico name="sort" size={13} color="currentColor"/>依到期日排序
           </button>
         </div>
@@ -3692,7 +3707,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               : (task.deadline ? fmtDate(task.deadline) : "尚未設定期限");
             return (
             <Card key={task.id} onClick={()=>toggleExpand(task.id)}
-              style={{ padding:20, cursor:"pointer", border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : C.white, opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
+              style={{ padding:20, cursor:"pointer", border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : "var(--glass-surface)", backdropFilter:isSelected?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:isSelected?"none":"blur(20px) saturate(160%)", opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isOpen?16:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
                   {/* 完成狀態 */}
@@ -3755,7 +3770,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400,
                         cursor:"pointer", transition:"all 0.15s",
                         border:`1.5px solid ${task.type===v?C.accent:C.border}`,
-                        background:task.type===v?C.accent:C.white, color:task.type===v?"#fff":C.textMid,
+                        background:task.type===v?C.accent:"var(--glass-surface)",
+                        backdropFilter:task.type===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:task.type===v?"none":"blur(20px) saturate(160%)",
+                        color:task.type===v?"#fff":C.textMid,
                         display:"flex", alignItems:"center", gap:5 }}>
                       <Ico name={ico} size={13} color="currentColor"/>{text}
                     </button>
@@ -4071,7 +4088,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
       </div>
 
       {/* Tab nav */}
-      <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, padding:"0 40px", display:"flex" }}>
+      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", borderBottom:`1px solid ${C.border}`, padding:"0 40px", display:"flex" }}>
         {STEPS.map((s,i) => {
           const locked = (i===1&&!canBatch1)||(i===2&&!canBatch2);
           const tip    = i===1?"請先選購 AVA、ACA 或 GW":"請先選購 AVA 或 GW";
@@ -4108,7 +4125,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
               <button onClick={()=>setShowCustomerAccess(true)}
                 style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", flexShrink:0,
-                  background:"var(--surface)", border:"1px solid var(--border)", borderRadius:9,
+                  background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:"1px solid var(--border)", borderRadius:9,
                   cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
                   transition:"all 0.15s" }}
                 onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
@@ -4886,7 +4903,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             </div>
             {/* Batch 2 */}
             {(hasAva||hasGw)&&(
-              <div style={{ background:C.white, border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16 }}>
+              <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16,
+                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>第二批資料</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {hasAva&&BATCH2_ITEMS.map((item,idx)=><OvBatch2Row key={item} item={item} checked={batch2Checked[item]} note={batch2Notes[item]} linkKey={BATCH2_LINK_KEYS[idx]} sheetLinks={sheetLinks}/>)}
@@ -4901,7 +4920,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             )}
             {/* Tasks overview */}
             {tasks.length>0&&(
-              <div style={{ background:C.white, border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24, boxShadow:"var(--shadow)" }}>
+              <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24,
+                boxShadow:"var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
@@ -4977,9 +4998,10 @@ const LoginPage = ({ theme, setTheme }) => {
       <div style={{ position:"fixed", top:16, right:20 }}>
         <ThemeToggle theme={theme} setTheme={setTheme}/>
       </div>
-      <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
+      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        border:"1px solid var(--border)", borderRadius:14,
         padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
-        boxShadow:"0 4px 24px rgba(0,0,0,0.08)" }}>
+        boxShadow:"0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
         <div style={{ width:56, height:56, borderRadius:14, background:"var(--accent)",
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
           <Ico name="building" size={26} color="#fff"/>
