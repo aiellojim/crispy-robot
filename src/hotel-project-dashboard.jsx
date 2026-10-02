@@ -138,6 +138,7 @@ const GLOBAL_CSS = `
     --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
+    --glass-surface: rgba(255,255,255,0.62);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -176,6 +177,7 @@ const GLOBAL_CSS = `
       --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
       --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
       --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
+      --glass-surface: rgba(33,33,43,0.55);
     }
   }
 
@@ -5333,7 +5335,8 @@ export default function App() {
 
       {/* Global header — always visible */}
       {!isDetailView && (
-        <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
+        <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+          borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
