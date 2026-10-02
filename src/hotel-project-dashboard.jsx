@@ -1063,7 +1063,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
@@ -2649,9 +2649,10 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.2)", zIndex:19998 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:400,
-        background:"var(--surface)", borderLeft:"1px solid var(--border)",
-        boxShadow:"-6px 0 32px rgba(0,0,0,0.12)", zIndex:19999,
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:400,
+        background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderLeft:"1px solid var(--border)",
+        boxShadow:"-6px 0 32px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)", zIndex:19999,
         display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)",
@@ -2823,7 +2824,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
@@ -3003,7 +3004,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:440, background:"var(--glass-surface)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
@@ -5034,7 +5035,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
