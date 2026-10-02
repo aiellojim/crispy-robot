@@ -423,6 +423,18 @@ const GLOBAL_CSS = `
     --purple: #33ffcc; --purple-light: #001a15; --purple-subtle: rgba(51,255,204,0.08);
     --shadow-sm: 0 0 4px rgba(0,255,65,0.15);
     --shadow: 0 0 12px rgba(0,255,65,0.12);
+    /* 2026-10-02 補：Liquid Glass 改版上線時這個區塊沒跟著加這三個變數，導致 jim mode 開啟時
+       卡片/面板還是用一般淺色或深色主題的玻璃色調（偏白或偏灰藍），跟這裡其他黑底綠字的駭客配色
+       對不上——跟著其餘三個同款變數一樣，用這個區塊自己的 --surface/--surface-raised 色值推算
+       （--glass-surface 比照其他主題「= --surface 的 RGB，alpha 0.55」的既有規律；
+       --glass-surface-hover 同樣比照「= --surface-raised 的 RGB，alpha 0.72」）。
+       canvas-glow 三色沒有照抄其他主題的藍/橙/綠三色，改成同一個駭客綠在不同濃淡，跟這個區塊
+       整體「單一強調色」的美術方向一致，避免跟代碼雨/掃描線效果搶視覺。 */
+    --glass-surface: rgba(6,10,6,0.55);
+    --glass-surface-hover: rgba(12,20,12,0.72);
+    --canvas-glow-1: rgba(0,255,65,0.18);
+    --canvas-glow-2: rgba(0,255,65,0.12);
+    --canvas-glow-3: rgba(0,255,65,0.15);
   }
   html.jim-mode-effect body { font-family:'DM Mono','Courier New',monospace; }
   html.jim-mode-effect body::after {

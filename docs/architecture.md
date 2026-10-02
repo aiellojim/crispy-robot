@@ -98,6 +98,24 @@ Global Header、Overview 專案卡片已換成毛玻璃材質（`background:"var
   跟外層做對比的巢狀小面板（例如 Jira Epic modal 的錯誤訊息框、SheetLink 的連結輸入框底色）
   維持不透明，因為它們本身的功能就是在已經半透明的外層容器裡提供一塊實色的視覺對比。
 
+**2026-10-02 補：jim mode 彩蛋沒跟著玻璃化更新的 bug**。Jim 問「彩蛋的視覺效果都沒受影響嗎」，
+實際查過一輪：`shake`/`flip table`/`confetti`/`matrix rain`/`glitch`/`barrel roll`/`trip mode`
+這些都是純 CSS keyframe 動畫（套在 `<body>`/`<html>` 上）或獨立建立、直接掛在 `document.body`
+下的 canvas/div（`triggerConfetti()`/`triggerMatrixRain()`，z-index 99998，不是 React 元件樹
+的一部分），完全不經過任何套了 `backdropFilter` 的 Card/Panel，所以不受這次改版影響。**只有
+`jim mode`（`html.jim-mode-effect`）這個會真的換掉整套 CSS 變數的「主題型」彩蛋受影響**：
+它定義了自己的 `--bg`/`--surface`/`--text`/`--border` 等（全黑底、駭客綠字），但套用 Liquid
+Glass 玻璃材質時新增的 `--glass-surface`／`--glass-surface-hover`／`--canvas-glow-1/2/3` 三組
+變數是後來才加的，當時沒有同步補進這個區塊——所以 Card/OvCard 等全部改用 `var(--glass-surface)`
+之後，jim mode 開啟時這些卡片會顯示一般淺色或深色主題的玻璃色調（偏白或偏灰藍），跟黑底綠字的
+駭客風格對不上，是這次改版確實造成的一個小 bug（已修正）：補上這三組變數，`--glass-surface`／
+`--glass-surface-hover` 比照其他主題「顏色＝對應的 `--surface`/`--surface-raised` 色值、
+alpha 分別是 0.55／0.72」的既有規律推算；`--canvas-glow-1/2/3` 沒有照抄其他主題的藍/橙/綠
+三色組合，改成同一個駭客綠在三種不同濃淡，跟這個彩蛋「單一強調色」的美術方向一致，也避免跟
+代碼雨/掃描線效果搶視覺。這是目前唯一一個因為「新增 CSS 變數時只想到標準的四個主題區塊、漏了
+這個額外疊加的第五個彩蛋區塊」而產生的實際視覺 bug，往後如果再新增需要四區塊同步的變數，
+記得這個區塊也要一起檢查。
+
 #### 改版收尾評估（2026-10-02，Jim 要求記錄）
 
 **效能影響**：全檔 `backdropFilter` 共 37 處（`WebkitBackdropFilter` 36 處，兩者本來就該幾乎
