@@ -1236,13 +1236,18 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
   // 有 ...GLASS（backdropFilter），巢狀在它底下會讓這裡自己的 backdropFilter 採樣不到真正的
   // 頁面背景、糊成一片看起來「特別透明」（2026-10-02 跟 UserSettingsPanel 一起踩到、一起修，
   // 同一類根因見 Jira Epic bootstrap modal 當初的 containing-block 問題，見 architecture.md）。
+  // zIndex 原本是 9997/9998——巢狀在 Header 底下時夠用（反正只要比 Header 內其他兄弟元素高就好），
+  // 但 portal 到 document.body 之後，要直接跟 Header 自己的 zIndex:10000 比大小，9997/9998 反而
+  // 比 Header 低，整個下拉選單會被壓到 Header（含分頁切換列）底下。改成跟其餘側邊面板
+  // （NotificationPanel／CustomerAccessPanel／SiteChatEbConsolePanel／UserSettingsPanel）同一個
+  // 20000/20001 階層，確保一定蓋過 Header。
   return createPortal(
   <>
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:9997 }}/>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
       ...GLASS,
       border:"1px solid var(--border)", borderRadius:14,
-      boxShadow:"0 8px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:9998,
+      boxShadow:"0 8px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:20001,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1978,21 +1983,19 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                   if (glow) glow.style.opacity = "0";
                 }}>
 
-                {/* 毛玻璃聚光光斑 — 絕對定位的第一個子元素，後面的內容會自然疊在它上面，
-                    不需要額外設 zIndex。inset:0 + borderRadius 跟卡片本身一致（不是只靠父層
-                    overflow:hidden 去裁切）——先前 inset:-20% 沒有自己設 borderRadius，
-                    filter:blur() 在部分瀏覽器會讓子層的裁切跟父層的圓角對不上，變成看得到
-                    直角，所以這裡直接讓光斑自己的形狀就是圓角，不依賴父層裁切是否生效。
-                    2026-10-02 補充：只設 borderRadius 還不夠——filter:blur() 的模糊範圍本來就會
-                    往外暈開，border-radius 只決定「未模糊前」那個圓角矩形的形狀，不會反過來裁掉
-                    模糊暈開到圓角外的像素；真正能裁掉暈出去的部分，要靠同一個元素自己也設
-                    overflow:hidden（單靠父層 Card 的 overflow:hidden 裁切子層的 filter 渲染結果，
-                    在 backdrop-filter 疊加的情境下部分瀏覽器會失效，跟 Header 巢狀面板那個
-                    backdrop-filter containing-block 問題是同一類瀏覽器合成層怪癖）。淺色模式下
-                    暈出去的白色光斑跟卡片底色對比不明顯，不容易發現；深色模式卡片底色深，暈出的
-                    直角範圍就很顯眼，所以 Jim 只在深色模式看到。 */}
-                <div className="card-glow" style={{ position:"absolute", inset:0, borderRadius:12, overflow:"hidden", pointerEvents:"none",
-                  filter:"blur(22px)", opacity:0, transition:"opacity 0.45s ease", mixBlendMode:"soft-light" }}/>
+                {/* 毛玻璃聚光光斑。2026-10-02 第二次修正：第一次只在 .card-glow 自己身上同時加
+                    borderRadius + overflow:hidden，想說「裁切跟濾鏡同一個元素上總該有效」，但
+                    Jim 回報深色模式下四角還是看得到——查證後這個假設本身就是錯的：overflow:hidden
+                    只會裁切「這個元素自己的子孫內容」的溢出，並不會回頭裁掉這個元素自己的
+                    filter:blur() 往外暈開的範圍，兩者加在同一個元素上無效，這是 CSS filter
+                    效果的已知限制，不是瀏覽器差異或 bug。真正可靠的做法是標準的「裁切用外層、
+                    濾鏡用內層」兩層結構：外層只負責 overflow:hidden + borderRadius 把形狀裁成
+                    圓角，本身完全不帶 filter；真正套 filter:blur() 的 .card-glow 當內層子元素，
+                    它暈出去的範圍會被外層的裁切邊界擋住，而不是靠自己擋自己。 */}
+                <div style={{ position:"absolute", inset:0, borderRadius:12, overflow:"hidden", pointerEvents:"none" }}>
+                  <div className="card-glow" style={{ position:"absolute", inset:0, pointerEvents:"none",
+                    filter:"blur(22px)", opacity:0, transition:"opacity 0.45s ease", mixBlendMode:"soft-light" }}/>
+                </div>
 
                 {/* Row 1 */}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>

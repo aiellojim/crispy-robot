@@ -201,7 +201,18 @@ block／stacking context，子孫自己的 `backdropFilter` 這時採樣不到�
 訂閱）都是渲染在 `HomePage`／App 根層級，不在任何有 `backdropFilter` 的祖先元素底下，所以才會
 「看起來清楚」——不是這兩個面板的程式碼寫得不一樣（`...GLASS` 完全相同），純粹是巢狀位置的問題。
 修法比照 Jira Epic modal：兩個元件自己的 `return` 改成 `createPortal(..., document.body)`，
-直接把這兩個面板掛到 `document.body`，脫離 Header 的 stacking context。另外也發現
+直接把這兩個面板掛到 `document.body`，脫離 Header 的 stacking context。
+
+**2026-10-02 補充修正（同一天稍晚發現）**：`InAppNotifModal` portal 完之後，Jim 回報整個下拉選單
+被壓到 Header 的分頁切換列底下。原因：portal 之前，`InAppNotifModal` 巢狀在 Header 裡面，
+`zIndex:9997/9998` 只要比 Header 內其他兄弟元素高就夠用，不需要跟 Header 自己的 `zIndex:10000`
+比較；但 portal 到 `document.body` 之後，它變成要直接跟 Header 的 `zIndex:10000` 在同一層比較大小，
+而 9997/9998 < 10000，整個面板因此沉到 Header 底下。`UserSettingsPanel` 沒有這個問題，因為它原本
+用的 `zIndex:20000/20001` 剛好已經比 10000 高，portal 前後都安全。修法：把 `InAppNotifModal` 的
+`zIndex` 一併調整成跟其他側邊面板同一階層的 `20000/20001`。**這是這類「把元素 portal 出某個容器」
+修法共通要注意的地方：z-index 的比較基準會從「容器內的局部順序」變成「跟容器本身、以及其他所有
+portal 到同一個掛載點的元素互相比較」，portal 前原本夠用的 z-index 數字，portal 後不一定還夠用，
+每次用 createPortal 都要重新檢查數字夠不夠大。**另外也發現
 `InAppNotifModal` 的背景遮罩 `<div onClick={onClose}>` 原本完全沒設 `background`（其餘面板都是
 `rgba(0,0,0,0.08)`），一併補上以跟其他面板一致。已確認 `CustomerAccessPanel`／
 `SiteChatEbConsolePanel`（渲染在 `ProjectDetail` 裡）跟 ProjectDetail 自己的本地 sticky header
@@ -213,20 +224,31 @@ block／stacking context，子孫自己的 `backdropFilter` 這時採樣不到�
 圖示（左邊用 `transform:rotate(180deg)`）、`color:"var(--text-subtle)"` + hover 時變
 `var(--accent)`，跟 Header 鈴鐺按鈕同一套 hover 慣例。
 
-#### 2026-10-02 追修：Overview 卡片光暈在深色模式露出直角
+#### 2026-10-02 追修：Overview 卡片光暈在深色模式露出直角（兩次嘗試）
 
 Jim 回報 Overview 專案卡片的滑鼠跟隨光暈（`.card-glow`），在深色模式下四角還是看得出直角，沒有
-跟卡片本身的圓角外框切齊。這個元件先前就已經踩過一次類似問題並嘗試修過（見上面那段舊註解：
-把光斑自己也設 `borderRadius:12`，不只依賴父層 `overflow:hidden` 裁切），但這次確認那個修法
-不完整——`border-radius` 只決定「模糊前」那個圓角矩形的形狀，`filter:blur(22px)` 本身的模糊暈染
-會往外擴散超出這個形狀，`border-radius` 不會反過來把暈出去的部分裁掉；真正能裁掉暈染範圍的，
-是 `overflow:hidden`，而且要設在**跟 `filter:blur()` 同一個元素上**才可靠（只靠父層 Card 的
-`overflow:hidden` 去裁子層的 filter 渲染結果，在父層同時有 `backdrop-filter` 的情況下，部分瀏覽器
-合成層處理會失效——這跟 Header 巢狀面板那個 `backdrop-filter` containing-block 問題是同一類瀏覽器
-合成怪癖）。淺色模式下暈出去的白色光斑跟卡片底色的對比不明顯，不容易注意到；深色模式卡片底色深，
-暈出的直角範圍對比強烈，才會被看出來。修法：在 `.card-glow` 自己的 inline style 補上
-`overflow:"hidden"`（跟既有的 `borderRadius:12` 同一個元素），讓模糊暈染確實被裁到圓角範圍內，
-不再依賴父層的裁切是否生效。
+跟卡片本身的圓角外框切齊。
+
+**第一次嘗試（錯的，記錄下來避免以後重蹈覆轍）**：在 `.card-glow` 自己的 inline style 上同時補
+`overflow:"hidden"` 跟既有的 `borderRadius:12`，想法是「裁切跟濾鏡同一個元素上總該有效」。Jim
+實測後回報深色模式下四角依然存在，證明這個假設是錯的：`overflow:hidden` 只會裁掉「這個元素自己
+的子孫內容」溢出的部分，**不會**回頭裁掉這個元素自己的 `filter:blur()` 往外暈開的範圍——兩者套在
+同一個元素上，裁切對濾鏡完全不生效。這是 CSS filter 效果本身的既有限制，不是瀏覽器差異或合成層
+bug（這點上一版的猜測方向是錯的）。
+
+**第二次嘗試（改成裁切/濾鏡分離成兩層）**：標準且可靠的做法是把「裁切」跟「套濾鏡」拆成兩個不同
+元素——外層只負責 `overflow:hidden` + `borderRadius:12` 把形狀裁成圓角、本身完全不帶任何
+`filter`；真正套 `filter:blur(22px)` 的 `.card-glow` 當內層子元素，它暈出去的範圍會被外層的裁切
+邊界擋下來，而不是靠自己擋自己。`querySelector(".card-glow")` 抓的 class name 不變，三個滑鼠事件
+handler 不用跟著改。
+
+**誠實說明**：這兩次修正都只透過 `npx vite build` 驗證語法跟 bundle 正常，**沒有實際在瀏覽器裡
+看過效果**——這個 sandbox 裡的瀏覽器工具連不到 Jim 本機的開發伺服器或部署後的正式網址，所以
+每次修改都只能依賴程式碼層面的推理，無法像本來驗收流程要求的「實際頁面確認」那樣自己先肉眼
+過一次。這次的二層分離結構是業界常見、原理上更可靠的標準做法，但因為第一次的猜測已經證明不可靠，
+不敢保證這次一定根除——如果 Jim 實測後還是看得到直角，麻煩截圖或告知瀏覽器/作業系統，會需要更多
+線索才能繼續排查（例如是否跟 Safari 對 `backdrop-filter`+`border-radius` 組合的既有渲染限制有關，
+這類限制目前沒有已知能 100% 跨瀏覽器解決的純 CSS 寫法）。
 
 ## 資料表
 
