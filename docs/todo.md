@@ -127,6 +127,16 @@
 - **無法復原的損失**：Langley Park 這個專案原本存在的 Showcase／Ads／Marketing Event 內容已經遺失，Jim 需要重新輸入；這次的修正能防止未來再發生同一種遺失，但不能挽回已經沒了的資料。
 - 還原點：`AVA UI settings`／`ACA basic settings` 皆為 `pre-friendly-defaults-lastsynced-fix-2026-09-15`。
 
+### 14. esm.sh 依賴風險：飯店端表單透過執行期 import 抓 Supabase JS SDK，CDN 失敗會讓整站顯示空殼（2026-09-23 發現，尚未動工）
+- 現象：Jim 回報全部（非 hotel-dashboard 本身的）飯店端 settings 表單一度同時打開都只顯示頁面骨架，資料讀不到、側邊欄分頁切換也不見，幾分鐘後自動恢復，懷疑是 Vercel。
+- **根因（推論，未經 esm.sh 自身事故紀錄獨立證實）**：`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings` 都是「無框架、無 build step」，靠 `<script type="module">` 在執行期用 `import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'` 動態抓 SDK。esm.sh 是「執行期即時轉譯」CDN（npm 套件現場轉成 ESM，未快取版本要現場 build），一旦轉譯或 CDN 本身短暫失效，整個 `<script type="module">`（含路由、sidebar、資料讀取等全部邏輯）會靜默完全不執行，只剩靜態 HTML 骨架——症狀跟 Jim 的描述完全吻合。查詢當下 esm.sh 官方狀態頁（`esm.instatus.com`）顯示全部正常、過去 7 天無事故通報，所以無法拿到跟這次事件時間點對得上的官方事故紀錄佐證，只能說症狀高度吻合、機率上最可能，不是 100% 確認。
+- **已比較三個候選方案（2026-09-23，Jim 訴求：免費、穩定、易查錯，尚未選定）**：
+  1. **自架 SDK 檔案（推薦）**：把 Supabase JS 官方預先打包好的單檔 ESM bundle 下載下來，放進各表單自己的 repo（例如 `./vendor/supabase.js`），改成相對路徑 import，執行期完全不再依賴任何外部 CDN。三個訴求裡「穩定」「易查錯」都能做到風險歸零而非降低——以後表單空白一定是自己程式碼的 bug。代價：SDK 版本要自己手動更新（不會自動拿到安全性更新／新功能），且因為 4 個表單各自獨立部署，vendor 檔案要在每個 repo 各放一份、之後升級要記得同步。
+  2. **改用 jsDelivr 的 `/+esm` 端點**：背後是 Cloudflare + Fastly 雙 CDN，規模與 SLA 比 esm.sh 高很多，CDN 完全失效機率降低但沒有歸零；出問題時的症狀（整個 module script 靜默失敗）跟現在一樣，「易查錯」沒有實質改善，仍是外部依賴。
+  3. **改用 unpkg**：需直接指到套件內部已打包好的 ESM 檔案路徑，Supabase JS 內部檔案通常還有自己的 bare import（例如 `cross-fetch`），瀏覽器沒有 import map 無法解析，實務上容易踩雷，可用性比 jsDelivr 差，不建議。
+  4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
+- **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。

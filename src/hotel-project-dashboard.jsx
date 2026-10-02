@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 
 // ─── Supabase ─────────────────────────────────────────────────
@@ -1073,7 +1074,9 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
             <div style={{ fontSize:16, fontWeight:500, color:C.text }}>通知設定</div>
             <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>Email 提醒</div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit" }}>✕</button>
+          <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textMid; }}>✕</button>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
@@ -1405,7 +1408,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
             <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
             <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
           </div>
-          <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit" }}>✕</button>
+          <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}>✕</button>
         </div>
         {modal.mode==="add" && (
           <div style={{ marginBottom:16 }}>
@@ -2669,7 +2674,9 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
           </div>
           <button onClick={onClose}
             style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
-              padding:"4px 10px", cursor:"pointer", fontSize:16, color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+              padding:"4px 10px", cursor:"pointer", fontSize:16, color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
         </div>
 
         {/* Messages */}
@@ -2840,7 +2847,9 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
           </div>
           <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
             borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+            color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
         </div>
 
         {/* Email list */}
@@ -3018,7 +3027,9 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
           </div>
           <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
             borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-subtle)", fontFamily:"inherit" }}>✕</button>
+            color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
@@ -4167,8 +4178,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                 )}
 
-                {/* Bootstrap Modal */}
-                {jiraBoot.open && (
+                {/* Bootstrap Modal（用 Portal 掛到 document.body，避免被外層 Card 的 backdropFilter 建立新的 containing block 困住） */}
+                {jiraBoot.open && createPortal(
                   <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.15)", zIndex:20000,
                     display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
                     onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
@@ -4184,7 +4195,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
                             style={{ background:"none", border:"1px solid var(--border)", borderRadius:6,
                               padding:"3px 9px", cursor:"pointer", fontSize:15, color:"var(--text-mid)",
-                              lineHeight:1, fontFamily:"inherit" }}>✕</button>
+                              lineHeight:1, fontFamily:"inherit", transition:"all 0.15s" }}
+                            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+                            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>✕</button>
                         )}
                       </div>
 
@@ -4308,7 +4321,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                         </div>
                       )}
                     </div>
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             </Card>
@@ -5047,7 +5061,9 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
           </div>
           <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
             borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-mid)", fontFamily:"inherit" }}>✕</button>
+            color:"var(--text-mid)", fontFamily:"inherit", transition:"all 0.15s" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>✕</button>
         </div>
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           <div style={{ marginBottom:18 }}>
