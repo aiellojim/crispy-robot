@@ -112,7 +112,7 @@ const GLOBAL_CSS = `
     --border-mid: #D4D4D4;
     --text: #111111;
     --text-mid: #6B6B6B;
-    --text-subtle: #A3A3A3;
+    --text-subtle: #767676;
     --accent: #E8621A;
     --accent-light: #FFF4EE;
     --accent-border: rgba(232,98,26,0.25);
@@ -155,7 +155,7 @@ const GLOBAL_CSS = `
       --border-mid: #42424F;
       --text: #EDEDED;
       --text-mid: #A3A3A3;
-      --text-subtle: #6B6B6B;
+      --text-subtle: #8C8C8C;
       --accent: #F4873D;
       --accent-light: #2A1A0A;
       --accent-border: rgba(244,135,61,0.3);
@@ -335,7 +335,7 @@ const GLOBAL_CSS = `
   html[data-theme="light"] {
     --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
     --border: #E5E5E5; --border-mid: #D4D4D4;
-    --text: #111111; --text-mid: #6B6B6B; --text-subtle: #A3A3A3;
+    --text: #111111; --text-mid: #6B6B6B; --text-subtle: #767676;
     --accent: #E8621A; --accent-light: #FFF4EE;
     --accent-border: rgba(232,98,26,0.25); --accent-subtle: rgba(232,98,26,0.07);
     --green: #16A34A; --green-light: #F0FDF4; --green-subtle: rgba(22,163,74,0.08);
@@ -361,7 +361,7 @@ const GLOBAL_CSS = `
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
     --border: #32323F; --border-mid: #42424F;
-    --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #6B6B6B;
+    --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #8C8C8C;
     --accent: #F4873D; --accent-light: #2A1A0A;
     --accent-border: rgba(244,135,61,0.3); --accent-subtle: rgba(244,135,61,0.08);
     --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
