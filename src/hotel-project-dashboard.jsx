@@ -460,6 +460,16 @@ const GLOBAL_CSS = `
 const daysUntil = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
 const fmtDate   = (d) => d ? new Date(d).toLocaleDateString("zh-TW") : "—";
 
+// 目前實際生效的是深色還是淺色主題——跟 CSS 的判斷順序完全對應：html[data-theme] 有明確設定時
+// 以它為準（對應使用者在 ThemeToggle 選了 light/dark）；沒有設定（= 使用者選 "system"，App 的
+// useEffect 會 removeAttribute）時才退回 prefers-color-scheme。給純 JS 端（例如滑鼠互動時要
+// 即時決定顏色、不方便整個走 CSS 變數）在少數幾個地方用，目前只有 Overview 卡片光暈。
+const isDarkTheme = () => {
+  const explicit = document.documentElement.getAttribute("data-theme");
+  if (explicit) return explicit === "dark";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+};
+
 const getFlags = (products, integrations) => ({
   hasAva:  products.includes("AVA"),
   hasAca:  products.includes("ACA"),
@@ -1966,7 +1976,17 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                   const r = e.currentTarget.getBoundingClientRect();
                   const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
                   const glow = e.currentTarget.querySelector(".card-glow");
-                  if (glow) glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.22) 30%, transparent 62%)`;
+                  if (glow) {
+                    // 深色模式維持原本的白色高光（卡片底色深，白光對比夠）；淺色模式卡片底色
+                    // 本來就接近白色，同樣的白色光斑疊上去幾乎看不出來，所以改用品牌 accent 橘
+                    // （--accent 淺色模式的色號 #E8621A → 232,98,26），色調跟全站 CTA／連結一致，
+                    // 不是另外挑的新顏色。濃度比白色版本略低（0.4/0.16 vs 0.55/0.22），因為
+                    // 有色光在同樣透明度下視覺上比白光更搶眼，要往下調才不會太像一塊橘漬。
+                    // 這組數值是起始推薦值，Jim 看過實際效果覺得濃淡不對，直接調這兩個 0.4/0.16
+                    // 即可，不用動其他邏輯。
+                    const rgb = isDarkTheme() ? "255,255,255" : "232,98,26";
+                    glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(${rgb},0.4) 0%, rgba(${rgb},0.16) 30%, transparent 62%)`;
+                  }
                   // 這些卡片比 demo 的示範卡片大上快一倍寬（minmax(500px,...) vs demo 的 280px），
                   // 同樣的旋轉角度在更大的面上視覺位移量會放大很多，所以角度要降更低、
                   // perspective 距離也要拉遠，手感才會跟 demo 一致（而不是同角度套用在更大的卡片上）。
