@@ -192,6 +192,18 @@ const GLOBAL_CSS = `
   }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
+
+  /* 2026-10-02：全站背景的模糊漸層色塊，比照 liquid-glass demo 確認過的版本搬進來。
+     position:fixed + zIndex:-1，固定在視窗背後，不隨捲動移動，顏色用既有的
+     --prod-* / --accent 系列變數（本來就有 light/dark 兩套值，不用另外配色）。
+     目前站上大部分卡片都還是不透明白底，這幾個色塊在它們背後完全看不出來，只會在
+     空白頁緣／之後真的套用玻璃材質的元件背後顯示出來——先加上去不影響現有任何畫面，
+     等玻璃材質套到 Overview 卡片時才會看到完整效果。 */
+  .bg-blob { position:fixed; border-radius:50%; filter:blur(90px); opacity:0.35; z-index:-1; pointer-events:none; }
+  .bg-blob1{ width:480px; height:480px; top:-140px; left:-120px; background:var(--prod-ava); }
+  .bg-blob2{ width:440px; height:440px; top:220px; right:-160px; background:var(--accent); }
+  .bg-blob3{ width:380px; height:380px; bottom:-180px; left:30%; background:var(--prod-aca); }
+  @media (prefers-color-scheme: dark) { .bg-blob { opacity:0.22; } }
   /* 🥚 視覺類彩蛋 — 獨立命名，跟 loading spinner 用的 spin 分開，避免以後改 spinner 速度時互相影響 */
   @keyframes barrelRoll { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   body.barrel-roll-effect { animation: barrelRoll 1s ease-in-out; transform-origin:center center; }
@@ -5315,6 +5327,9 @@ export default function App() {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
+      <div className="bg-blob bg-blob1"/>
+      <div className="bg-blob bg-blob2"/>
+      <div className="bg-blob bg-blob3"/>
 
       {/* Global header — always visible */}
       {!isDetailView && (
