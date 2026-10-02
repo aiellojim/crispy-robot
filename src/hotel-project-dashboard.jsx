@@ -101,6 +101,28 @@ const baseInput = {
   outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color 0.15s",
 };
 
+// Liquid Glass 材質（2026-10-02 改版，見 docs/architecture.md「Liquid Glass 視覺改版」一節）。
+// 全站套用毛玻璃效果的卡片/面板/次要按鈕一律 `{...GLASS, ...其他 style}` 展開這個常數，不要手寫
+// 三行字面值——之後若要整站調整模糊強度/飽和度，只要改這一處。注意展開順序：GLASS 要放在前面，
+// 讓呼叫端自己的 style 屬性可以覆寫（例如某張卡片刻意要退回不透明時），但也因此呼叫端如果不小心
+// 自己又寫了一次 background，會覆寫掉這裡的玻璃背景、不會有任何錯誤或警告（Card 元件旁邊有一樣
+// 的提醒註解，TasksTab 曾經踩過這個坑）。
+const GLASS = {
+  background: "var(--glass-surface)",
+  backdropFilter: "blur(20px) saturate(160%)",
+  WebkitBackdropFilter: "blur(20px) saturate(160%)",
+};
+
+// 「選中態＝純色實色、未選中態＝玻璃」這個切換按鈕樣式在 CalendarPage／TasksTab／JiraTab 重複了
+// 好幾次，统一用這個 helper 展開。`active` 為 true 時回傳純色填滿（不套 blur，純色按鈕不需要）、
+// false 時回傳跟 GLASS 一致的玻璃樣式。注意：純色的「選中態」本身是故意不玻璃化的功能性狀態指示
+// （跟主色 CTA 按鈕同一類判斷，見 architecture.md），不要為了統一視覺把 active 分支也套 GLASS。
+const glassToggle = (active, activeBg) => ({
+  background: active ? activeBg : GLASS.background,
+  backdropFilter: active ? "none" : GLASS.backdropFilter,
+  WebkitBackdropFilter: active ? "none" : GLASS.WebkitBackdropFilter,
+});
+
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
@@ -544,6 +566,21 @@ const newProject = () => {
 
 // ─── Shared UI components ─────────────────────────────────────
 
+// 統一的側邊欄/modal 關閉（✕）按鈕，取代原本 7 處幾乎一樣的 inline 寫法（2026-10-02 加上紅色
+// hover 高亮時發現完全重複，順手收斂成元件）。各呼叫端原本在字級/圓角/padding/文字顏色上有些微
+// 差異（多半是不同時期各自手刻造成的，不是刻意設計），這裡用 props 把差異值傳進來、原樣保留每個
+// 呼叫端目前的視覺，沒有統一成同一套外觀——預設值取最常見的那組（CustomerAccessPanel／
+// SiteChatEbConsolePanel 原本的寫法）。
+const CloseButton = ({ onClick, size=16, radius=8, padding="4px 10px", color="var(--text-subtle)", lineHeight }) => (
+  <button onClick={onClick}
+    style={{ background:"none", border:"1px solid var(--border)", borderRadius:radius,
+      padding, cursor:"pointer", fontSize:size, color, fontFamily:"inherit", transition:"all 0.15s",
+      ...(lineHeight!=null ? { lineHeight } : {}) }}
+    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
+    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color=color; }}
+  >✕</button>
+);
+
 // Linear-style thin progress bar (replaces Ring)
 const LinearProgress = ({ pct, color }) => (
   <div style={{ height:3, background:"var(--border)", borderRadius:2, overflow:"hidden", width:"100%" }}>
@@ -554,7 +591,7 @@ const LinearProgress = ({ pct, color }) => (
 const ProgressCard = ({ label, checked, total, color }) => {
   const pct = total===0 ? 0 : Math.round((checked/total)*100);
   return (
-    <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+    <div style={{ ...GLASS,
       border:"1px solid var(--border)", borderRadius:12,
       boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
       padding:"16px 20px", flex:1, minWidth:150 }}>
@@ -675,9 +712,14 @@ const MiniBar = ({ pct, color }) => (
   </div>
 );
 
+// 注意：呼叫端傳進來的 style prop 會整個蓋在最後（...style 在最後一個），所以如果呼叫端自己在
+// style 裡又寫一次 background，會不聲不響蓋掉下面這個 ...GLASS 背景、沒有任何錯誤或警告
+// （2026-10-02 在 TasksTab 踩過一次：<Card style={{background:C.white}}> 讓玻璃效果整個失效，
+// 見 architecture.md「Liquid Glass 視覺改版」一節）。要覆寫 Card 的視覺時，請透過
+// border/boxShadow/padding 等其他屬性，不要覆寫 background，除非真的要刻意讓某張卡片退回不透明
+// （並在呼叫端註明原因）。
 const Card = ({ children, style={}, ...rest }) => (
-  <div {...rest} style={{ background:"var(--glass-surface)",
-    backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+  <div {...rest} style={{ ...GLASS,
     border:"1px solid var(--border)", borderRadius:12,
     boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
     padding:24, marginBottom:16, ...style }}>
@@ -871,8 +913,7 @@ const OvCheckRow = ({ label, checked, note, color }) => (
 );
 
 const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
-  <div style={{ background:"var(--glass-surface)",
-    backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+  <div style={{ ...GLASS,
     border:"1px solid var(--border)", borderRadius:12, padding:16,
     boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
     <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:400 }}>{title}</div>
@@ -1066,8 +1107,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
-        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
         borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
@@ -1076,9 +1116,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
             <div style={{ fontSize:16, fontWeight:500, color:C.text }}>通知設定</div>
             <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>Email 提醒</div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:18, color:C.textMid, fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textMid; }}>✕</button>
+          <CloseButton onClick={onClose} size={18} color={C.textMid}/>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
@@ -1186,7 +1224,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
   <>
     <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9997 }}/>
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
-      background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      ...GLASS,
       border:"1px solid var(--border)", borderRadius:14,
       boxShadow:"0 8px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:9998,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -1402,7 +1440,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
   const ModalContent = modal ? (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.15)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
-      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ ...GLASS,
         borderRadius:14, padding:28, width:"100%", maxWidth:520,
         boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
@@ -1410,9 +1448,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
             <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
             <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
           </div>
-          <button onClick={closeModal} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16, color:C.textLight, fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}>✕</button>
+          <CloseButton onClick={closeModal} color={C.textLight}/>
         </div>
         {modal.mode==="add" && (
           <div style={{ marginBottom:16 }}>
@@ -1446,7 +1482,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <div style={{ display:"flex", gap:8 }}>
             {[{ v:"deadline", ico:"pin", text:"期限" },{ v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text })=>(
               <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, background:draft.type===v?C.accent:"var(--glass-surface)", backdropFilter:draft.type===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:draft.type===v?"none":"blur(20px) saturate(160%)", color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, ...glassToggle(draft.type===v, C.accent), color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
             ))}
           </div>
         </div>
@@ -1489,7 +1525,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           </button>
         </div>
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-          <button onClick={closeModal} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
+          <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving}
             style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
@@ -1506,9 +1542,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:16 }}>
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
+          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }} style={{ ...GLASS, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>‹</button>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
-          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
+          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }} style={{ ...GLASS, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", fontFamily:"inherit", fontSize:16 }}>›</button>
           <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
@@ -1525,7 +1561,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Calendar grid */}
       <div ref={gridRef} style={{ border:`1px solid ${C.border}`, borderRadius:12, position:"relative", overflow:"visible" }}
         onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}>
-        <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", borderRadius:12, overflow:"hidden" }}>
+        <div style={{ ...GLASS, borderRadius:12, overflow:"hidden" }}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
           {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:500, color:d==="日"?C.red:d==="六"?C.accent:C.textMid }}>{d}</div>)}
         </div>
@@ -1603,7 +1639,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
             <div onClick={e=>e.stopPropagation()}
               style={{ position:"absolute", top:expandedPos.top, left:expandedPos.left,
                 width:Math.max(expandedPos.width, 180), height:dropH,
-                background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                ...GLASS,
                 border:`1px solid ${C.accentBorder}`,
                 borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)",
                 zIndex:9999, display:"flex", flexDirection:"column" }}>
@@ -1643,7 +1679,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {events.length>0 && (
         <div style={{ marginTop:24 }}>
           <h3 style={{ fontSize:15, fontWeight:500, color:C.text, marginBottom:12 }}>本月事件</h3>
-          <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+          <div style={{ ...GLASS,
             border:"1px solid var(--border)", borderRadius:12, overflow:"hidden",
             boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
@@ -1772,7 +1808,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
         {stats.map(({ label, value, icon, color, sub, onClick, isActive }) => (
           <div key={label} onClick={onClick}
-            style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+            style={{ ...GLASS,
               border:`1px solid ${isActive ? color : "var(--border)"}`,
               borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease",
               cursor:onClick?"pointer":"default",
@@ -1795,7 +1831,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       </div>
 
       {/* 篩選欄（含通知設定，統一外框） */}
-      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ ...GLASS,
         border:"1px solid var(--border)",
         boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
         borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
@@ -1874,8 +1910,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
             return (
               <div key={proj.id}
                 style={{ position:"relative", overflow:"hidden",
-                  background:"var(--glass-surface)",
-                  backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                  ...GLASS,
                   border:"1px solid var(--border)", borderRadius:12,
                   padding:20, cursor:"pointer",
                   boxShadow:"var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
@@ -2662,7 +2697,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:19998 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:400,
-        background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        ...GLASS,
         borderLeft:"1px solid var(--border)",
         boxShadow:"-6px 0 32px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)", zIndex:19999,
         display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
@@ -2679,11 +2714,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
               <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.5 Flash Lite</div>
             </div>
           </div>
-          <button onClick={onClose}
-            style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
-              padding:"4px 10px", cursor:"pointer", fontSize:16, color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
+          <CloseButton onClick={onClose} radius={7}/>
         </div>
 
         {/* Messages */}
@@ -2838,8 +2869,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
-        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
@@ -2852,11 +2882,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
               Hotel ID: <span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
             </div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
-            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
+          <CloseButton onClick={onClose}/>
         </div>
 
         {/* Email list */}
@@ -3020,8 +3046,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, background:"var(--glass-surface)",
-        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, ...GLASS,
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
@@ -3032,11 +3057,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
             <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>推送到 eb-console</div>
             <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>SiteChat 問候語 + 主題色彩（不含 FAQ 卡片）</div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
-            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-subtle)", fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>✕</button>
+          <CloseButton onClick={onClose}/>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
@@ -3329,15 +3350,14 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
           <div style={{ display:"flex", gap:8 }}>
             <button onClick={handleUpdateDescription} disabled={descLoading}
               style={{ display:"flex", alignItems:"center", gap:6,
-                background:descSuccess?C.greenLight:"var(--glass-surface)",
-                backdropFilter:descSuccess?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:descSuccess?"none":"blur(20px) saturate(160%)",
+                ...glassToggle(descSuccess, C.greenLight),
                 border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:descLoading?"wait":"pointer", fontSize:13,
                 color:descSuccess?C.green:C.textMid, fontFamily:"inherit", transition:"all 0.2s" }}>
               {descLoading?"更新中…":descSuccess?"✓ 已更新":<><Ico name="fileText" size={13} color="currentColor"/> 更新 Epic Description</>}
             </button>
             <button onClick={fetchIssues} disabled={loading}
-              style={{ display:"flex", alignItems:"center", gap:6, background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+              style={{ display:"flex", alignItems:"center", gap:6, ...GLASS,
                 border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
                 cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
               {loading ? "同步中…" : <><Ico name="refresh" size={13} color="currentColor"/> 同步 Jira</>}
@@ -3383,7 +3403,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             const isIssueOverdue = issue.dueDate && issue.statusCategory !== "done" && daysUntil(issue.dueDate) < 0;
             return (
               <div key={issue.key} onClick={()=>toggleExpand(issue.key)}
-                style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                style={{ ...GLASS,
                 border:`1px solid ${C.border}`,
                 boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
                 borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer" }}>
@@ -3424,7 +3444,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                     {/* Dropdown */}
                     {isOpen && trans.length>0 && (
                       <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0,
-                        background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                        ...GLASS,
                         border:`1px solid ${C.border}`, borderRadius:10,
                         boxShadow:"0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
@@ -3653,8 +3673,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 style={{ padding:"6px 14px", borderRadius:20, fontFamily:"inherit", fontSize:12, fontWeight:400,
                   cursor:"pointer", transition:"all 0.15s",
                   border:`1px solid ${filterMode===v?C.accent:C.border}`,
-                  background:filterMode===v?C.accent:"var(--glass-surface)",
-                  backdropFilter:filterMode===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:filterMode===v?"none":"blur(20px) saturate(160%)",
+                  ...glassToggle(filterMode===v, C.accent),
                   color:filterMode===v?"#fff":C.textMid }}>
                 {text}
               </button>
@@ -3664,8 +3683,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
             style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8,
               fontFamily:"inherit", fontSize:12, cursor:"pointer", transition:"all 0.15s",
               border:`1px solid ${sortByDate?C.accent:C.border}`,
-              background:sortByDate?C.accentLight:"var(--glass-surface)",
-              backdropFilter:sortByDate?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:sortByDate?"none":"blur(20px) saturate(160%)",
+              ...glassToggle(sortByDate, C.accentLight),
               color:sortByDate?C.accent:C.textMid }}>
             <Ico name="sort" size={13} color="currentColor"/>依到期日排序
           </button>
@@ -3707,7 +3725,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               : (task.deadline ? fmtDate(task.deadline) : "尚未設定期限");
             return (
             <Card key={task.id} onClick={()=>toggleExpand(task.id)}
-              style={{ padding:20, cursor:"pointer", border:`1px solid ${isSelected ? C.accentBorder : C.border}`, background:isSelected ? C.accentLight : "var(--glass-surface)", backdropFilter:isSelected?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:isSelected?"none":"blur(20px) saturate(160%)", opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
+              style={{ padding:20, cursor:"pointer", border:`1px solid ${isSelected ? C.accentBorder : C.border}`, ...glassToggle(isSelected, C.accentLight), opacity:task.completed?0.6:1, transition:"opacity 0.15s" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isOpen?16:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
                   {/* 完成狀態 */}
@@ -3770,8 +3788,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400,
                         cursor:"pointer", transition:"all 0.15s",
                         border:`1.5px solid ${task.type===v?C.accent:C.border}`,
-                        background:task.type===v?C.accent:"var(--glass-surface)",
-                        backdropFilter:task.type===v?"none":"blur(20px) saturate(160%)", WebkitBackdropFilter:task.type===v?"none":"blur(20px) saturate(160%)",
+                        ...glassToggle(task.type===v, C.accent),
                         color:task.type===v?"#fff":C.textMid,
                         display:"flex", alignItems:"center", gap:5 }}>
                       <Ico name={ico} size={13} color="currentColor"/>{text}
@@ -4057,7 +4074,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
       {/* Header — 跟 App 的 Global Header 是不同元件（這份是 ProjectDetail 自己的），
           所以之前換玻璃材質時沒有一起套到，這裡補上同一套處理 */}
-      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ ...GLASS,
         borderBottom:`1px solid ${C.border}`, padding:"0 40px",
         display:"flex", alignItems:"center", justifyContent:"space-between",
         height:60, position:"sticky", top:0, zIndex:10000 }}>
@@ -4088,7 +4105,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
       </div>
 
       {/* Tab nav */}
-      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", borderBottom:`1px solid ${C.border}`, padding:"0 40px", display:"flex" }}>
+      <div style={{ ...GLASS, borderBottom:`1px solid ${C.border}`, padding:"0 40px", display:"flex" }}>
         {STEPS.map((s,i) => {
           const locked = (i===1&&!canBatch1)||(i===2&&!canBatch2);
           const tip    = i===1?"請先選購 AVA、ACA 或 GW":"請先選購 AVA 或 GW";
@@ -4125,7 +4142,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
               <button onClick={()=>setShowCustomerAccess(true)}
                 style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", flexShrink:0,
-                  background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)", border:"1px solid var(--border)", borderRadius:9,
+                  ...GLASS, border:"1px solid var(--border)", borderRadius:9,
                   cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
                   transition:"all 0.15s" }}
                 onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
@@ -4201,7 +4218,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
                     onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
                       setJiraBoot(p=>({...p,open:false})); }}>
-                    <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                    <div style={{ ...GLASS,
                       borderRadius:14, padding:28, width:"100%", maxWidth:460,
                       boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
 
@@ -4209,12 +4226,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
                         <h3 style={{ fontSize:17, fontWeight:500, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
                         {!["creating_epic","creating_tasks"].includes(jiraBoot.step) && (
-                          <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
-                            style={{ background:"none", border:"1px solid var(--border)", borderRadius:6,
-                              padding:"3px 9px", cursor:"pointer", fontSize:15, color:"var(--text-mid)",
-                              lineHeight:1, fontFamily:"inherit", transition:"all 0.15s" }}
-                            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>✕</button>
+                          <CloseButton onClick={()=>setJiraBoot(p=>({...p,open:false}))}
+                            size={15} radius={6} padding="3px 9px" color="var(--text-mid)" lineHeight={1}/>
                         )}
                       </div>
 
@@ -4903,7 +4916,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             </div>
             {/* Batch 2 */}
             {(hasAva||hasGw)&&(
-              <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+              <div style={{ ...GLASS,
                 border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16,
                 boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>第二批資料</div>
@@ -4920,7 +4933,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             )}
             {/* Tasks overview */}
             {tasks.length>0&&(
-              <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+              <div style={{ ...GLASS,
                 border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24,
                 boxShadow:"var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
@@ -4998,7 +5011,7 @@ const LoginPage = ({ theme, setTheme }) => {
       <div style={{ position:"fixed", top:16, right:20 }}>
         <ThemeToggle theme={theme} setTheme={setTheme}/>
       </div>
-      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ ...GLASS,
         border:"1px solid var(--border)", borderRadius:14,
         padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
         boxShadow:"0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
@@ -5071,8 +5084,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
-        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
@@ -5081,11 +5093,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
             <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>個人設定</div>
             <div style={{ fontSize:12, color:"var(--text-mid)", marginTop:2 }}>Jira 連線與帳號管理</div>
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"1px solid var(--border)",
-            borderRadius:8, padding:"4px 10px", cursor:"pointer", fontSize:16,
-            color:"var(--text-mid)", fontFamily:"inherit", transition:"all 0.15s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>✕</button>
+          <CloseButton onClick={onClose} color="var(--text-mid)"/>
         </div>
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           <div style={{ marginBottom:18 }}>
@@ -5449,7 +5457,7 @@ export default function App() {
 
       {/* Global header — always visible */}
       {!isDetailView && (
-        <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        <div style={{ ...GLASS,
           borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10000 }}>
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>

@@ -98,6 +98,79 @@ Global Header、Overview 專案卡片已換成毛玻璃材質（`background:"var
   跟外層做對比的巢狀小面板（例如 Jira Epic modal 的錯誤訊息框、SheetLink 的連結輸入框底色）
   維持不透明，因為它們本身的功能就是在已經半透明的外層容器裡提供一塊實色的視覺對比。
 
+#### 改版收尾評估（2026-10-02，Jim 要求記錄）
+
+**效能影響**：全檔 `backdropFilter` 共 37 處（`WebkitBackdropFilter` 36 處，兩者本來就該幾乎
+一一對應，少的 1 處是切換態用 `"none"` 不重複寫前綴也沒差），其中 30 處是最常見的
+`background:"var(--glass-surface)"` 組合。這些都是 inline style、不是另外的 CSS 規則檔案，
+對 bundle 體積幾乎沒有影響（這次整個分批改版下來，build 產出從 632.71 kB 長到 635.92 kB，
+gzip 後只多了約 0.15 kB，可以忽略）。真正的成本是瀏覽器端的 GPU 合成層：`backdrop-filter`
+在目前主流瀏覽器都有硬體加速，但每一個套用的元素都會讓瀏覽器多開一層合成運算，元素數量一多、
+尤其是同時大量出現在可捲動清單裡時，低階裝置上可能感覺到捲動不夠滑順。目前全站只有一個地方
+是「清單裡每一筆都玻璃化」而不是「只有外層容器玻璃化」——JiraTab 的 issue 卡片列表（因為它們
+視覺上讀起來比較像獨立卡片而不是表格列，所以刻意跟著卡片規則做）。如果某間飯店的 Jira Epic
+底下子任務筆數很多（例如 50+），這是目前**唯一**可能在捲動時感覺到效能差異的地方；CalendarPage
+的 42 個日期格子則是刻意反過來處理、維持不透明純色不套 `backdrop-filter`，就是因為量大+密集
+格線套毛玻璃這個成本/視覺效益換算不划算。如果日後真的有人反映 Jira 子任務頁捲動卡頓，直接把
+issue 卡片的 `backdropFilter` 拿掉、只留外層清單容器玻璃化即可，不用改結構。
+
+**維護穩定度影響**：這次改動全部是 style 層級的疊加，沒有動到任何資料流、Supabase 呼叫或商業
+邏輯，唯一的結構性改動是 Jira Epic modal 改用 `ReactDOM.createPortal`（新增 `import { createPortal }
+from "react-dom"`，`react-dom` 本來就是既有相依套件，沒有新增套件）。真正要留意的維護風險有兩個：
+
+1. **四個主題區塊重複**（`:root` / dark media query / `data-theme="light"` / `data-theme="dark"`）
+   這個既有規則，這次改版又多了 5 個新變數要照規則複製四份（`--glass-surface`、
+   `--glass-surface-hover`、`--canvas-glow-1/2/3`），等於又放大了一點這類「漏改其中一塊」的
+   踩坑面——這次改版過程中就至少踩過兩次（`--glass-surface` 一開始漏了手動覆蓋區塊、後來修對比度
+   時也要記得四處一起改）。這是既有的結構限制，不是這次改版造成的，但這次確實讓需要「四份同步」
+   的變數數量變多了。
+2. **`<Card style={{...}}>` 覆寫陷阱**：`Card` 元件是 `{ background:"var(--glass-surface)",
+   backdropFilter:..., ...style }`，呼叫端傳進去的 `style` prop 會整個蓋在最後，所以如果呼叫端
+   自己在 `style` 裡又寫一次 `background`，會不聲不響蓋掉玻璃效果，也不會有任何錯誤或警告——
+   這次實際抓到一個真實案例：TasksTab 的任務卡片用了 `<Card style={{..., background:C.white}}>`，
+   玻璃效果因此完全沒生效（有 `backdropFilter` 卻被不透明背景蓋住，等於白做工），已經修掉。
+   檢查過其他所有 `<Card>` 呼叫點（9 處），只有這一處有這個問題，其餘都是 `<Card>` 空 props，
+   暫時不是系統性問題，但沒有任何機制防止未來新寫的程式碼重蹈覆轍。已經在 `Card` 元件定義旁邊
+   加上程式碼註解提醒，但這只是最低限度的防呆，不是結構性修正（見下方「簡化建議」）。
+
+**簡化整理（2026-10-02 已執行，Jim 要求一併完成）**——以下三項原本只是記錄的機會，Jim 確認後
+當場做掉了，純粹是程式碼整理，沒有改變任何畫面輸出：
+- 重複 30 次的 `{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)",
+  WebkitBackdropFilter:"blur(20px) saturate(160%)" }` 已抽成共用常數 `const GLASS = {...}`
+  （跟 `baseInput` 同一區，檔案前段），所有呼叫端改成 `{...GLASS, ...其他 style}`。以後如果要
+  整站統一調整模糊強度或飽和度，改這一個地方就好；「這個元素是不是玻璃」在程式碼上看
+  `...GLASS` 一眼就能辨識。
+- 「選中態＝純色、未選中態＝玻璃」這個切換按鈕樣式（CalendarPage／TasksTab／JiraTab，6 處）
+  已抽成 helper function `glassToggle(active, activeBg)`（定義在 `GLASS` 常數旁），回傳對應的
+  `background`/`backdropFilter`/`WebkitBackdropFilter` 物件，呼叫端改成 `...glassToggle(條件,
+  選中色)`。
+- 7 個關閉（✕）按鈕已收斂成共用元件 `CloseButton`（定義在「Shared UI components」區段最前面，
+  `background:C.white` 那批改掉之前就有的 7 處重複，不是這次新造成的）。原本 7 處在字級／圓角／
+  padding／文字顏色上有些微差異（不同時期各自手刻造成的，不是刻意設計），`CloseButton` 用
+  `size`/`radius`/`padding`/`color`/`lineHeight` 幾個 props 把這些差異值傳進去，每個呼叫端
+  視覺跟改版前逐像素一致，沒有趁機「順便統一外觀」。
+整個檔案 `node --check` 不適用（這是 Vite/JSX 專案，不是單檔 HTML 表單），驗收方式是
+`npx vite build` 通過——三項整理做完後 build 產出從 635.92 kB 降到 628.83 kB（少了被消除的
+重複字面值），確認 build 乾淨過。
+
+**這次過程中發現的結構/視覺問題**：
+- 上面提到的 `<Card style={{background:...}}>` 覆寫陷阱是本輪實際抓到、也修掉的一個真案例，
+  已經在 `Card` 定義旁加註解提醒；但這只防得了「有讀註解的人」，沒有程式層面的保護（例如 dev
+  模式下偵測到 `style.background` 就 console.warn），如果要更徹底，需要另外討論是否值得加這層
+  防呆，目前先不動。
+- 視覺上有一個沒有動、但值得記錄的取捨：這次為了修文字對比度，淺色模式的 `--text-subtle` 從
+  `#A3A3A3` 改到 `#767676`，跟 `--text-mid`（`#6B6B6B`）只差 11（十六進位），兩層灰階的視覺
+  區隔比改版前更小了——換句話說，拉高「最淺那層文字」的清晰度，一定程度上犧牲了「中層文字」
+  跟「最淺層文字」原本該有的層次感。這是優先選擇可讀性換來的結果，不是沒注意到，但如果 Jim
+  實際看過覺得兩層分不太出來，下一步可以考慮把 `--text-mid` 也一起往深（淺色模式）/往淺
+  （深色模式）調一點，重新拉開兩層間距，而不是只動 `--text-subtle`。
+- JiraTab 的 issue 卡片玻璃化之後，卡片本身的邊框/底色對比變得比原本的「純白+實邊框」更柔和，
+  逾期（overdue）狀態目前只靠卡片內那個小小的狀態下拉選單變色提示，沒有在卡片層級做任何強調——
+  這在改版前後邏輯上沒有變（本來就只靠下拉選單變色），但因為外層卡片整體的視覺「安靜」程度提高
+  了，逾期項目在玻璃化之後有沒有「不夠搶眼」，建議 Jim 實際瀏覽一個有逾期子任務的專案確認一下，
+  如果覺得不夠醒目，可以考慮幫逾期卡片加一圈淡紅色邊框或左側色條，跟 TasksTab 卡片已經有的
+  「選取態＝實色強調」邏輯呼應。
+
 ## 資料表
 
 | 資料表 | 說明 |
