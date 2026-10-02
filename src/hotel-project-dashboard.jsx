@@ -140,9 +140,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.14);
-    --canvas-glow-2: rgba(232,98,26,0.12);
-    --canvas-glow-3: rgba(14,122,90,0.12);
+    --canvas-glow-1: rgba(30,111,181,0.30);
+    --canvas-glow-2: rgba(232,98,26,0.26);
+    --canvas-glow-3: rgba(14,122,90,0.24);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -183,9 +183,9 @@ const GLOBAL_CSS = `
       --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
       --glass-surface: rgba(33,33,43,0.55);
       --glass-surface-hover: rgba(42,42,54,0.72);
-      --canvas-glow-1: rgba(77,144,212,0.18);
-      --canvas-glow-2: rgba(244,135,61,0.16);
-      --canvas-glow-3: rgba(34,164,116,0.16);
+      --canvas-glow-1: rgba(77,144,212,0.40);
+      --canvas-glow-2: rgba(244,135,61,0.36);
+      --canvas-glow-3: rgba(34,164,116,0.32);
     }
   }
 
@@ -353,9 +353,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.14);
-    --canvas-glow-2: rgba(232,98,26,0.12);
-    --canvas-glow-3: rgba(14,122,90,0.12);
+    --canvas-glow-1: rgba(30,111,181,0.30);
+    --canvas-glow-2: rgba(232,98,26,0.26);
+    --canvas-glow-3: rgba(14,122,90,0.24);
   }
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
@@ -379,9 +379,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
     --glass-surface: rgba(33,33,43,0.55);
     --glass-surface-hover: rgba(42,42,54,0.72);
-    --canvas-glow-1: rgba(77,144,212,0.18);
-    --canvas-glow-2: rgba(244,135,61,0.16);
-    --canvas-glow-3: rgba(34,164,116,0.16);
+    --canvas-glow-1: rgba(77,144,212,0.40);
+    --canvas-glow-2: rgba(244,135,61,0.36);
+    --canvas-glow-3: rgba(34,164,116,0.32);
   }
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
