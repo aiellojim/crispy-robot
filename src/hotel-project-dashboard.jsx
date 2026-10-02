@@ -1982,8 +1982,16 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                     不需要額外設 zIndex。inset:0 + borderRadius 跟卡片本身一致（不是只靠父層
                     overflow:hidden 去裁切）——先前 inset:-20% 沒有自己設 borderRadius，
                     filter:blur() 在部分瀏覽器會讓子層的裁切跟父層的圓角對不上，變成看得到
-                    直角，所以這裡直接讓光斑自己的形狀就是圓角，不依賴父層裁切是否生效。 */}
-                <div className="card-glow" style={{ position:"absolute", inset:0, borderRadius:12, pointerEvents:"none",
+                    直角，所以這裡直接讓光斑自己的形狀就是圓角，不依賴父層裁切是否生效。
+                    2026-10-02 補充：只設 borderRadius 還不夠——filter:blur() 的模糊範圍本來就會
+                    往外暈開，border-radius 只決定「未模糊前」那個圓角矩形的形狀，不會反過來裁掉
+                    模糊暈開到圓角外的像素；真正能裁掉暈出去的部分，要靠同一個元素自己也設
+                    overflow:hidden（單靠父層 Card 的 overflow:hidden 裁切子層的 filter 渲染結果，
+                    在 backdrop-filter 疊加的情境下部分瀏覽器會失效，跟 Header 巢狀面板那個
+                    backdrop-filter containing-block 問題是同一類瀏覽器合成層怪癖）。淺色模式下
+                    暈出去的白色光斑跟卡片底色對比不明顯，不容易發現；深色模式卡片底色深，暈出的
+                    直角範圍就很顯眼，所以 Jim 只在深色模式看到。 */}
+                <div className="card-glow" style={{ position:"absolute", inset:0, borderRadius:12, overflow:"hidden", pointerEvents:"none",
                   filter:"blur(22px)", opacity:0, transition:"opacity 0.45s ease", mixBlendMode:"soft-light" }}/>
 
                 {/* Row 1 */}

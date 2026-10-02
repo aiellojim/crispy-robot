@@ -213,6 +213,21 @@ block／stacking context，子孫自己的 `backdropFilter` 這時採樣不到�
 圖示（左邊用 `transform:rotate(180deg)`）、`color:"var(--text-subtle)"` + hover 時變
 `var(--accent)`，跟 Header 鈴鐺按鈕同一套 hover 慣例。
 
+#### 2026-10-02 追修：Overview 卡片光暈在深色模式露出直角
+
+Jim 回報 Overview 專案卡片的滑鼠跟隨光暈（`.card-glow`），在深色模式下四角還是看得出直角，沒有
+跟卡片本身的圓角外框切齊。這個元件先前就已經踩過一次類似問題並嘗試修過（見上面那段舊註解：
+把光斑自己也設 `borderRadius:12`，不只依賴父層 `overflow:hidden` 裁切），但這次確認那個修法
+不完整——`border-radius` 只決定「模糊前」那個圓角矩形的形狀，`filter:blur(22px)` 本身的模糊暈染
+會往外擴散超出這個形狀，`border-radius` 不會反過來把暈出去的部分裁掉；真正能裁掉暈染範圍的，
+是 `overflow:hidden`，而且要設在**跟 `filter:blur()` 同一個元素上**才可靠（只靠父層 Card 的
+`overflow:hidden` 去裁子層的 filter 渲染結果，在父層同時有 `backdrop-filter` 的情況下，部分瀏覽器
+合成層處理會失效——這跟 Header 巢狀面板那個 `backdrop-filter` containing-block 問題是同一類瀏覽器
+合成怪癖）。淺色模式下暈出去的白色光斑跟卡片底色的對比不明顯，不容易注意到；深色模式卡片底色深，
+暈出的直角範圍對比強烈，才會被看出來。修法：在 `.card-glow` 自己的 inline style 補上
+`overflow:"hidden"`（跟既有的 `borderRadius:12` 同一個元素），讓模糊暈染確實被裁到圓角範圍內，
+不再依賴父層的裁切是否生效。
+
 ## 資料表
 
 | 資料表 | 說明 |
