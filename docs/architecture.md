@@ -26,15 +26,29 @@
 - 串接功能：`PBX` / `PMS` / `TMS` / `RCU` / `POS` / `IPTV`
 
 ### zIndex 圖層順序
-背景漸層模糊色塊(-1) < 日期格子(1) < Jira 狀態下拉(100) < 行事曆展開卡片(9999) < Global/專案頁 Header(10000)
+日期格子(1) < Jira 狀態下拉(100) < 行事曆展開卡片(9999) < Global/專案頁 Header(10000)
 < 新增/編輯任務彈窗(20000) = 通知設定背板(20000) < 通知設定側邊欄(20001)
 
-背景色塊（2026-10-02 新增，Liquid Glass 視覺改版第一步）：`position:fixed` 的三個模糊圓形色塊，
-固定貼在視窗背後、不隨捲動移動，顏色沿用既有的 `--prod-*`/`--accent` 變數。`zIndex:-1` 是刻意选
-在圖層清單最底端——它存在的目的是讓之後套用毛玻璃材質的元件（Global Header、Overview 卡片等）
-背後有顏色可以透出來，本身不應該蓋到任何現有內容，所以必須比清單上所有其他層都低。Global Header
-已在同一天換成毛玻璃材質（`background:"var(--glass-surface)"` + `backdropFilter`），`zIndex:10000`
-不變，純粹換材質不動結構。
+### Liquid Glass 視覺改版（2026-10-02 起）
+全站背景改成疊在 `body { background }` 上的三層大範圍 `radial-gradient`（`--canvas-glow-1/2/3`
+變數，色相沿用既有 `--prod-*`/`--accent`），`background-attachment:fixed` 讓色暈固定貼在視窗、
+不隨內容捲動。**第一版曾經改用 `position:fixed` + `zIndex:-1` 的三個獨立模糊色塊 div，實測範圍
+太小、只能貼在角落，大部分頁面仍然看起來純白，已經整個換掉**——現在的做法直接是 `body` 背景的
+一部分，不是獨立元件，不佔用 zIndex 圖層序列，之後也不用再去想它跟其他層的疊放順序。
+
+Global Header、Overview 專案卡片已換成毛玻璃材質（`background:"var(--glass-surface)"` +
+`backdropFilter`），zIndex 皆維持原值不變，純粹換材質不動結構。專案卡片另外做了滑鼠追蹤光斑
+（`.card-glow` 子元素，`inset:0` + 跟卡片一致的 `borderRadius`，不能只靠父層 `overflow:hidden`
+裁切，`filter:blur()` 在部分瀏覽器會讓子層裁切跟父層圓角對不上）跟輕微 3D 傾斜（`perspective`
++ `rotateX/rotateY`，角度要留意卡片實際尺寸——這批卡片比最初的 demo 示範卡片寬得多，同樣的角度
+套用在更大的面上位移量會被放大，需要調低角度、拉遠 perspective 距離才會跟 demo 手感一致）。
+
+套用這批材質新增的 CSS 變數（`--glass-surface`、`--glass-surface-hover`、`--canvas-glow-1/2/3`）
+都要同時定義在四個主題區塊：`:root`、`@media (prefers-color-scheme: dark)`、
+`html[data-theme="light"]`、`html[data-theme="dark"]`——這個站的手動深色/淺色切換是用後兩個
+`data-theme` 區塊覆蓋、優先權比 media query 高，「系統」模式才會真的跟 media query 走。漏放其中
+一個區塊會導致「手動選淺色、但作業系統本身是深色」這類情境下變數值跑掉（已踩過一次：
+`--glass-surface` 最初只放了前兩個區塊，導致淺色模式下 Header 顯示錯誤顏色）。
 
 ## 資料表
 

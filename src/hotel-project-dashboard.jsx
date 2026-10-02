@@ -140,6 +140,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
+    --canvas-glow-1: rgba(30,111,181,0.14);
+    --canvas-glow-2: rgba(232,98,26,0.12);
+    --canvas-glow-3: rgba(14,122,90,0.12);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -180,12 +183,23 @@ const GLOBAL_CSS = `
       --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
       --glass-surface: rgba(33,33,43,0.55);
       --glass-surface-hover: rgba(42,42,54,0.72);
+      --canvas-glow-1: rgba(77,144,212,0.18);
+      --canvas-glow-2: rgba(244,135,61,0.16);
+      --canvas-glow-3: rgba(34,164,116,0.16);
     }
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-    font-family: 'Noto Sans TC', 'Inter', sans-serif; font-weight: 300; }
+  body { margin: 0; color: var(--text); font-family: 'Noto Sans TC', 'Inter', sans-serif; font-weight: 300;
+    /* 整片 canvas 的漸層色暈 — 三層大範圍 radial-gradient 疊在 --bg 上面，覆蓋範圍遠大於
+       單一 viewport，不管畫面多大、捲到哪裡都看得到色暈，不是只在角落放幾個色塊。
+       background-attachment:fixed 讓色暈固定貼在視窗上，不隨頁面內容捲動位移。 */
+    background:
+      radial-gradient(1200px 900px at 6% -8%, var(--canvas-glow-1), transparent 60%),
+      radial-gradient(1100px 850px at 100% 18%, var(--canvas-glow-2), transparent 55%),
+      radial-gradient(1000px 800px at 32% 115%, var(--canvas-glow-3), transparent 55%),
+      var(--bg);
+    background-attachment: fixed; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
@@ -197,17 +211,13 @@ const GLOBAL_CSS = `
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @keyframes spin   { to { transform: rotate(360deg); } }
 
-  /* 2026-10-02：全站背景的模糊漸層色塊，比照 liquid-glass demo 確認過的版本搬進來。
-     position:fixed + zIndex:-1，固定在視窗背後，不隨捲動移動，顏色用既有的
-     --prod-* / --accent 系列變數（本來就有 light/dark 兩套值，不用另外配色）。
-     目前站上大部分卡片都還是不透明白底，這幾個色塊在它們背後完全看不出來，只會在
-     空白頁緣／之後真的套用玻璃材質的元件背後顯示出來——先加上去不影響現有任何畫面，
-     等玻璃材質套到 Overview 卡片時才會看到完整效果。 */
-  .bg-blob { position:fixed; border-radius:50%; filter:blur(90px); opacity:0.35; z-index:-1; pointer-events:none; }
-  .bg-blob1{ width:480px; height:480px; top:-140px; left:-120px; background:var(--prod-ava); }
-  .bg-blob2{ width:440px; height:440px; top:220px; right:-160px; background:var(--accent); }
-  .bg-blob3{ width:380px; height:380px; bottom:-180px; left:30%; background:var(--prod-aca); }
-  @media (prefers-color-scheme: dark) { .bg-blob { opacity:0.22; } }
+  /* 2026-10-02：第一版用 position:fixed 的模糊色塊做背景，實測發現色塊範圍太小、只
+     貼在角落，大部分 viewport 還是看起來純白——改成直接疊在 body 背景上的大範圍漸層
+     （見下方 body 規則的 background），不再用獨立的色塊 div，不用處理 z-index/
+     stacking context，保證整個頁面任何地方都看得到色暈，不是只有角落。
+     --canvas-glow-1/2/3 顏色沿用既有 --prod-ava/--accent/--prod-aca 色相，四個主題
+     區塊（:root、dark media query、html[data-theme=light/dark]）都要各自定義一次
+     ——這是上一輪 --glass-surface 漏放進手動覆蓋區塊踩過的坑，這次四個區塊一次到位。 */
   /* 🥚 視覺類彩蛋 — 獨立命名，跟 loading spinner 用的 spin 分開，避免以後改 spinner 速度時互相影響 */
   @keyframes barrelRoll { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   body.barrel-roll-effect { animation: barrelRoll 1s ease-in-out; transform-origin:center center; }
@@ -343,6 +353,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
+    --canvas-glow-1: rgba(30,111,181,0.14);
+    --canvas-glow-2: rgba(232,98,26,0.12);
+    --canvas-glow-3: rgba(14,122,90,0.12);
   }
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
@@ -366,6 +379,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
     --glass-surface: rgba(33,33,43,0.55);
     --glass-surface-hover: rgba(42,42,54,0.72);
+    --canvas-glow-1: rgba(77,144,212,0.18);
+    --canvas-glow-2: rgba(244,135,61,0.16);
+    --canvas-glow-3: rgba(34,164,116,0.16);
   }
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
@@ -1858,22 +1874,28 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                   const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
                   const glow = e.currentTarget.querySelector(".card-glow");
                   if (glow) glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.22) 30%, transparent 62%)`;
-                  const MAX_TILT = 5;
+                  // 這些卡片比 demo 的示範卡片大上快一倍寬（minmax(500px,...) vs demo 的 280px），
+                  // 同樣的旋轉角度在更大的面上視覺位移量會放大很多，所以角度要降更低、
+                  // perspective 距離也要拉遠，手感才會跟 demo 一致（而不是同角度套用在更大的卡片上）。
+                  const MAX_TILT = 2;
                   const rx = (0.5 - py) * MAX_TILT * 2, ry = (px - 0.5) * MAX_TILT * 2;
-                  e.currentTarget.style.transform = `translateY(-4px) perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+                  e.currentTarget.style.transform = `translateY(-4px) perspective(1800px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
                 }}
                 onMouseLeave={e=>{
                   e.currentTarget.style.borderColor="var(--border)";
                   e.currentTarget.style.boxShadow="var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)";
                   e.currentTarget.style.background="var(--glass-surface)";
-                  e.currentTarget.style.transform="translateY(0) perspective(900px) rotateX(0deg) rotateY(0deg)";
+                  e.currentTarget.style.transform="translateY(0) perspective(1800px) rotateX(0deg) rotateY(0deg)";
                   const glow = e.currentTarget.querySelector(".card-glow");
                   if (glow) glow.style.opacity = "0";
                 }}>
 
                 {/* 毛玻璃聚光光斑 — 絕對定位的第一個子元素，後面的內容會自然疊在它上面，
-                    不需要額外設 zIndex。inset:-20% + blur() 避免模糊在元素自己邊界上留下硬邊。 */}
-                <div className="card-glow" style={{ position:"absolute", inset:"-20%", pointerEvents:"none",
+                    不需要額外設 zIndex。inset:0 + borderRadius 跟卡片本身一致（不是只靠父層
+                    overflow:hidden 去裁切）——先前 inset:-20% 沒有自己設 borderRadius，
+                    filter:blur() 在部分瀏覽器會讓子層的裁切跟父層的圓角對不上，變成看得到
+                    直角，所以這裡直接讓光斑自己的形狀就是圓角，不依賴父層裁切是否生效。 */}
+                <div className="card-glow" style={{ position:"absolute", inset:0, borderRadius:12, pointerEvents:"none",
                   filter:"blur(22px)", opacity:0, transition:"opacity 0.45s ease", mixBlendMode:"soft-light" }}/>
 
                 {/* Row 1 */}
@@ -5369,9 +5391,6 @@ export default function App() {
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
-      <div className="bg-blob bg-blob1"/>
-      <div className="bg-blob bg-blob2"/>
-      <div className="bg-blob bg-blob3"/>
 
       {/* Global header — always visible */}
       {!isDetailView && (
