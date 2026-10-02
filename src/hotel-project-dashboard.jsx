@@ -339,6 +339,7 @@ const GLOBAL_CSS = `
     --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
+    --glass-surface: rgba(255,255,255,0.62);
   }
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
@@ -360,6 +361,7 @@ const GLOBAL_CSS = `
     --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
+    --glass-surface: rgba(33,33,43,0.55);
   }
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
