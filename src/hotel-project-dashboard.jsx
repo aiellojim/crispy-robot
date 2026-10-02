@@ -1063,8 +1063,9 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:C.white,
-        borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1180,8 +1181,9 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
   <>
     <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:9997 }}/>
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
-      background:"var(--surface)", border:"1px solid var(--border)", borderRadius:14,
-      boxShadow:"0 8px 30px rgba(0,0,0,0.15)", zIndex:9998,
+      background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+      border:"1px solid var(--border)", borderRadius:14,
+      boxShadow:"0 8px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:9998,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1395,7 +1397,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
   const ModalContent = modal ? (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
-      <div style={{ background:C.white, borderRadius:14, padding:28, width:"100%", maxWidth:520, boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
+      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderRadius:14, padding:28, width:"100%", maxWidth:520,
+        boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
@@ -2819,8 +2823,9 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--surface)",
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -2998,8 +3003,9 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:440, background:"var(--surface)",
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:440, background:"var(--glass-surface)",
+        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -4166,8 +4172,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
                     onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
                       setJiraBoot(p=>({...p,open:false})); }}>
-                    <div style={{ background:"var(--surface)", borderRadius:14, padding:28, width:"100%", maxWidth:460,
-                      boxShadow:"0 20px 60px rgba(0,0,0,0.2)", animation:"fadeIn 0.2s ease" }}>
+                    <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+                      borderRadius:14, padding:28, width:"100%", maxWidth:460,
+                      boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
 
                       {/* Header 含 X 關閉按鈕 */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
@@ -5027,8 +5034,9 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
   return (
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
-      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--surface)",
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12)",
+      <div style={{ position:"fixed", top:0, right:0, bottom:0, width:380, background:"var(--glass-surface)",
+        backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
