@@ -4011,7 +4011,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"transparent", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
 
       {/* Header */}
@@ -4940,7 +4940,7 @@ const LoginPage = ({ theme, setTheme }) => {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column",
+    <div style={{ minHeight:"100vh", background:"transparent", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
       {/* Theme toggle 右上角 */}
@@ -5366,7 +5366,7 @@ export default function App() {
   }, [fetchCustomerNotifs]);
 
   if (authLoading) return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center",
+    <div style={{ minHeight:"100vh", background:"transparent", display:"flex", alignItems:"center",
       justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
       <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
@@ -5377,7 +5377,7 @@ export default function App() {
   if (!session) return <LoginPage theme={theme} setTheme={setTheme}/>;
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column",
+    <div style={{ minHeight:"100vh", background:"transparent", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC',sans-serif", gap:16 }}>
       <style>{GLOBAL_CSS}</style>
       <div style={{ width:40, height:40, border:`3px solid ${C.accentBorder}`, borderTopColor:C.accent,
@@ -5389,7 +5389,7 @@ export default function App() {
   const isDetailView = view==="detail" && activeProject;
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"transparent", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
 
       {/* Global header — always visible */}
