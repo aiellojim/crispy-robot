@@ -1980,12 +1980,11 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                     // 深色模式維持原本的白色高光（卡片底色深，白光對比夠）；淺色模式卡片底色
                     // 本來就接近白色，同樣的白色光斑疊上去幾乎看不出來，所以改用品牌 accent 橘
                     // （--accent 淺色模式的色號 #E8621A → 232,98,26），色調跟全站 CTA／連結一致，
-                    // 不是另外挑的新顏色。濃度比白色版本略低（0.4/0.16 vs 0.55/0.22），因為
-                    // 有色光在同樣透明度下視覺上比白光更搶眼，要往下調才不會太像一塊橘漬。
-                    // 這組數值是起始推薦值，Jim 看過實際效果覺得濃淡不對，直接調這兩個 0.4/0.16
-                    // 即可，不用動其他邏輯。
+                    // 不是另外挑的新顏色。濃度原本 0.4/0.16，Jim 2026-10-02 實測後覺得可以再濃
+                    // 一點，調成 0.5/0.2（白色版本是 0.55/0.22，兩者現在接近，不用再往下調了）。
+                    // 之後還要再調，直接改這兩個數字即可，不用動其他邏輯。
                     const rgb = isDarkTheme() ? "255,255,255" : "232,98,26";
-                    glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(${rgb},0.4) 0%, rgba(${rgb},0.16) 30%, transparent 62%)`;
+                    glow.style.background = `radial-gradient(circle at ${(px*100).toFixed(1)}% ${(py*100).toFixed(1)}%, rgba(${rgb},0.5) 0%, rgba(${rgb},0.2) 30%, transparent 62%)`;
                   }
                   // 這些卡片比 demo 的示範卡片大上快一倍寬（minmax(500px,...) vs demo 的 280px），
                   // 同樣的旋轉角度在更大的面上視覺位移量會放大很多，所以角度要降更低、
