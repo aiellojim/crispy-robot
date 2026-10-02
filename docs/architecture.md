@@ -250,6 +250,27 @@ handler 不用跟著改。
 線索才能繼續排查（例如是否跟 Safari 對 `backdrop-filter`+`border-radius` 組合的既有渲染限制有關，
 這類限制目前沒有已知能 100% 跨瀏覽器解決的純 CSS 寫法）。
 
+**第三次嘗試（2026-10-02 同一天，Jim 回報第二次修正後四角依然存在）**：重新檢討後懷疑前兩次都
+修錯層了——真正的直角來源可能從頭到尾都不是 `.card-glow`，而是**卡片本身**：外層卡片這個元素
+同時有 `overflow:"hidden"`、`borderRadius:12`、跟 `...GLASS`（`backdropFilter`）三者疊在同一個
+元素上，這正好是全網最常被回報的 `backdrop-filter` 已知限制——`backdrop-filter` 取樣/合成的範圍
+在部分瀏覽器（尤其 Safari／WebKit）不會正確被同一元素的 `overflow:hidden` + `border-radius`
+裁成圓角，跟我們這兩次在 `.card-glow` 身上重演的「裁切對自己的視覺效果不生效」是同一個病根的
+不同症狀，差別只在於這次是整張卡片的 `backdrop-filter`，不是內層光斑的 `filter:blur()`。
+
+這次換一個不同機制的修法：在卡片外層額外加上 `clipPath:"inset(0px round 12px)"`。`clip-path`
+不是透過 `overflow` 的 box model 裁切，而是直接在最終合成輸出上做裁切，業界公認是處理
+「`backdrop-filter` 忽略 `border-radius`」這個經典問題時，比 `overflow:hidden` 更可靠的手段
+（`overflow:hidden` 繼續保留，`clip-path` 是疊加上去，不是取代）。沒有更動任何 DOM 結構或疊放
+順序，是風險最低的加法修正。
+
+**再次誠實說明**：連續三次修正都只能用 `npx vite build` 驗證語法，無法實際看到畫面——如果這次
+`clip-path` 還是沒有解決，接下來能排查的方向已經不多：(1) 可能要麻煩 Jim 直接說是哪個瀏覽器/
+版本看到這個狀況，Safari 對這個組合的支援度明顯比 Chrome/Edge 差，如果是 Safari，目前沒有已知
+100% 可靠的純 CSS 解法，退路通常是放棄在同一層同時用 `backdrop-filter`+圓角，改用遮罩圖片
+（`mask-image`）或乾脆把這張卡片的圓角做小一點讓肉眼比較不明顯；(2) 也可能请 Jim 提供一張截圖，
+用視覺比對縮小範圍（直角出現在整張卡片外框，還是只在滑鼠懸停光暈那一圈）。
+
 ## 資料表
 
 | 資料表 | 說明 |

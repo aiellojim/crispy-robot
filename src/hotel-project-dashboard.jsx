@@ -1945,7 +1945,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
 
             return (
               <div key={proj.id}
-                style={{ position:"relative", overflow:"hidden",
+                style={{ position:"relative", overflow:"hidden", clipPath:"inset(0px round 12px)",
                   ...GLASS,
                   border:"1px solid var(--border)", borderRadius:12,
                   padding:20, cursor:"pointer",
