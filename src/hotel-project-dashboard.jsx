@@ -140,9 +140,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.30);
-    --canvas-glow-2: rgba(232,98,26,0.26);
-    --canvas-glow-3: rgba(14,122,90,0.24);
+    --canvas-glow-1: rgba(30,111,181,0.40);
+    --canvas-glow-2: rgba(232,98,26,0.34);
+    --canvas-glow-3: rgba(14,122,90,0.32);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -353,9 +353,9 @@ const GLOBAL_CSS = `
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.30);
-    --canvas-glow-2: rgba(232,98,26,0.26);
-    --canvas-glow-3: rgba(14,122,90,0.24);
+    --canvas-glow-1: rgba(30,111,181,0.40);
+    --canvas-glow-2: rgba(232,98,26,0.34);
+    --canvas-glow-3: rgba(14,122,90,0.32);
   }
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
@@ -673,7 +673,10 @@ const MiniBar = ({ pct, color }) => (
 );
 
 const Card = ({ children, style={}, ...rest }) => (
-  <div {...rest} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12,
+  <div {...rest} style={{ background:"var(--glass-surface)",
+    backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+    border:"1px solid var(--border)", borderRadius:12,
+    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
     padding:24, marginBottom:16, ...style }}>
     {children}
   </div>
@@ -865,7 +868,10 @@ const OvCheckRow = ({ label, checked, note, color }) => (
 );
 
 const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
-  <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:12, padding:16 }}>
+  <div style={{ background:"var(--glass-surface)",
+    backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+    border:"1px solid var(--border)", borderRadius:12, padding:16,
+    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
     <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:400 }}>{title}</div>
     {children}
     {linkKey && sheetLinks[linkKey] && (
@@ -4014,8 +4020,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     <div style={{ minHeight:"100vh", background:"transparent", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
 
-      {/* Header */}
-      <div style={{ background:C.white, borderBottom:`1px solid ${C.border}`, padding:"0 40px",
+      {/* Header — 跟 App 的 Global Header 是不同元件（這份是 ProjectDetail 自己的），
+          所以之前換玻璃材質時沒有一起套到，這裡補上同一套處理 */}
+      <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
+        borderBottom:`1px solid ${C.border}`, padding:"0 40px",
         display:"flex", alignItems:"center", justifyContent:"space-between",
         height:60, position:"sticky", top:0, zIndex:10000 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
