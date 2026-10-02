@@ -1062,7 +1062,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
@@ -1395,7 +1395,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
   const realTodayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
 
   const ModalContent = modal ? (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.15)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
       <div style={{ background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderRadius:14, padding:28, width:"100%", maxWidth:520,
@@ -2648,7 +2648,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.2)", zIndex:19998 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:19998 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:400,
         background:"var(--glass-surface)", backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)",
@@ -2823,7 +2823,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
@@ -3003,7 +3003,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
@@ -4169,7 +4169,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
                 {/* Bootstrap Modal */}
                 {jiraBoot.open && (
-                  <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:20000,
+                  <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.15)", zIndex:20000,
                     display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
                     onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
                       setJiraBoot(p=>({...p,open:false})); }}>
@@ -5034,7 +5034,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
 
   return (
     <>
-      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.3)", zIndex:20000 }}/>
+      <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, background:"var(--glass-surface)",
         backdropFilter:"blur(20px) saturate(160%)", WebkitBackdropFilter:"blur(20px) saturate(160%)",
         borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
