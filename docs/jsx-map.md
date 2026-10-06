@@ -65,7 +65,9 @@
 - `src/main.jsx`（8 行）：進入點。
 - `src/OrganicLoader.jsx`（2026-10-06 新增）：全站 loading 動畫的**唯一替換點**。jsx 內共 11 處 `<OrganicLoader .../>`（`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`），取代原本的 `animation:"spin ..."` 轉圈。
   - 改外觀只動此檔：`DEFAULT_VARIANT`（orbit / ripple）、`SPEED`、`ORBIT` / `RIPPLE` 設定物件、`VARIANTS` 註冊表、`LOADER_CSS`（keyframes，模組載入時自動注入 `<head>`，不動 `GLOBAL_CSS`、不新增 CSS 變數）。
-  - 呼叫端 props：`size`（按鈕 13、區塊 24~28、全頁 56）、`color`（預設 `var(--accent)`）、`variant`、`label`、`style`。
+  - 呼叫端 props：`size`（高度；按鈕 13、區塊 24~28、全頁 56）、`color`（預設 `var(--accent)`）、`variant`（`orbit` / `ripple` / `cradle`）、`label`、`style`。
+  - 唯一不用預設款的地方：AI 打字泡泡（`grep -n 'variant="cradle"'`）用 `cradle`（牛頓擺，size 20，寬約 3.7 倍高）。
   - `GLOBAL_CSS` 內舊的 `@keyframes spin` 已無使用者，暫留未刪。
+  - 預覽頁：`dev/loader-preview.html`（僅開發用，不進 build），改 loader 後先在這頁看效果。
   - 還原點：git tag `before-organic-loader-2026-10-06`。
 - `customer-portal/Dashboard.jsx`：**不存在於本 repo**（2026-07-03 查證），位置未確認。

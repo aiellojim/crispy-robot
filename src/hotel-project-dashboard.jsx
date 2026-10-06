@@ -2826,7 +2826,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
               <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4,
                 background:"var(--surface-raised)", border:"1px solid var(--border)",
                 display:"flex", gap:5, alignItems:"center" }}>
-                <OrganicLoader size={18} />
+                <OrganicLoader variant="cradle" size={20} />
               </div>
             </div>
           )}

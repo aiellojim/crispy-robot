@@ -293,15 +293,17 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 **不得再在呼叫端手寫 `animation:"spin …"` 或自帶 keyframes**。目前共 11 處呼叫
 （`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`）。
 
-- 款式：`orbit`（Gooey Orbit，預設）、`ripple`；換款式改該檔 `DEFAULT_VARIANT`，或呼叫端傳 `variant`。
+- 款式：`orbit`（Gooey Orbit，預設）、`ripple`、`cradle`（牛頓擺，目前只用在 AI 打字泡泡，`size={20}`）；換款式改該檔 `DEFAULT_VARIANT`，或呼叫端傳 `variant`。
 - 外觀參數（速度 `SPEED`、橢圓尺寸、軌道、黏連度）全在該檔上方的 `ORBIT` / `RIPPLE` 設定物件。
 - keyframes 在 `LOADER_CSS`，模組載入時以固定 id `organic-loader-css` 注入 `<head>`：
   不放進 `GLOBAL_CSS`、不新增 CSS 變數，所以不需同步主題區塊與 jim mode 區塊。
 - 上色用 `currentColor`，預設 `var(--accent)`，隨主題自動變色；按鈕內有底色時傳 `color="#fff"` 之類。
-- 尺寸慣例：按鈕內 13、區塊 24~28、全頁 56；AI 打字中 18。
+- 尺寸慣例：`size` 一律代表**高度**，寬度由款式的 `aspect` 決定（orbit / ripple 為正方形，cradle 約 3.7 倍寬）。按鈕內 13、區塊 24~28、全頁 56、AI 打字泡泡 20（cradle）。
 - `prefers-reduced-motion`：所有會動的元素帶 `data-ol`，統一改為透明度呼吸。
 - 每個實例用 `useId` 產生獨立的 SVG filter id，多個 loader 同時存在不會互相干擾。
 - 舊的 `@keyframes spin`（`GLOBAL_CSS`）已無使用者，暫留未刪。
+- 預覽頁：`dev/loader-preview.html`（`npm run dev` 後開 `/dev/loader-preview.html`），把各款式、各尺寸、AI 泡泡與按鈕情境常駐顯示，可放大、切深淺色。
+  只有根目錄 `index.html` 是 vite build 入口，所以 `dev/` 不會被打包上線。
 
 ## 資料表
 
