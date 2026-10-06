@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
+import OrganicLoader from "./OrganicLoader.jsx";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const sb = createClient(
@@ -2825,10 +2826,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
               <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4,
                 background:"var(--surface-raised)", border:"1px solid var(--border)",
                 display:"flex", gap:5, alignItems:"center" }}>
-                {[0,1,2].map(i=>(
-                  <div key={i} style={{ width:6, height:6, borderRadius:"50%", background:"var(--text-subtle)",
-                    animation:"spin 1s linear infinite", animationDelay:`${i*0.2}s`, opacity:0.6 }}/>
-                ))}
+                <OrganicLoader size={18} />
               </div>
             </div>
           )}
@@ -2950,9 +2948,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {loading ? (
             <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
-              <div style={{ width:24, height:24, border:"2.5px solid var(--border)",
-                borderTopColor:"var(--accent)", borderRadius:"50%",
-                animation:"spin 0.7s linear infinite", margin:"0 auto 10px" }}/>
+              <OrganicLoader size={24} style={{ margin:"0 auto 10px" }} />
               載入中…
             </div>
           ) : emails.length === 0 ? (
@@ -2982,9 +2978,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
                     onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
                     onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
                     {removing === email
-                      ? <div style={{ width:12, height:12, border:"2px solid var(--border-mid)",
-                          borderTopColor:"var(--red)", borderRadius:"50%",
-                          animation:"spin 0.7s linear infinite" }}/>
+                      ? <OrganicLoader size={13} color="var(--red)" />
                       : <Ico name="trash" size={13} color="currentColor"/>}
                   </button>
                 </div>
@@ -3025,8 +3019,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
                 display:"flex", alignItems:"center", gap:6, transition:"background 0.15s",
                 whiteSpace:"nowrap" }}>
               {adding
-                ? <div style={{ width:13, height:13, border:"2px solid rgba(255,255,255,0.4)",
-                    borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+                ? <OrganicLoader size={13} color="#fff" />
                 : <Ico name="user" size={13} color="#fff"/>}
               新增
             </button>
@@ -3124,9 +3117,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {loading ? (
             <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-subtle)" }}>
-              <div style={{ width:24, height:24, border:"2.5px solid var(--border)",
-                borderTopColor:"var(--accent)", borderRadius:"50%",
-                animation:"spin 0.7s linear infinite", margin:"0 auto 10px" }}/>
+              <OrganicLoader size={24} style={{ margin:"0 auto 10px" }} />
               載入中…
             </div>
           ) : !settings ? (
@@ -3189,7 +3180,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
                   fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
                   alignItems:"center", justifyContent:"center", gap:6 }}>
                 {(pushing || hasInFlight)
-                  ? <div style={{ width:13, height:13, border:"2px solid rgba(255,255,255,0.4)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+                  ? <OrganicLoader size={13} color="#fff" />
                   : <Ico name="send" size={13} color="currentColor"/>}
                 {hasInFlight ? "推送處理中…" : "確認推送"}
               </button>
@@ -3434,8 +3425,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
 
       {loading && (
         <div style={{ textAlign:"center", padding:"40px 0", color:C.textMid }}>
-          <div style={{ width:28, height:28, border:`3px solid ${C.accentBorder}`, borderTopColor:C.accent,
-            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
+          <OrganicLoader size={28} style={{ margin:"0 auto 12px" }} />
           載入 Jira 子任務中…
         </div>
       )}
@@ -4319,8 +4309,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       {/* Step 1：建立 Epic 中 */}
                       {jiraBoot.step==="creating_epic" && (
                         <div style={{ textAlign:"center", padding:"20px 0" }}>
-                          <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
-                            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 14px" }}/>
+                          <OrganicLoader size={28} style={{ margin:"0 auto 14px" }} />
                           <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 Epic…</div>
                         </div>
                       )}
@@ -4333,8 +4322,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                             <a href={jiraBoot.epicUrl} target="_blank" rel="noreferrer"
                               style={{ color:"#0052cc", textDecoration:"none", fontWeight:500 }}>{jiraBoot.epicKey}</a>&nbsp;已建立
                           </div>
-                          <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
-                            borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }}/>
+                          <OrganicLoader size={28} style={{ margin:"0 auto 12px" }} />
                           <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 {jiraTaskCount} 筆子任務，請稍候（約 15 秒）…</div>
                           {jiraBoot.issueTypeName && (
                             <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
@@ -5497,8 +5485,7 @@ export default function App() {
     <div style={{ minHeight:"100vh", background:"transparent", display:"flex", alignItems:"center",
       justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
-      <div style={{ width:28, height:28, border:"3px solid var(--accent-border)", borderTopColor:"var(--accent)",
-        borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+      <OrganicLoader size={56} label="載入中" />
     </div>
   );
 
@@ -5508,8 +5495,7 @@ export default function App() {
     <div style={{ minHeight:"100vh", background:"transparent", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC',sans-serif", gap:16 }}>
       <style>{GLOBAL_CSS}</style>
-      <div style={{ width:40, height:40, border:`3px solid ${C.accentBorder}`, borderTopColor:C.accent,
-        borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+      <OrganicLoader size={56} />
       <div style={{ fontSize:14, color:C.textMid }}>載入專案資料中…</div>
     </div>
   );

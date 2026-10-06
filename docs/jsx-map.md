@@ -9,7 +9,7 @@
 
 ## Imports / Export
 
-- Imports：`react`（useState/useMemo/useEffect/useCallback/useRef）、`@supabase/supabase-js`（createClient）。無其他外部套件。
+- Imports：`react`（useState/useMemo/useEffect/useCallback/useRef）、`@supabase/supabase-js`（createClient）、`./OrganicLoader.jsx`（loading 動畫，見「其他檔案」）。無其他外部套件。
 - 環境變數：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`、`VITE_GEMINI_API_KEY`。
 - Export：僅 `export default function App`（位於約第 3634 行）。
 
@@ -63,4 +63,9 @@
 
 - `src/App.jsx`（122 行）：Vite 官方樣板 counter，**與本專案無關**，勿誤讀。
 - `src/main.jsx`（8 行）：進入點。
+- `src/OrganicLoader.jsx`（2026-10-06 新增）：全站 loading 動畫的**唯一替換點**。jsx 內共 11 處 `<OrganicLoader .../>`（`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`），取代原本的 `animation:"spin ..."` 轉圈。
+  - 改外觀只動此檔：`DEFAULT_VARIANT`（orbit / ripple）、`SPEED`、`ORBIT` / `RIPPLE` 設定物件、`VARIANTS` 註冊表、`LOADER_CSS`（keyframes，模組載入時自動注入 `<head>`，不動 `GLOBAL_CSS`、不新增 CSS 變數）。
+  - 呼叫端 props：`size`（按鈕 13、區塊 24~28、全頁 56）、`color`（預設 `var(--accent)`）、`variant`、`label`、`style`。
+  - `GLOBAL_CSS` 內舊的 `@keyframes spin` 已無使用者，暫留未刪。
+  - 還原點：git tag `before-organic-loader-2026-10-06`。
 - `customer-portal/Dashboard.jsx`：**不存在於本 repo**（2026-07-03 查證），位置未確認。
