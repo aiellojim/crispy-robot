@@ -31,6 +31,15 @@ export const CTA_CLASS = "lg-cta lg-live"; // 主色 CTA 按鈕用，樣式見 G
 export const tint = (a) =>
   `color-mix(in srgb, var(--lg-shadow-tint) ${Math.round(a * 100)}%, transparent)`;
 
+// 重複出現的樣式組合（值與原本逐字相同，只是集中定義）：
+// glassTint("purple") → 玻璃底 + 一層同色系淡色（完成／啟用狀態用）
+export const glassTint = (name) =>
+  `linear-gradient(var(--${name}-subtle),var(--${name}-subtle)), ${GLASS_BG}`;
+// 側邊面板（通知設定、AI 助手、Jira 等）的左側陰影 + 內緣高光
+export const PANEL_SHADOW = `-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`;
+// 彈窗（新增／編輯任務等）的大陰影 + 玻璃邊緣
+export const MODAL_SHADOW = `0 20px 60px ${tint(0.2)}, ${RIM}`;
+
 // ─── CSS ──────────────────────────────────────────────────────
 // 每個區塊只放「原始 token」；組合用的 token（--lg-bg 等）只在 :root 定義一次，
 // 因為所有主題區塊都作用在同一個 <html> 上，var() 會用最後生效的原始值解析。

@@ -29,7 +29,7 @@
 | `Icon` / `ICONS` / `AielloLogo` / `Ico` | 327–380 | SVG icon 元件與 path 定義、Logo |
 | `MiniBar` / `Card` / `SectionLabel` / `SectionCount` | 381–411 | 版面小元件 |
 | `renderRichText` / `RichText` | 412–457 | 富文字（連結/換行）解析渲染 |
-| `FInput` `Chip` `CheckRow` `NoteArea` `SheetLink` `NavRow` | 458–535 | 表單元件群 |
+| `FInput` `Chip` `CheckRow` `NoteArea` `SheetLink` `Batch2Card` `NavRow` | 458–535 | 表單元件群 |
 | `OvCheckRow` `OvCard` `OvBatch2Row` | 536–588 | 專案總覽頁唯讀元件 |
 | `FilterSelect` / `THEME_OPTIONS` / `ThemeToggle` | 589–633 | 篩選下拉與主題切換 |
 | `VAPID_PUBLIC_KEY` `urlBase64ToUint8Array` `subToKeys` `getOrCreateSub` `updateSub` `deleteSub` | 634–673 | **Web Push 區**：訂閱管理（讀寫 `push_subscriptions`） |
@@ -64,7 +64,8 @@
 - `src/App.jsx`（122 行）：Vite 官方樣板 counter，**與本專案無關**，勿誤讀。
 - `src/main.jsx`（8 行）：進入點。
 - `src/OrganicLoader.jsx`（2026-10-06 新增）：全站 loading 動畫的**唯一替換點**。jsx 內共 11 處 `<OrganicLoader .../>`（`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`），取代原本的 `animation:"spin ..."` 轉圈。
-- `src/glassFx.js`（2026-10-06 新增）：Liquid Glass 的質感加成層，模組載入時把 CSS 注入 `<head>`（id=`glass-fx-css`）並掛一個全站 `pointermove` listener。匯出 `GLASS_BG`／`GLASS_BG_HOVER`（斜向光背景）、`RIM`／`RIM_HOVER`（邊緣高光）、`tint(a)`（色調陰影）、`CTA_CLASS`（主色 CTA 按鈕，`grep -n CTA_CLASS` 可列出全部套用處）；`className="lg-live"` 啟用游標邊緣光。jsx 內引用處：`grep -n "GLASS_BG\|RIM\|tint(\|lg-live" src/hotel-project-dashboard.jsx`。材質參數（透明度/blur）仍在 `GLASS` 常數與 GLOBAL_CSS 的 `--glass-surface`，不在這個檔案。細節見 `docs/todo.md`「Glass v2」。
+- `src/theme.js`（2026-10-06 新增）：淺／深色主題的 CSS 變數 token 本體（`LIGHT_TOKENS`／`DARK_TOKENS` 兩個字串）。`GLOBAL_CSS` 用 `${LIGHT_TOKENS}`／`${DARK_TOKENS}` 在四個位置（`:root`、dark media、`html[data-theme=light]`、`html[data-theme=dark]`）各引用一次，**改主題色只動這個檔案一處**。
+- `src/glassFx.js`（2026-10-06 新增）：Liquid Glass 的質感加成層，模組載入時把 CSS 注入 `<head>`（id=`glass-fx-css`）並掛一個全站 `pointermove` listener。匯出 `GLASS_BG`／`GLASS_BG_HOVER`（斜向光背景）、`RIM`／`RIM_HOVER`（邊緣高光）、`tint(a)`（色調陰影）、`glassTint(name)`（玻璃底＋同色系淡色，完成/啟用態用）、`PANEL_SHADOW`（側邊面板陰影）、`MODAL_SHADOW`（彈窗陰影）、`CTA_CLASS`（主色 CTA 按鈕，`grep -n CTA_CLASS` 可列出全部套用處）；`className="lg-live"` 啟用游標邊緣光。jsx 內引用處：`grep -n "GLASS_BG\|RIM\|tint(\|lg-live" src/hotel-project-dashboard.jsx`。材質參數（透明度/blur）仍在 `GLASS` 常數與 GLOBAL_CSS 的 `--glass-surface`，不在這個檔案。細節見 `docs/todo.md`「Glass v2」。
   - 改外觀只動此檔：`DEFAULT_VARIANT`（orbit / ripple）、`SPEED`、`ORBIT` / `RIPPLE` 設定物件、`VARIANTS` 註冊表、`LOADER_CSS`（keyframes，模組載入時自動注入 `<head>`，不動 `GLOBAL_CSS`、不新增 CSS 變數）。
   - 呼叫端 props：`size`（高度；按鈕 13、區塊 24~28、全頁 56）、`color`（預設 `var(--accent)`）、`variant`（`orbit` / `ripple` / `cradle`）、`label`、`style`。
   - 唯一不用預設款的地方：AI 打字泡泡（`grep -n 'variant="cradle"'`）用 `cradle`（牛頓擺，size 20，寬約 3.7 倍高）。

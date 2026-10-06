@@ -137,6 +137,13 @@
   4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
 - **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
 
+### 程式碼易維護性重構 Batch 1（2026-10-06，輸出刻意不變，待 Jim 實機確認）
+- 還原點：`git tag before-refactor-batch1-2026-10-06`。
+- 做了：① 主題 token 抽到 `src/theme.js`（GLOBAL_CSS 四處改引用）；② `glassFx.js` 新增 `glassTint()`／`PANEL_SHADOW`／`MODAL_SHADOW`，取代重複的字面值；③ 第二批資料兩份幾乎相同的卡片 JSX 抽成 `Batch2Card`；④ 清掉未用 icon（filter/tag/sparkle）、DebugHud 的 `Date.now()` 改 `useState(()=>Date.now())`、`EBCONSOLE_PROXY` 加 eslint-disable 說明。lint 錯誤 7→4。
+- 驗證：GLOBAL_CSS 四個主題區塊 56 個 token 逐項與舊版相同、其餘 CSS 文字相同；helper 字串與舊字面值逐字相同；Batch2Card 與舊 inline JSX 的 renderToStaticMarkup 在 80 種組合下完全一致。**未做：真實頁面肉眼比對。**
+- 未動（刻意）：3 個 `set-state-in-effect` 與 1 個 `immutability` lint 錯誤（要逐一評估行為風險）。
+- 尚未批准的下一批：Batch 2（hover handler 改 `.lg-btn` CSS class；GLOBAL_CSS 改單次注入）、7 處 `.map` 渲染 GLASS 卡片的效能量測。
+
 ### Glass v2 材質升級（2026-10-06 已導入「斜向光＋邊緣光＋色調陰影＋等寬數字」，等 Jim 實機確認）
 - **結論**：Jim 比對預覽後，保留**原本**的玻璃（`--glass-surface` 透明度、`blur(20px) saturate(160%)`、canvas 色暈完全沒動）；顆粒、硬邊形狀、elevation 重分級、降 alpha、密度預設、圓角階層**都不做**。只導入下面四項。
 - 實作集中在 `src/glassFx.js`（同 OrganicLoader 的做法：模組載入時把 CSS 注入 `<head>`，id=`glass-fx-css`）；jsx 只引用 `GLASS_BG / GLASS_BG_HOVER / RIM / RIM_HOVER / tint()`，不再手寫字面值。

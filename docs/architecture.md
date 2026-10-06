@@ -298,6 +298,10 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 4. 文字：`tabular-nums`、`h1–h3 text-wrap:balance`（字重維持原本的 300，Jim 決定不動）。
    深色的 `--text-mid`／`--text-subtle` 也在同一天調亮（#B8B8C2／#A4A4B0）——斜向光會把卡片左上角底色提亮，
    原值在最壞情況（藍色暈 + 光）對比掉到約 3.4:1。
+**主題 token 的位置（2026-10-06 重構）**：淺／深色的 `--bg`、`--text`、`--glass-surface` 等本體在 `src/theme.js`（`LIGHT_TOKENS`／`DARK_TOKENS`），
+`GLOBAL_CSS` 的四個主題區塊都是引用它們——新增或調整主題 token 只改 `theme.js` 一處，不要再回頭在 GLOBAL_CSS 手寫。
+（jim mode 與 `--lg-*` 仍在各自位置：jim 在 GLOBAL_CSS 的 `html.jim-mode-effect`，`--lg-*` 在 `glassFx.js`。）
+重複的樣式組合集中在 `glassFx.js`：`glassTint("purple"|"accent")`、`PANEL_SHADOW`、`MODAL_SHADOW`；單次使用的陰影仍寫在原處。
 新增 `--lg-*` token 要在 `glassFx.js` 的五個區塊都定義：`:root`、dark media、`html[data-theme=light]`、
 `html[data-theme=dark]`、`html.jim-mode-effect`（jim 放最後，同 specificity 靠順序）。
 5. 主色 CTA：`CTA_CLASS`（`.lg-cta`）——維持原本的實色平面（accent 底、白字），只加半透明白邊框與游標邊緣光；

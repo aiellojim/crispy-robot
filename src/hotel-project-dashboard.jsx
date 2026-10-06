@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import OrganicLoader from "./OrganicLoader.jsx";
-import { GLASS_BG, GLASS_BG_HOVER, RIM, RIM_HOVER, CTA_CLASS, tint } from "./glassFx.js";
+import { LIGHT_TOKENS, DARK_TOKENS } from "./theme.js";
+import { GLASS_BG, GLASS_BG_HOVER, RIM, RIM_HOVER, CTA_CLASS, tint, glassTint, PANEL_SHADOW, MODAL_SHADOW } from "./glassFx.js";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const sb = createClient(
@@ -128,90 +129,10 @@ const glassToggle = (active, activeBg) => ({
 const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
-  :root {
-    --bg: #F5F5F5;
-    --surface: #FFFFFF;
-    --surface-raised: #FAFAFA;
-    --border: #E5E5E5;
-    --border-mid: #D4D4D4;
-    --text: #111111;
-    --text-mid: #6B6B6B;
-    --text-subtle: #767676;
-    --accent: #E8621A;
-    --accent-light: #FFF4EE;
-    --accent-border: rgba(232,98,26,0.25);
-    --accent-subtle: rgba(232,98,26,0.07);
-    --green: #16A34A;
-    --green-light: #F0FDF4;
-    --green-subtle: rgba(22,163,74,0.08);
-    --amber: #B45309;
-    --amber-light: #FFFBEB;
-    --amber-subtle: rgba(180,83,9,0.08);
-    --red: #DC2626;
-    --red-light: #FEF2F2;
-    --red-subtle: rgba(220,38,38,0.07);
-    --purple: #7C3AED;
-    --purple-light: #F5F3FF;
-    --purple-subtle: rgba(124,58,237,0.07);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --cal-launch-bg: #DBEAFE; --cal-launch-text: #1E40AF; --cal-launch-border: #93C5FD;
-    --cal-batch1-bg: #DCFCE7; --cal-batch1-text: #166534; --cal-batch1-border: #86EFAC;
-    --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
-    --cal-task-bg:   #FEF3C7; --cal-task-text:   #92400E; --cal-task-border:   #FCD34D;
-    --cal-period-bg: #FFE4E6; --cal-period-text:  #9F1239; --cal-period-border: #FCA5A5;
-    --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
-    --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
-    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
-    --glass-surface: rgba(255,255,255,0.62);
-    --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.40);
-    --canvas-glow-2: rgba(232,98,26,0.34);
-    --canvas-glow-3: rgba(14,122,90,0.32);
-  }
+  :root {${LIGHT_TOKENS}}
 
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #17171E;
-      --surface: #21212B;
-      --surface-raised: #2A2A36;
-      --border: #32323F;
-      --border-mid: #42424F;
-      --text: #EDEDED;
-      --text-mid: #B8B8C2;
-      --text-subtle: #A4A4B0;
-      --accent: #F4873D;
-      --accent-light: #2A1A0A;
-      --accent-border: rgba(244,135,61,0.3);
-      --accent-subtle: rgba(244,135,61,0.08);
-      --green: #22C55E;
-      --green-light: #052E16;
-      --green-subtle: rgba(34,197,94,0.1);
-      --amber: #F59E0B;
-      --amber-light: #1C1200;
-      --amber-subtle: rgba(245,158,11,0.1);
-      --red: #EF4444;
-      --red-light: #2D0F0F;
-      --red-subtle: rgba(239,68,68,0.1);
-      --purple: #A78BFA;
-      --purple-light: #1E0A3C;
-      --purple-subtle: rgba(167,139,250,0.1);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-      --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
-      --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
-      --cal-batch1-bg: #0A2E1A; --cal-batch1-text: #86EFAC; --cal-batch1-border: #14532D;
-      --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
-      --cal-task-bg:   #2A1C00; --cal-task-text:   #FCD34D; --cal-task-border:   #78350F;
-      --cal-period-bg: #2D0A14; --cal-period-text:  #FCA5A5; --cal-period-border: #881337;
-      --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
-      --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
-      --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
-      --glass-surface: rgba(33,33,43,0.55);
-      --glass-surface-hover: rgba(42,42,54,0.72);
-      --canvas-glow-1: rgba(77,144,212,0.40);
-      --canvas-glow-2: rgba(244,135,61,0.36);
-      --canvas-glow-3: rgba(34,164,116,0.32);
-    }
+    :root {${DARK_TOKENS}}
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -356,58 +277,8 @@ const GLOBAL_CSS = `
   }
 
   /* Manual theme overrides — higher specificity than media query */
-  html[data-theme="light"] {
-    --bg: #F5F5F5; --surface: #FFFFFF; --surface-raised: #FAFAFA;
-    --border: #E5E5E5; --border-mid: #D4D4D4;
-    --text: #111111; --text-mid: #6B6B6B; --text-subtle: #767676;
-    --accent: #E8621A; --accent-light: #FFF4EE;
-    --accent-border: rgba(232,98,26,0.25); --accent-subtle: rgba(232,98,26,0.07);
-    --green: #16A34A; --green-light: #F0FDF4; --green-subtle: rgba(22,163,74,0.08);
-    --amber: #B45309; --amber-light: #FFFBEB; --amber-subtle: rgba(180,83,9,0.08);
-    --red: #DC2626; --red-light: #FEF2F2; --red-subtle: rgba(220,38,38,0.07);
-    --purple: #7C3AED; --purple-light: #F5F3FF; --purple-subtle: rgba(124,58,237,0.07);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --cal-launch-bg: #DBEAFE; --cal-launch-text: #1E40AF; --cal-launch-border: #93C5FD;
-    --cal-batch1-bg: #DCFCE7; --cal-batch1-text: #166534; --cal-batch1-border: #86EFAC;
-    --cal-batch2-bg: #F3E8FF; --cal-batch2-text: #6B21A8; --cal-batch2-border: #D8B4FE;
-    --cal-task-bg: #FEF3C7; --cal-task-text: #92400E; --cal-task-border: #FCD34D;
-    --cal-period-bg: #FFE4E6; --cal-period-text: #9F1239; --cal-period-border: #FCA5A5;
-    --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
-    --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
-    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
-    --glass-surface: rgba(255,255,255,0.62);
-    --glass-surface-hover: rgba(255,255,255,0.78);
-    --canvas-glow-1: rgba(30,111,181,0.40);
-    --canvas-glow-2: rgba(232,98,26,0.34);
-    --canvas-glow-3: rgba(14,122,90,0.32);
-  }
-  html[data-theme="dark"] {
-    --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
-    --border: #32323F; --border-mid: #42424F;
-    --text: #EDEDED; --text-mid: #B8B8C2; --text-subtle: #A4A4B0;
-    --accent: #F4873D; --accent-light: #2A1A0A;
-    --accent-border: rgba(244,135,61,0.3); --accent-subtle: rgba(244,135,61,0.08);
-    --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
-    --amber: #F59E0B; --amber-light: #1C1200; --amber-subtle: rgba(245,158,11,0.1);
-    --red: #EF4444; --red-light: #2D0F0F; --red-subtle: rgba(239,68,68,0.1);
-    --purple: #A78BFA; --purple-light: #1E0A3C; --purple-subtle: rgba(167,139,250,0.1);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-    --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
-    --cal-launch-bg: #1A2744; --cal-launch-text: #93C5FD; --cal-launch-border: #1E3A6E;
-    --cal-batch1-bg: #0A2E1A; --cal-batch1-text: #86EFAC; --cal-batch1-border: #14532D;
-    --cal-batch2-bg: #1E0A3C; --cal-batch2-text: #D8B4FE; --cal-batch2-border: #4C1D95;
-    --cal-task-bg: #2A1C00; --cal-task-text: #FCD34D; --cal-task-border: #78350F;
-    --cal-period-bg: #2D0A14; --cal-period-text: #FCA5A5; --cal-period-border: #881337;
-    --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
-    --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
-    --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
-    --glass-surface: rgba(33,33,43,0.55);
-    --glass-surface-hover: rgba(42,42,54,0.72);
-    --canvas-glow-1: rgba(77,144,212,0.40);
-    --canvas-glow-2: rgba(244,135,61,0.36);
-    --canvas-glow-3: rgba(34,164,116,0.32);
-  }
+  html[data-theme="light"] {${LIGHT_TOKENS}}
+  html[data-theme="dark"] {${DARK_TOKENS}}
   html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
   html[data-theme="dark"] select option { background: #1C1C1C; color: #EDEDED; }
 
@@ -651,13 +522,11 @@ const ICONS = {
   bell:       "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0",
   calendar:   "M3 4h18v18H3z M3 9h18 M8 2v4 M16 2v4",
   search:     "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35",
-  filter:     "M22 3H2l8 9.46V19l4 2v-8.54L22 3z",
   sort:       "M3 6h18 M7 12h10 M10 18h4",
   user:       "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
   pin:        "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
   link:       "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
   chevronR:   "M9 18l6-6-6-6",
-  tag:        "M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z M7 7h.01",
   grid:       "M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z",
   trash:      "M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6",
   jira:       "M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z",
@@ -668,7 +537,6 @@ const ICONS = {
   send:       "M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z",
   msgSquare:  "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   pencil:     "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 9.5-9.5z",
-  sparkle:     "M12 2l3 6.5L22 10l-5 4.5L18.5 22 12 19l-6.5 3L7 14.5 2 10l7-1.5L12 2z",
   building:    "M3 21h18 M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16 M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4 M9 7h1 M14 7h1 M9 11h1 M14 11h1",
   mail:         "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6",
   package:     "M16.5 9.4l-9-5.19 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96L12 12.01l8.73-5.05 M12 22.08V12",
@@ -702,7 +570,7 @@ const JIM_HUD_QUOTES = [
 const DebugHud = ({ projects, allTasks }) => {
   const [now, setNow] = useState(new Date());
   const [quoteIdx, setQuoteIdx] = useState(0);
-  const startRef = useRef(Date.now());
+  const [startMs] = useState(() => Date.now());
 
   useEffect(() => {
     const t1 = setInterval(() => setNow(new Date()), 1000);
@@ -710,7 +578,7 @@ const DebugHud = ({ projects, allTasks }) => {
     return () => { clearInterval(t1); clearInterval(t2); };
   }, []);
 
-  const uptimeSec = Math.floor((now.getTime() - startRef.current) / 1000);
+  const uptimeSec = Math.floor((now.getTime() - startMs) / 1000);
   const mm = String(Math.floor(uptimeSec / 60)).padStart(2, "0");
   const ss = String(uptimeSec % 60).padStart(2, "0");
 
@@ -911,6 +779,35 @@ const SheetLink = ({ value, onChange }) => {
     </div>
   );
 };
+
+// 第二批資料的單張卡片（AVA 各項目與 GW 共用；GW 多一個產品線徽章）
+const Batch2Card = ({ title, isDone, onToggle, note, onNote, link, onLink, badge }) => (
+  <div style={{ ...GLASS,
+    // 完成態＝紫色淡色疊在玻璃上（不是換成不透明底色），未完成＝純玻璃
+    background:isDone?glassTint("purple"):GLASS_BG,
+    border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
+    borderRadius:12, marginBottom:12, overflow:"hidden" }}>
+    {/* 卡片 header：點擊切換勾選 */}
+    <div onClick={onToggle}
+      style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
+      <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
+        border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
+        background:isDone?"var(--purple)":"transparent",
+        display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
+        {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:500 }}>✓</span>}
+      </div>
+      <span style={{ fontSize:14, fontWeight:400, color:"var(--text)", flex:1 }}>{title}</span>
+      {badge && <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
+        border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:400 }}>{badge}</span>}
+      {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400, ...(badge?{ marginLeft:4 }:null) }}>待完成</span>}
+    </div>
+    {/* 卡片 body：備註 + 檔案連結 */}
+    <div style={{ padding:"0 16px 16px" }}>
+      <NoteArea value={note} onChange={onNote} focusColor="var(--purple)"/>
+      <SheetLink value={link} onChange={onLink}/>
+    </div>
+  </div>
+);
 
 const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
   <div style={{ display:"flex", justifyContent:onBack?"space-between":"flex-end" }}>
@@ -1134,7 +1031,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:`1px solid ${C.border}`, boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
+        borderLeft:`1px solid ${C.border}`, boxShadow:PANEL_SHADOW,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1477,7 +1374,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
       <div style={{ ...GLASS,
         borderRadius:14, padding:28, width:"100%", maxWidth:520,
-        boxShadow:`0 20px 60px ${tint(0.2)}, ${RIM}`, animation:"fadeIn 0.2s ease" }}>
+        boxShadow:MODAL_SHADOW, animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
@@ -2947,7 +2844,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
+        borderLeft:"1px solid var(--border)", boxShadow:PANEL_SHADOW,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -3119,7 +3016,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
+        borderLeft:"1px solid var(--border)", boxShadow:PANEL_SHADOW,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -3242,6 +3139,7 @@ const CUSTOMER_ACCESS_MANAGE  = `${import.meta.env.VITE_SUPABASE_URL}/functions/
 // 2026-09-01：目前沒有任何地方呼叫這支（改成 sitechat_ebconsole_pushes 工作佇列 + 本機 agent，
 // 見 SiteChatEbConsolePanel 上方註解）。Edge Function 本身還留著部署，保留這個常數只是為了未來
 // 如果換成有固定出口 IP 的內網代理、要改回直接呼叫時方便，不是死碼誤留。
+// eslint-disable-next-line no-unused-vars -- 刻意保留，見上方註解
 const EBCONSOLE_PROXY         = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebconsole-proxy`;
 const JIRA_ANON  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -3762,7 +3660,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
       {/* 批次操作列 */}
       {selectedIds.size > 0 && (
         <div style={{ ...GLASS, display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
-          background:`linear-gradient(var(--accent-subtle),var(--accent-subtle)), ${GLASS_BG}`,
+          background:glassTint("accent"),
           border:`1px solid ${C.accentBorder}`, boxShadow:RIM, borderRadius:12, marginBottom:16 }}>
           <span style={{ fontSize:13, color:C.accent, fontWeight:400 }}>已選取 {selectedIds.size} 筆</span>
           <button onClick={removeSelected}
@@ -4287,7 +4185,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       setJiraBoot(p=>({...p,open:false})); }}>
                     <div style={{ ...GLASS,
                       borderRadius:14, padding:28, width:"100%", maxWidth:460,
-                      boxShadow:`0 20px 60px ${tint(0.2)}, ${RIM}`, animation:"fadeIn 0.2s ease" }}>
+                      boxShadow:MODAL_SHADOW, animation:"fadeIn 0.2s ease" }}>
 
                       {/* Header 含 X 關閉按鈕 */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
@@ -4639,62 +4537,18 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     {info.batch2Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch2Deadline}</span>}
                   </div>
                 </div>
-                {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
-                  const isDone = !!batch2Checked[item];
-                  return (
-                    <div key={item} style={{ ...GLASS,
-                      // 完成態＝紫色淡色疊在玻璃上（不是換成不透明底色），未完成＝純玻璃
-                      background:isDone?`linear-gradient(var(--purple-subtle),var(--purple-subtle)), ${GLASS_BG}`:GLASS_BG,
-                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
-                      borderRadius:12, marginBottom:12, overflow:"hidden" }}>
-                      {/* 卡片 header：點擊切換勾選 */}
-                      <div onClick={()=>toggleCheck(setBatch2Checked, item, "batch2_checked")}
-                        style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
-                        <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
-                          border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
-                          background:isDone?"var(--purple)":"transparent",
-                          display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:500 }}>✓</span>}
-                        </div>
-                        <span style={{ fontSize:14, fontWeight:400, color:"var(--text)", flex:1 }}>{item}</span>
-                        {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400 }}>待完成</span>}
-                      </div>
-                      {/* 卡片 body：備註 + 檔案連結 */}
-                      <div style={{ padding:"0 16px 16px" }}>
-                        <NoteArea value={batch2Notes[item]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [item]:v }))} focusColor="var(--purple)"/>
-                        <SheetLink value={sheetLinks[BATCH2_LINK_KEYS[idx]]} onChange={v=>setSheetLinks(p=>({ ...p, [BATCH2_LINK_KEYS[idx]]:v }))} color="var(--purple)"/>
-                      </div>
-                    </div>
-                  );
-                })}
-                {hasGw&&(()=>{
-                  const isDone = !!batch2Checked[GW_ITEM];
-                  return (
-                    <div style={{ ...GLASS,
-                      // 完成態＝紫色淡色疊在玻璃上（不是換成不透明底色），未完成＝純玻璃
-                      background:isDone?`linear-gradient(var(--purple-subtle),var(--purple-subtle)), ${GLASS_BG}`:GLASS_BG,
-                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
-                      borderRadius:12, marginBottom:12, overflow:"hidden" }}>
-                      <div onClick={()=>toggleCheck(setBatch2Checked, GW_ITEM, "batch2_checked")}
-                        style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
-                        <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
-                          border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
-                          background:isDone?"var(--purple)":"transparent",
-                          display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-                          {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:500 }}>✓</span>}
-                        </div>
-                        <span style={{ fontSize:14, fontWeight:400, color:"var(--text)", flex:1 }}>{GW_ITEM}</span>
-                        <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
-                          border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:400 }}>GW</span>
-                        {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400, marginLeft:4 }}>待完成</span>}
-                      </div>
-                      <div style={{ padding:"0 16px 16px" }}>
-                        <NoteArea value={batch2Notes[GW_ITEM]||""} onChange={v=>setBatch2Notes(p=>({ ...p, [GW_ITEM]:v }))} focusColor="var(--purple)"/>
-                        <SheetLink value={sheetLinks[GW_LINK_KEY]} onChange={v=>setSheetLinks(p=>({ ...p, [GW_LINK_KEY]:v }))} color="var(--purple)"/>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {hasAva&&BATCH2_ITEMS.map((item,idx)=>(
+                  <Batch2Card key={item} title={item} isDone={!!batch2Checked[item]}
+                    onToggle={()=>toggleCheck(setBatch2Checked, item, "batch2_checked")}
+                    note={batch2Notes[item]||""} onNote={v=>setBatch2Notes(p=>({ ...p, [item]:v }))}
+                    link={sheetLinks[BATCH2_LINK_KEYS[idx]]} onLink={v=>setSheetLinks(p=>({ ...p, [BATCH2_LINK_KEYS[idx]]:v }))}/>
+                ))}
+                {hasGw&&(
+                  <Batch2Card title={GW_ITEM} badge="GW" isDone={!!batch2Checked[GW_ITEM]}
+                    onToggle={()=>toggleCheck(setBatch2Checked, GW_ITEM, "batch2_checked")}
+                    note={batch2Notes[GW_ITEM]||""} onNote={v=>setBatch2Notes(p=>({ ...p, [GW_ITEM]:v }))}
+                    link={sheetLinks[GW_LINK_KEY]} onLink={v=>setSheetLinks(p=>({ ...p, [GW_LINK_KEY]:v }))}/>
+                )}
                 <NavRow onBack={()=>setStep(1)} onNext={()=>setStep(3)} nextLabel="下一步：Jira 子任務 →" nextColor={C.purple}/>
               </>
             )}
@@ -4745,7 +4599,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   style={{ ...GLASS, flexShrink:0, display:"flex", alignItems:"center", gap:6,
                   padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
-                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?`linear-gradient(var(--accent-subtle),var(--accent-subtle)), ${GLASS_BG}`:GLASS_BG,
+                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?glassTint("accent"):GLASS_BG,
                   color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accent:C.textMid,
                   fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
                   {projSub&&(projSub.subscribed_projects||[]).includes(project.id)
@@ -5163,7 +5017,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
+        borderLeft:"1px solid var(--border)", boxShadow:PANEL_SHADOW,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
