@@ -23,6 +23,7 @@ React（Vite）+ 純 inline style 前端（Vercel）＋ Supabase 後端（Postgr
 | 要找 `src/hotel-project-dashboard.jsx` 內某功能的位置 | `docs/jsx-map.md`，然後用 grep + 區段讀取；**禁止整檔讀取** |
 | 架構、資料表、Edge Function 決策、zIndex、產品線 | `docs/architecture.md` |
 | 改 loading 動畫（換款式、速度、形狀、尺寸慣例） | `src/OrganicLoader.jsx`（檔頭註解即用法；詳見 `docs/architecture.md`「Loading 動畫」） |
+| 改玻璃質感（斜向光、邊緣光、陰影色調、深色字重）或新增 `--lg-*` token | `src/glassFx.js`（檔頭註解；詳見 `docs/architecture.md`「Glass v2 質感加成」） |
 | 目前待辦與方案評估 | `docs/todo.md` |
 | 要派 subagent（大量掃描、結案驗證） | `docs/delegation.md` + `docs/templates/` |
 | 想知道這套制度的由來 | `docs/harness-notes.md` |

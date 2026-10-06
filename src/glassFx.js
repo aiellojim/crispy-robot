@@ -5,7 +5,7 @@
 //   1. 斜向光   --lg-bg / --lg-bg-hover：左上角一道 135° 的柔光，疊在 --glass-surface 上面
 //   2. 邊緣光   .lg-live：游標移到元素上時，邊框（1px）會跟著游標位置亮起一小段
 //   3. 色調陰影 tint(a)：大陰影不用純黑，改成帶一點主題色的深色（淺色=藍灰、深色=靛黑、jim=深綠）
-//   4. 文字細節 body 等寬數字（tabular-nums）、標題 text-wrap:balance
+//   4. 文字細節 body 等寬數字（tabular-nums）、標題 text-wrap:balance、深色模式內文字重 400
 //
 // 想調整外觀時只動這個檔案的 token（下面 GLASS_FX_CSS 的五個區塊）；jsx 那邊只引用
 // GLASS_BG / GLASS_BG_HOVER / RIM / RIM_HOVER / tint()，不再手寫字面值。
@@ -41,7 +41,8 @@ const LIGHT = `
     --lg-rim-lo: rgba(0,0,0,0.04);
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 62%, transparent);
-    --lg-shadow-tint: rgb(28,38,84);`;
+    --lg-shadow-tint: rgb(28,38,84);
+    --lg-body-weight: 300;`;
 
 const DARK = `
     --lg-sheen: rgba(255,255,255,0.09);
@@ -52,7 +53,8 @@ const DARK = `
     --lg-rim-lo: rgba(0,0,0,0.04);
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: rgba(255,255,255,0.5);
-    --lg-shadow-tint: rgb(2,4,18);`;
+    --lg-shadow-tint: rgb(2,4,18);
+    --lg-body-weight: 400;`;
 
 const JIM = `
     --lg-sheen: rgba(0,255,65,0.07);
@@ -63,7 +65,8 @@ const JIM = `
     --lg-rim-lo: rgba(0,0,0,0.04);
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 70%, transparent);
-    --lg-shadow-tint: rgb(0,32,8);`;
+    --lg-shadow-tint: rgb(0,32,8);
+    --lg-body-weight: 400;`;
 
 export const GLASS_FX_CSS = `
   :root {${LIGHT}
@@ -102,6 +105,9 @@ export const GLASS_FX_CSS = `
   /* 文字細節：數字等寬（百分比、日期、計數跳動時不會左右抖動；字型沒有 tnum 時等於沒作用），
      標題換行平衡。 */
   body { font-variant-numeric: tabular-nums; }
+  /* 深色模式內文字重 300→400（細字在深底上發虛，次級文字最明顯）；淺色維持 300。
+     用 html body 提高 specificity，才壓得過 GLOBAL_CSS 的 body{font-weight:300}。要退回：把 DARK／JIM 的 --lg-body-weight 改成 300。 */
+  html body { font-weight: var(--lg-body-weight); }
   h1, h2, h3 { text-wrap: balance; }
 `;
 

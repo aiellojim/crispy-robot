@@ -146,6 +146,7 @@
   4. **文字細節**：`body{font-variant-numeric:tabular-nums}`、`h1–h3{text-wrap:balance}`。（`index.css` 本來就有 `optimizeLegibility`＋antialiased；百分比大數字本來就是 DM Mono 等寬。）
 - 新增 token 的規則：`--lg-*` 要在 `glassFx.js` 的五個區塊（`:root`、dark media、`html[data-theme=light]`、`html[data-theme=dark]`、`html.jim-mode-effect`）都定義，jim 放最後。
 - 還原：`git tag before-glass-v2-2026-10-06`；或只把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import，即回到原本材質。
+- **2026-10-06 追加（Jim 實機回饋：深色次級文字可讀性）**：深色 `--text-mid` #A3A3A3→#B8B8C2、`--text-subtle` #8C8C8C→#A4A4B0，深色/jim 內文字重 300→400（`glassFx.js` 的 `--lg-body-weight`，要退回改成 300）。
 - 驗證狀況：build、eslint（0 新增問題）通過；無頭 Chromium 渲染確認淺/深色的斜向光、邊緣光（mask 只留 1px 邊框）、色調陰影都有生效。**真實頁面的實際觀感未驗證，需 Jim 實機看。**
 - 已知限制：`color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器大陰影會消失（不影響功能）。
 - 可選的後續（Jim 沒要求、沒動）：body `font-weight` 300→400、細線（hairline）處理、圓角階層。

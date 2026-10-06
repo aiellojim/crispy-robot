@@ -287,6 +287,22 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 這組數值是起始推薦值，不是精算出來的定論——沒辦法在這個環境肉眼確認實際濃淡，Jim 看過實際效果
 覺得太濃/太淡，直接調 `onMouseMove` 裡那兩個 0.4/0.16 數字即可，不用動其他邏輯。
 
+### Glass v2 質感加成（2026-10-06 起，`src/glassFx.js`）
+在上面那套玻璃（`--glass-surface` 透明度、`blur(20px) saturate(160%)`、canvas 色暈）**之上**疊四樣東西，
+玻璃本身的參數完全沒動（Jim 比對預覽後決定保留原本的透明度；顆粒、硬邊形狀、elevation 重分級都不做）：
+1. 斜向光：`GLASS.background` ＝ `GLASS_BG`（左上 135° 柔光疊在 `--glass-surface` 上）。`style.background=`
+   是 shorthand，hover/leave handler 一律用 `GLASS_BG_HOVER`／`GLASS_BG`，不能再寫 `var(--glass-surface…)`。
+2. 游標邊緣光：加 `className="lg-live"`（目前：專案卡片、統計卡、Jira issue 卡）；1px 邊框跟著游標亮一段，
+   全站一個 delegated、rAF 節流的 `pointermove` listener，觸控裝置停用。
+3. 色調陰影：大陰影用 `tint(a)`（`color-mix` 帶主題色，強度＝原本 rgba(0,0,0,a) 的 a）；邊緣高光用 `RIM`／`RIM_HOVER`。
+4. 文字：`tabular-nums`、`h1–h3 text-wrap:balance`、深色模式內文字重 400（`--lg-body-weight`）。
+   深色的 `--text-mid`／`--text-subtle` 也在同一天調亮（#B8B8C2／#A4A4B0）——斜向光會把卡片左上角底色提亮，
+   原值在最壞情況（藍色暈 + 光）對比掉到約 3.4:1。
+新增 `--lg-*` token 要在 `glassFx.js` 的五個區塊都定義：`:root`、dark media、`html[data-theme=light]`、
+`html[data-theme=dark]`、`html.jim-mode-effect`（jim 放最後，同 specificity 靠順序）。
+還原：tag `before-glass-v2-2026-10-06`，或把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import。
+`color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器只會失去大陰影。
+
 ### Loading 動畫（2026-10-06 起）
 
 全站 loading 動畫統一由 `src/OrganicLoader.jsx` 提供，jsx 內只用 `<OrganicLoader size={…} />`，
@@ -397,5 +413,5 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 ## 還原點（git tags，2026-07-03 實查）
 
 `before-jira-bootstrap`、`jira-bootstrap-stable`、`before-phase-C-ui-redesign`、
-`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`。
+`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`、`before-glass-v2-2026-10-06`。
 慣例：任何重大改動前先打描述性 tag（`/checkpoint`）。

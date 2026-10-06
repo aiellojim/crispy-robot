@@ -178,8 +178,8 @@ const GLOBAL_CSS = `
       --border: #32323F;
       --border-mid: #42424F;
       --text: #EDEDED;
-      --text-mid: #A3A3A3;
-      --text-subtle: #8C8C8C;
+      --text-mid: #B8B8C2;
+      --text-subtle: #A4A4B0;
       --accent: #F4873D;
       --accent-light: #2A1A0A;
       --accent-border: rgba(244,135,61,0.3);
@@ -385,7 +385,7 @@ const GLOBAL_CSS = `
   html[data-theme="dark"] {
     --bg: #17171E; --surface: #21212B; --surface-raised: #2A2A36;
     --border: #32323F; --border-mid: #42424F;
-    --text: #EDEDED; --text-mid: #A3A3A3; --text-subtle: #8C8C8C;
+    --text: #EDEDED; --text-mid: #B8B8C2; --text-subtle: #A4A4B0;
     --accent: #F4873D; --accent-light: #2A1A0A;
     --accent-border: rgba(244,135,61,0.3); --accent-subtle: rgba(244,135,61,0.08);
     --green: #22C55E; --green-light: #052E16; --green-subtle: rgba(34,197,94,0.1);
