@@ -309,6 +309,18 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 還原：tag `before-glass-v2-2026-10-06`，或把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import。
 `color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器只會失去大陰影。
 
+### Hover 樣式 class 與 GLOBAL_CSS 注入（2026-10-06 Batch 2 重構）
+- **hover 一律優先用 CSS class**，不要再寫 `onMouseEnter`/`onMouseLeave` 去改 `style`：`GLOBAL_CSS` 末段有 `.hv-accent`（邊框+字變主色）、
+  `.hv-red`、`.hv-danger`（紅底+紅框+紅字，刪除/移除鈕）、`.hv-fill`（主色實心，日曆「＋」）、`.hv-row`（列 hover 底色）、`.hv-bg`、
+  `.hv-icon-accent`／`.hv-icon-red`（無框圖示鈕）、`.hv-dim`（透明度 .7）、`.hv-del`。用法：`className="hv-accent"`；有條件才亮的
+  用 `className={cond ? "hv-accent" : undefined}`（例：已訂閱的「訂閱此專案提醒」不亮）。
+- 為什麼要 `!important`：元件的 base 樣式寫在 inline style，inline 比 class 優先，不加蓋不過去。為什麼要 `:not(:disabled)`：React 不對
+  disabled 按鈕觸發 mouse 事件，但 CSS `:hover` 會，要自己排除。離開 hover 時瀏覽器自然回到 inline base 值，不用再手寫「還原」。
+- **刻意沒改的 hover**：專案卡片（3D 傾斜＋光斑跟著游標，要即時算位置，必須 JS）、Header 的 🔔／AI 切換／使用者選單（Jim 決定不動；
+  AI 切換還有 `showAi` 條件）。這些仍用 `onMouseEnter`/`onMouseLeave`。
+- `GLOBAL_CSS` 現在在模組載入時只注入 `<head>` 一次（`<style id="app-global-css">`），不再於每個渲染分支各放一份 `<style>{GLOBAL_CSS}</style>`。
+  載入順序在 `organic-loader-css`、`glass-fx-css` 之後，跟以前 `<body>` 內的 `<style>` 相對順序相同。新增全域 CSS 直接寫進 `GLOBAL_CSS` 即可。
+
 ### Loading 動畫（2026-10-06 起）
 
 全站 loading 動畫統一由 `src/OrganicLoader.jsx` 提供，jsx 內只用 `<OrganicLoader size={…} />`，

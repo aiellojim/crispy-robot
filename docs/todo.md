@@ -137,6 +137,13 @@
   4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
 - **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
 
+### 程式碼易維護性重構 Batch 2（2026-10-06，輸出刻意不變，待 Jim 實機確認）
+- 還原點：`git tag before-refactor-batch2-2026-10-06`（Batch 1 已 commit：57661a7）。
+- 做了：① 19 處純樣式 hover（共 23 組 handler 中的 19 組）改成 `GLOBAL_CSS` 的 `.hv-*` class（說明見 architecture.md「Hover 樣式 class」）；② `GLOBAL_CSS` 改為 `<head>` 單次注入（原本 5 個渲染分支各一份 `<style>`）。
+- 驗證：無頭瀏覽器逐一比對舊 JS handler vs 新 class 的 hover／離開後實際 computed style（23 案例 × 淺/深/jim ＝ 69 項，全部一致；含停用按鈕不亮、有條件的訂閱按鈕）；Batch 1 版與新版的登入頁截圖逐像素相同（淺/深色）；head 內 style 順序 organic-loader → glass-fx → app-global-css。lint 數量不變、build 通過。**未做：登入後真實頁面肉眼比對**（需 Supabase 登入）。
+- 刻意保留 JS hover：專案卡片（3D 傾斜）、Header 三顆（含 AI 切換條件）。
+- 剩餘未批准：7 處 `.map` 渲染 GLASS 卡片的效能量測；剩下 4 個 lint 錯誤（3 個 set-state-in-effect、1 個 immutability）。
+
 ### 程式碼易維護性重構 Batch 1（2026-10-06，輸出刻意不變，待 Jim 實機確認）
 - 還原點：`git tag before-refactor-batch1-2026-10-06`。
 - 做了：① 主題 token 抽到 `src/theme.js`（GLOBAL_CSS 四處改引用）；② `glassFx.js` 新增 `glassTint()`／`PANEL_SHADOW`／`MODAL_SHADOW`，取代重複的字面值；③ 第二批資料兩份幾乎相同的卡片 JSX 抽成 `Batch2Card`；④ 清掉未用 icon（filter/tag/sparkle）、DebugHud 的 `Date.now()` 改 `useState(()=>Date.now())`、`EBCONSOLE_PROXY` 加 eslint-disable 說明。lint 錯誤 7→4。

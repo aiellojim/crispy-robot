@@ -327,7 +327,35 @@ const GLOBAL_CSS = `
   .jira-desc-html ul, .jira-desc-html ol { margin:0 0 8px; padding-left:20px; }
   .jira-desc-html .jira-img-placeholder { display:inline-flex; align-items:center; gap:4px; background:var(--surface-raised); border:1px dashed var(--border-mid); color:var(--text-subtle); font-size:12px; padding:3px 8px; border-radius:6px; margin:2px 0; }
   .jira-desc-html code { background:var(--surface-raised); padding:1px 5px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
+
+  /* hover 樣式 class（取代原本逐元件的 onMouseEnter/onMouseLeave 手動改 style）。
+     !important：元件 base 樣式寫在 inline style 裡，inline 的優先序比 class 高，不加就蓋不過去。
+     :not(:disabled)：React 不會對 disabled 按鈕觸發 mouse 事件，CSS 的 :hover 會，所以要自己排除。
+     離開 hover 時瀏覽器自然回到 inline 的 base 值，不需要再手寫「還原」。
+     用法：<button className="hv-accent">；有條件的 hover 用 className={cond ? "hv-x" : undefined}。 */
+  .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent) !important; }
+  .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
+  .hv-danger:not(:disabled):hover { background:var(--red-subtle) !important; border-color:var(--red) !important; color:var(--red) !important; }
+  .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:#fff !important; }
+  .hv-row:hover { background:var(--surface-raised) !important; }
+  .hv-bg:not(:disabled):hover { background:var(--bg) !important; }
+  .hv-icon-accent:not(:disabled):hover { color:var(--accent) !important; background:var(--surface-raised) !important; }
+  .hv-icon-red:not(:disabled):hover { color:var(--red) !important; background:var(--surface-raised) !important; }
+  .hv-dim:hover { opacity:0.7 !important; }
+  .hv-del:not(:disabled):hover { opacity:1 !important; color:var(--red) !important; }
 `;
+
+// GLOBAL_CSS 只注入 <head> 一次（id 固定，HMR 重新執行時會覆寫同一個 <style>，不會重複）。
+// 以前是每個渲染分支各塞一份 <style>{GLOBAL_CSS}</style>，切換分支（載入中→登入→主畫面）時會
+// 卸載/重建並重新解析。載入順序仍在 OrganicLoader／glassFx 的 <style> 之後，跟以前 <body> 內
+// 的 <style> 相對順序相同。
+if (typeof document !== "undefined") {
+  const STYLE_ID = "app-global-css";
+  const el =
+    document.getElementById(STYLE_ID) ||
+    document.head.appendChild(Object.assign(document.createElement("style"), { id: STYLE_ID }));
+  el.textContent = GLOBAL_CSS;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────
 const daysUntil = (d) => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null;
@@ -471,8 +499,7 @@ const CloseButton = ({ onClick, size=16, radius=8, padding="4px 10px", color="va
     style={{ background:"none", border:"1px solid var(--border)", borderRadius:radius,
       padding, cursor:"pointer", fontSize:size, color, fontFamily:"inherit", transition:"all 0.15s",
       ...(lineHeight!=null ? { lineHeight } : {}) }}
-    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color=color; }}
+    className="hv-danger"
   >✕</button>
 );
 
@@ -1182,8 +1209,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
                 style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
                   borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s",
                   background:n.read?"transparent":"var(--accent-subtle)" }}
-                onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
-                onMouseLeave={e=>e.currentTarget.style.background=n.read?"transparent":"var(--accent-subtle)"}>
+                className="hv-row">
                 <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
                   background:p.checked?"var(--green-light)":"var(--amber-light)",
                   display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -1216,8 +1242,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
             <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
               style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
                 borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s" }}
-              onMouseEnter={e=>e.currentTarget.style.background="var(--surface-raised)"}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+              className="hv-row">
               <div style={{ width:34, height:34, borderRadius:8, flexShrink:0,
                 background:n.days===0?"var(--red-light)":n.days<=2?"var(--amber-light)":"var(--green-light)",
                 display:"flex", alignItems:"center", justifyContent:"center",
@@ -1480,16 +1505,14 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }}
             style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
               border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+            className="hv-accent">
             <Ico name="chevronR" size={16} color="currentColor" style={{ transform:"rotate(180deg)" }}/>
           </button>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
           <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }}
             style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
               border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+            className="hv-accent">
             <Ico name="chevronR" size={16} color="currentColor"/>
           </button>
           <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
@@ -1548,8 +1571,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                         {projects.length>0 && (
                           <button onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
                             style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:5, width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12, color:C.textLight, padding:0, lineHeight:1, flexShrink:0, transition:"all 0.15s" }}
-                            onMouseEnter={e=>{ e.currentTarget.style.background=C.accent; e.currentTarget.style.borderColor=C.accent; e.currentTarget.style.color="#fff"; }}
-                            onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}
+                            className="hv-fill"
                             title="新增任務">+</button>
                         )}
                       </div>
@@ -1559,8 +1581,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
                             onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); else if(ev.jiraUrl) window.open(ev.jiraUrl,"_blank","noopener"); }}
                             style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default", transition:"opacity 0.15s" }}
-                            onMouseEnter={e=>{ if(ev.taskId||ev.jiraUrl) e.currentTarget.style.opacity="0.7"; }}
-                            onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                            className={(ev.taskId||ev.jiraUrl)?"hv-dim":undefined}>
                             <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                               {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                             </div>
@@ -1598,8 +1619,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                     style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, flexShrink:0, display:"flex", alignItems:"flex-start", gap:4 }}>
                     <div style={{ flex:1, minWidth:0, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default" }}
                       onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); } else if(ev.jiraUrl){ window.open(ev.jiraUrl,"_blank","noopener"); }}}
-                      onMouseEnter={e=>{ if(ev.taskId||ev.jiraUrl) e.currentTarget.style.opacity="0.7"; }}
-                      onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; }}>
+                      className={(ev.taskId||ev.jiraUrl)?"hv-dim":undefined}>
                       <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                       </div>
@@ -1609,8 +1629,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                       <button onClick={e=>{ e.stopPropagation(); deleteTask(ev.taskId); }}
                         style={{ background:"none", border:"none", cursor:"pointer", padding:"1px 3px",
                           fontSize:11, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
-                        onMouseEnter={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.color=C.red; }}
-                        onMouseLeave={e=>{ e.currentTarget.style.opacity="0.5"; e.currentTarget.style.color=ev.text; }}
+                        className="hv-del"
                         title="刪除任務"><Ico name="trash" size={14} color="currentColor"/></button>
                     )}
                   </div>
@@ -1648,21 +1667,18 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                   <div style={{ display:"flex", gap:2, flexShrink:0 }}>
                     <button onClick={()=>openEditModal(ev.taskObj)}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
-                      onMouseEnter={e=>{ e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--surface-raised)"; }}
-                      onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
+                      className="hv-icon-accent"
                       title="編輯任務"><Ico name="pencil" size={13} color="currentColor"/></button>
                     <button onClick={()=>deleteTask(ev.taskId)}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
-                      onMouseEnter={e=>{ e.currentTarget.style.color="var(--red)"; e.currentTarget.style.background="var(--surface-raised)"; }}
-                      onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
+                      className="hv-icon-red"
                       title="刪除任務"><Ico name="trash" size={13} color="currentColor"/></button>
                   </div>
                 )}
                 {ev.jiraUrl && !ev.taskId && (
                   <button onClick={()=>window.open(ev.jiraUrl,"_blank","noopener")}
                     style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s", flexShrink:0 }}
-                    onMouseEnter={e=>{ e.currentTarget.style.color="var(--accent)"; e.currentTarget.style.background="var(--surface-raised)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.color="var(--text-subtle)"; e.currentTarget.style.background="none"; }}
+                    className="hv-icon-accent"
                     title="在 Jira 開啟"><Ico name="link" size={13} color="currentColor"/></button>
                 )}
               </div>
@@ -1816,8 +1832,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
               background:"transparent", border:"1px solid var(--border)", borderRadius:8,
               padding:"7px 13px", cursor:"pointer", fontFamily:"inherit",
               fontSize:13, color:"var(--text-mid)", transition:"all 0.12s" }}
-            onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-            onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
+            className="hv-accent">
             <Ico name="bell" size={14} color="currentColor"/>
             通知設定
           </button>
@@ -1937,8 +1952,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
                       cursor:"pointer", fontSize:13, color:C.textLight, lineHeight:1,
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
-                    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}
+                    className="hv-danger"
                     title="移除專案"><Ico name="trash" size={14} color="currentColor"/></button>
                 </div>
 
@@ -2890,8 +2904,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
                     style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
                       padding:"4px 8px", cursor:"pointer", color:"var(--text-subtle)",
                       fontFamily:"inherit", transition:"all 0.12s", flexShrink:0 }}
-                    onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
+                    className="hv-red">
                     {removing === email
                       ? <OrganicLoader size={13} color="var(--red)" />
                       : <Ico name="trash" size={13} color="currentColor"/>}
@@ -3422,8 +3435,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                                 padding:"8px 12px", background:"none", border:"none",
                                 cursor:"pointer", fontFamily:"inherit", textAlign:"left",
                                 borderBottom:`1px solid ${C.border}` }}
-                              onMouseEnter={e=>e.currentTarget.style.background=C.bg}
-                              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+                              className="hv-bg">
                               <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11,
                                 fontWeight:500, background:ts.bg, color:ts.color,
                                 whiteSpace:"nowrap" }}>{t.name}</span>
@@ -3732,8 +3744,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   <button onClick={(e)=>{e.stopPropagation(); removeTask(task.id);}}
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
                       cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
-                    onMouseEnter={e=>{ e.currentTarget.style.background="var(--red-subtle)"; e.currentTarget.style.borderColor="var(--red)"; e.currentTarget.style.color="var(--red)"; }}
-                    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor=C.border; e.currentTarget.style.color=C.textLight; }}><Ico name="trash" size={14} color="currentColor"/></button>
+                    className="hv-danger"><Ico name="trash" size={14} color="currentColor"/></button>
                 </div>
               </div>
 
@@ -4040,7 +4051,6 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   return (
     <div style={{ minHeight:"100vh", background:"transparent", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
-      <style>{GLOBAL_CSS}</style>
 
       {/* Header — 跟 App 的 Global Header 是不同元件（這份是 ProjectDetail 自己的），
           所以之前換玻璃材質時沒有一起套到，這裡補上同一套處理 */}
@@ -4110,8 +4120,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   ...GLASS, border:"1px solid var(--border)", borderRadius:9,
                   cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
                   transition:"all 0.15s" }}
-                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
-                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; }}>
+                className="hv-accent">
                 <Ico name="user" size={13} color="currentColor"/>
                 客戶存取
               </button>
@@ -4594,8 +4603,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   const updated=await updateSub(projSub.id,{ subscribed_projects:next });
                   setProjSub(updated); setSubLoading(false);
                 }}
-                  onMouseEnter={e=>{ if(!(projSub&&(projSub.subscribed_projects||[]).includes(project.id))){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; } }}
-                  onMouseLeave={e=>{ if(!(projSub&&(projSub.subscribed_projects||[]).includes(project.id))){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; } }}
+                  className={projSub&&(projSub.subscribed_projects||[]).includes(project.id)?undefined:"hv-accent"}
                   style={{ ...GLASS, flexShrink:0, display:"flex", alignItems:"center", gap:6,
                   padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
@@ -4934,7 +4942,6 @@ const LoginPage = ({ theme, setTheme }) => {
   return (
     <div style={{ minHeight:"100vh", background:"transparent", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
-      <style>{GLOBAL_CSS}</style>
       {/* Theme toggle 右上角 */}
       <div style={{ position:"fixed", top:16, right:20 }}>
         <ThemeToggle theme={theme} setTheme={setTheme}/>
@@ -5363,7 +5370,6 @@ export default function App() {
   if (authLoading) return (
     <div style={{ minHeight:"100vh", background:"transparent", display:"flex", alignItems:"center",
       justifyContent:"center", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
-      <style>{GLOBAL_CSS}</style>
       <OrganicLoader size={56} label="載入中" />
     </div>
   );
@@ -5373,7 +5379,6 @@ export default function App() {
   if (loading) return (
     <div style={{ minHeight:"100vh", background:"transparent", display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", fontFamily:"'Noto Sans TC',sans-serif", gap:16 }}>
-      <style>{GLOBAL_CSS}</style>
       <OrganicLoader size={56} />
       <div style={{ fontSize:14, color:C.textMid }}>載入專案資料中…</div>
     </div>
@@ -5383,7 +5388,6 @@ export default function App() {
 
   return (
     <div style={{ minHeight:"100vh", background:"transparent", fontFamily:"'Noto Sans TC','Segoe UI',sans-serif" }}>
-      <style>{GLOBAL_CSS}</style>
 
       {/* Global header — always visible */}
       {!isDetailView && (
