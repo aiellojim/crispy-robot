@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import OrganicLoader from "./OrganicLoader.jsx";
+import { GLASS_BG, GLASS_BG_HOVER, RIM, RIM_HOVER, tint } from "./glassFx.js";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const sb = createClient(
@@ -109,7 +110,7 @@ const baseInput = {
 // 自己又寫了一次 background，會覆寫掉這裡的玻璃背景、不會有任何錯誤或警告（Card 元件旁邊有一樣
 // 的提醒註解，TasksTab 曾經踩過這個坑）。
 const GLASS = {
-  background: "var(--glass-surface)",
+  background: GLASS_BG,
   backdropFilter: "blur(20px) saturate(160%)",
   WebkitBackdropFilter: "blur(20px) saturate(160%)",
 };
@@ -616,7 +617,7 @@ const ProgressCard = ({ label, checked, total, color }) => {
   return (
     <div style={{ ...GLASS,
       border:"1px solid var(--border)", borderRadius:12,
-      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+      boxShadow:RIM,
       padding:"16px 20px", flex:1, minWidth:150 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
         <span style={{ fontSize:11, letterSpacing:1.2, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>{label}</span>
@@ -744,7 +745,7 @@ const MiniBar = ({ pct, color }) => (
 const Card = ({ children, style={}, ...rest }) => (
   <div {...rest} style={{ ...GLASS,
     border:"1px solid var(--border)", borderRadius:12,
-    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+    boxShadow:RIM,
     padding:24, marginBottom:16, ...style }}>
     {children}
   </div>
@@ -938,7 +939,7 @@ const OvCheckRow = ({ label, checked, note, color }) => (
 const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
   <div style={{ ...GLASS,
     border:"1px solid var(--border)", borderRadius:12, padding:16,
-    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
+    boxShadow:RIM }}>
     <div style={{ fontSize:11, letterSpacing:1.4, color, textTransform:"uppercase", marginBottom:12, fontWeight:400 }}>{title}</div>
     {children}
     {linkKey && sheetLinks[linkKey] && (
@@ -1131,7 +1132,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:`1px solid ${C.border}`, boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
+        borderLeft:`1px solid ${C.border}`, boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1258,7 +1259,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
       ...GLASS,
       border:"1px solid var(--border)", borderRadius:14,
-      boxShadow:"0 8px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:20001,
+      boxShadow:`0 8px 30px ${tint(0.15)}, ${RIM}`, zIndex:20001,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -1474,7 +1475,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
       <div style={{ ...GLASS,
         borderRadius:14, padding:28, width:"100%", maxWidth:520,
-        boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
+        boxShadow:`0 20px 60px ${tint(0.2)}, ${RIM}`, animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
             <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
@@ -1688,7 +1689,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                 width:Math.max(expandedPos.width, 180), height:dropH,
                 ...GLASS,
                 border:`1px solid ${C.accentBorder}`,
-                borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)",
+                borderRadius:10, boxShadow:`0 8px 24px ${tint(0.15)}, ${RIM}`,
                 zIndex:9999, display:"flex", flexDirection:"column" }}>
               <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
                 {dayEvs.map((ev,ei)=>(
@@ -1728,7 +1729,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <h3 style={{ fontSize:15, fontWeight:500, color:C.text, marginBottom:12 }}>本月事件</h3>
           <div style={{ ...GLASS,
             border:"1px solid var(--border)", borderRadius:12, overflow:"hidden",
-            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
+            boxShadow:RIM }}>
             {[...events].sort((a,b)=>a.date.localeCompare(b.date)).map((ev,i,arr)=>(
               <div key={i}
                 style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px",
@@ -1854,12 +1855,12 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       {/* Stat cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
         {stats.map(({ label, value, icon, color, sub, onClick, isActive }) => (
-          <div key={label} onClick={onClick}
+          <div key={label} onClick={onClick} className="lg-live"
             style={{ ...GLASS,
               border:`1px solid ${isActive ? color : "var(--border)"}`,
               borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease",
               cursor:onClick?"pointer":"default",
-              boxShadow:isActive?`0 0 0 3px ${color}22, inset 0 1px 0 rgba(255,255,255,0.5)`:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+              boxShadow:isActive?`0 0 0 3px ${color}22, ${RIM}`:RIM,
               transition:"border-color 0.2s, box-shadow 0.2s" }}>
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
               <span style={{ fontSize:12, color:"var(--text-mid)", fontWeight:400, lineHeight:1.4 }}>{label}</span>
@@ -1880,7 +1881,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
       {/* 篩選欄（含通知設定，統一外框） */}
       <div style={{ ...GLASS,
         border:"1px solid var(--border)",
-        boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+        boxShadow:RIM,
         borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
           {/* 搜尋 */}
@@ -1955,19 +1956,19 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
             const b2total   = (hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0);
 
             return (
-              <div key={proj.id}
+              <div key={proj.id} className="lg-live"
                 style={{ position:"relative", overflow:"hidden", clipPath:"inset(0px round 12px)",
                   ...GLASS,
                   border:"1px solid var(--border)", borderRadius:12,
                   padding:20, cursor:"pointer",
-                  boxShadow:"var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+                  boxShadow:`var(--shadow-sm), ${RIM}`,
                   transition:"border-color 0.15s, box-shadow 0.25s, background 0.25s, transform 0.45s cubic-bezier(0.34,1.56,0.64,1)",
                   animation:"fadeIn 0.2s ease" }}
                 onClick={()=>onOpen(proj.id)}
                 onMouseEnter={e=>{
                   e.currentTarget.style.borderColor="var(--accent-border)";
-                  e.currentTarget.style.boxShadow="var(--shadow), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -1px 0 rgba(0,0,0,0.06)";
-                  e.currentTarget.style.background="var(--glass-surface-hover)";
+                  e.currentTarget.style.boxShadow=`0 10px 28px ${tint(0.14)}, var(--shadow), ${RIM_HOVER}`;
+                  e.currentTarget.style.background=GLASS_BG_HOVER;
                   const glow = e.currentTarget.querySelector(".card-glow");
                   if (glow) glow.style.opacity = "1";
                 }}
@@ -1996,8 +1997,8 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                 }}
                 onMouseLeave={e=>{
                   e.currentTarget.style.borderColor="var(--border)";
-                  e.currentTarget.style.boxShadow="var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)";
-                  e.currentTarget.style.background="var(--glass-surface)";
+                  e.currentTarget.style.boxShadow=`var(--shadow-sm), ${RIM}`;
+                  e.currentTarget.style.background=GLASS_BG;
                   e.currentTarget.style.transform="translateY(0) perspective(1800px) rotateX(0deg) rotateY(0deg)";
                   const glow = e.currentTarget.querySelector(".card-glow");
                   if (glow) glow.style.opacity = "0";
@@ -2761,7 +2762,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:400,
         ...GLASS,
         borderLeft:"1px solid var(--border)",
-        boxShadow:"-6px 0 32px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)", zIndex:19999,
+        boxShadow:`-6px 0 32px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`, zIndex:19999,
         display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         {/* Header */}
         <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)",
@@ -2929,7 +2930,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
+        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -3101,7 +3102,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:440, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
+        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
 
         {/* Header */}
@@ -3453,10 +3454,10 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             // Issue 徽章逾期變色：用偏灰、不飽和的磚紅，跟月曆的做法一樣避免太刺眼
             const isIssueOverdue = issue.dueDate && issue.statusCategory !== "done" && daysUntil(issue.dueDate) < 0;
             return (
-              <div key={issue.key} onClick={()=>toggleExpand(issue.key)}
+              <div key={issue.key} onClick={()=>toggleExpand(issue.key)} className="lg-live"
                 style={{ ...GLASS,
                 border:`1px solid ${C.border}`,
-                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)",
+                boxShadow:RIM,
                 borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px 20px",
                   gap:12, alignItems:"center" }}>
@@ -3497,7 +3498,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                       <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0,
                         ...GLASS,
                         border:`1px solid ${C.border}`, borderRadius:10,
-                        boxShadow:"0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5)", zIndex:100, overflow:"hidden" }}>
+                        boxShadow:`0 8px 24px ${tint(0.12)}, ${RIM}`, zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
                           const ts = statusStyle(t.statusCategory ?? "new");
                           return (
@@ -4271,7 +4272,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       setJiraBoot(p=>({...p,open:false})); }}>
                     <div style={{ ...GLASS,
                       borderRadius:14, padding:28, width:"100%", maxWidth:460,
-                      boxShadow:"0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)", animation:"fadeIn 0.2s ease" }}>
+                      boxShadow:`0 20px 60px ${tint(0.2)}, ${RIM}`, animation:"fadeIn 0.2s ease" }}>
 
                       {/* Header 含 X 關閉按鈕 */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
@@ -4967,7 +4968,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {(hasAva||hasGw)&&(
               <div style={{ ...GLASS,
                 border:"1px solid var(--border)", borderRadius:12, padding:16, marginBottom:16,
-                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.04)" }}>
+                boxShadow:RIM }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.purple, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>第二批資料</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {hasAva&&BATCH2_ITEMS.map((item,idx)=><OvBatch2Row key={item} item={item} checked={batch2Checked[item]} note={batch2Notes[item]} linkKey={BATCH2_LINK_KEYS[idx]} sheetLinks={sheetLinks}/>)}
@@ -4984,7 +4985,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {tasks.length>0&&(
               <div style={{ ...GLASS,
                 border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24,
-                boxShadow:"var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
+                boxShadow:`var(--shadow), ${RIM}` }}>
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
@@ -5063,7 +5064,7 @@ const LoginPage = ({ theme, setTheme }) => {
       <div style={{ ...GLASS,
         border:"1px solid var(--border)", borderRadius:14,
         padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
-        boxShadow:"0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
+        boxShadow:`0 4px 24px ${tint(0.08)}, ${RIM}` }}>
         <div style={{ width:56, height:56, borderRadius:14, background:"var(--accent)",
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
           <Ico name="building" size={26} color="#fff"/>
@@ -5138,7 +5139,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
     <>
       <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
       <div style={{ position:"fixed", top:0, right:0, bottom:0, height:"100vh", width:380, ...GLASS,
-        borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 24px rgba(0,0,0,0.12), inset 1px 0 0 rgba(255,255,255,0.5)",
+        borderLeft:"1px solid var(--border)", boxShadow:`-4px 0 24px ${tint(0.12)}, inset 1px 0 0 rgba(255,255,255,0.5)`,
         zIndex:20001, display:"flex", flexDirection:"column", fontFamily:"inherit" }}>
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>

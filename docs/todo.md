@@ -137,13 +137,19 @@
   4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
 - **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
 
-### Glass v2 材質升級（2026-10-06 提案，評估中，尚未動正式程式）
-- 預覽：`dev/glass-preview.html`（`npm run dev` 後開 `/dev/glass-preview.html`），左＝現在、右＝提案，含深淺色、modal、游標邊緣光、「自動捲動」效能實測按鈕。提案的全部樣式在 `dev/glass-proposed.css`（token + `.lg` / `.lg-2` / `.lg-3` / `.lg-ctl` / `.lg-live` / `.lg-canvas`），`dev/glass-base.css` 只是預覽用的現行 token 拷貝。
-- **Jim 第一輪預覽回饋（2026-10-06）與 v2 調整**：1/2/3 可做但磨砂感太強、要更透明平滑 → 卡片不再疊顆粒（只剩畫布極淡的防色帶顆粒）；4 不要邊緣清楚的形狀、只要色暈 → 畫布改 5 團柔邊色暈（新增中段的紫、青，卡片滑過時玻璃吃到不同顏色）；5 modal 太實心、三級都要再透 → 底色 alpha 淺色 .52/.62/.72、深色 .44/.54/.66，模糊 14/20/26px，並提供「更透／最透」兩組預設在預覽頁比較；6、7 照做。透明度往下調的代價：色暈最濃處 text-mid 對比約 −0.3（試算：淺色 4.2~4.5 → 3.9~4.2），若要補償可把淺色 `--text-mid` 略調深，待 Jim 決定。
-- 導入範圍（2026-10-06 grep）：`...GLASS` 34 處、`glassToggle(` 6 處、手寫的 `inset 0 1px 0 rgba(255,255,255…` 邊緣高光 19 處、`var(--glass-surface` 直接引用 3 處、modal／側邊欄 zIndex 20000/20001 共 12 行。
-- 導入方式：新 CSS 貼進 `GLOBAL_CSS`（**不要做成 .css 檔讓 Vite 處理**：Vite 8 用 lightningcss 壓縮，`light-dark()` 會被改寫，行為要另外測）；元件改成 `className`，`GLASS` 常數退役；建議分批、每批後 Jim 手動檢查，沿用 Liquid Glass 的批次。
-- 待 Jim 決定／實測的風險：(1) `light-dark()` 需要 `color-scheme` 跟主題走，會影響原生控制項（date picker 現用 `invert()` 手動處理，要拿掉）；瀏覽器下限 Chrome 123 / Safari 17.5 / Firefox 120。(2) jim mode 要另外覆寫 `--lg-*`。(3) 畫布改 `body::before` fixed 層取代 `background-attachment: fixed`，需實測捲動效能。(4) 預覽內的效能數字在沙盒（軟體算圖）量的不具代表性，要在 Jim 的機器上跑。
-- 不動的既有規則：輸入框、主色 CTA、選中態純色填滿維持不透明；日曆 42 格與列表 row 不加 backdrop-filter。
+### Glass v2 材質升級（2026-10-06 已導入「斜向光＋邊緣光＋色調陰影＋等寬數字」，等 Jim 實機確認）
+- **結論**：Jim 比對預覽後，保留**原本**的玻璃（`--glass-surface` 透明度、`blur(20px) saturate(160%)`、canvas 色暈完全沒動）；顆粒、硬邊形狀、elevation 重分級、降 alpha、密度預設、圓角階層**都不做**。只導入下面四項。
+- 實作集中在 `src/glassFx.js`（同 OrganicLoader 的做法：模組載入時把 CSS 注入 `<head>`，id=`glass-fx-css`）；jsx 只引用 `GLASS_BG / GLASS_BG_HOVER / RIM / RIM_HOVER / tint()`，不再手寫字面值。
+  1. **斜向光**：`GLASS.background` 改成 `var(--lg-bg)` ＝ 左上 135° 柔光疊在 `--glass-surface` 上（淺色 .34、深色 .09、jim 綠 .07）。因為 `style.background=` 是 shorthand，hover/leave 的 handler 要用 `GLASS_BG_HOVER` / `GLASS_BG`，不能再寫 `var(--glass-surface…)`。
+  2. **邊緣光**：加 `className="lg-live"` 的元素，游標移上去時 1px 邊框會跟著游標亮一小段（淺色＝品牌 accent、深色＝白、jim＝綠）。目前只加在：專案卡片、總覽統計卡、Jira issue 卡。全站只有一個 delegated、rAF 節流的 `pointermove` listener；觸控裝置整個停用。
+  3. **色調陰影**：大陰影（modal、側邊欄、下拉、彈出）從純黑改成 `tint(a)`＝`color-mix(in srgb, var(--lg-shadow-tint) a%, transparent)`，強度維持原值；專案卡片 hover 另外多一道柔和的色調浮起陰影。邊緣高光 `RIM` 現在是「上緣＋左緣亮、右下微暗」的斜向版本（上緣數值跟舊版相同）。
+  4. **文字細節**：`body{font-variant-numeric:tabular-nums}`、`h1–h3{text-wrap:balance}`。（`index.css` 本來就有 `optimizeLegibility`＋antialiased；百分比大數字本來就是 DM Mono 等寬。）
+- 新增 token 的規則：`--lg-*` 要在 `glassFx.js` 的五個區塊（`:root`、dark media、`html[data-theme=light]`、`html[data-theme=dark]`、`html.jim-mode-effect`）都定義，jim 放最後。
+- 還原：`git tag before-glass-v2-2026-10-06`；或只把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import，即回到原本材質。
+- 驗證狀況：build、eslint（0 新增問題）通過；無頭 Chromium 渲染確認淺/深色的斜向光、邊緣光（mask 只留 1px 邊框）、色調陰影都有生效。**真實頁面的實際觀感未驗證，需 Jim 實機看。**
+- 已知限制：`color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器大陰影會消失（不影響功能）。
+- 可選的後續（Jim 沒要求、沒動）：body `font-weight` 300→400、細線（hairline）處理、圓角階層。
+- `dev/glass-preview.*`、`dev/glass-base.css`、`dev/glass-proposed.css` 是**被否決的 v2 提案**的 A/B 預覽，已過時，建議之後 `git rm`；已發佈的 claude.ai 預覽 artifact 同理。
 
 ## 長期方向
 
