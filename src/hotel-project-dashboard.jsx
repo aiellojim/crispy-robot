@@ -1635,7 +1635,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                     }
                   }}}
                   style={{ minHeight:110, padding:"6px 8px", borderRight:di<6?`1px solid ${C.border}`:"none",
-                    background:isToday?C.accentLight:d?C.white:"var(--surface-raised)",
+                    // 格子透明，讓外層容器（GLASS，只有一個 backdrop-filter）的玻璃透出來；今天＝accent 淡色，
+                    // 非本月＝極淡暗化（--lg-dim）。不在 42 個格子上各自套 blur。
+                    background:isToday?"var(--accent-subtle)":d?"transparent":"var(--lg-dim)",
                     display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0,
                     cursor:d&&dayEvents.length>2?"pointer":"default", transition:"background 0.15s",
                     position:"relative", zIndex:1 }}>
@@ -1736,7 +1738,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
               <div key={i}
                 style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px",
                   borderBottom:i<arr.length-1?"1px solid var(--border)":"none",
-                  borderLeft:`3px solid ${ev.border}`, background:"var(--surface)" }}>
+                  borderLeft:`3px solid ${ev.border}`, background:"transparent" }}>
                 {/* 日期 */}
                 <span style={{ fontSize:12, fontWeight:500, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace", flexShrink:0, minWidth:80 }}>{fmtDate(ev.date)}</span>
                 {/* 專案名稱 + 任務/類型名稱 */}
@@ -4737,7 +4739,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
                   const updated=await updateSub(projSub.id,{ subscribed_projects:next });
                   setProjSub(updated); setSubLoading(false);
-                }} style={{ ...GLASS, boxShadow:RIM, flexShrink:0, display:"flex", alignItems:"center", gap:6,
+                }}
+                  onMouseEnter={e=>{ if(!(projSub&&(projSub.subscribed_projects||[]).includes(project.id))){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; } }}
+                  onMouseLeave={e=>{ if(!(projSub&&(projSub.subscribed_projects||[]).includes(project.id))){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-mid)"; } }}
+                  style={{ ...GLASS, flexShrink:0, display:"flex", alignItems:"center", gap:6,
                   padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
                   background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?`linear-gradient(var(--accent-subtle),var(--accent-subtle)), ${GLASS_BG}`:GLASS_BG,

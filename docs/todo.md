@@ -157,7 +157,11 @@
 - **專案頁 tab bar**：圓圈編號換成 16px SVG icon（`STEP_ICONS`：building／clipboardList／layers／checkSquare／calendar／grid，鎖定時顯示 lock）；`ICONS` 新增 `layers`、`checkSquare`。
 - **主色 CTA 樣式**（`glassFx.js` 的 `.lg-cta`，jsx 用 `className={CTA_CLASS}`）：**最終版＝維持原本的實色平面（`var(--accent)`、白字）＋半透明白邊框＋游標邊緣光**。曾試過霧面實色＋斜向光＋高光＋主色調陰影＋hover 上浮，Jim 實機看後覺得立體感突兀，底色/文字色回復原樣、高光與陰影與上浮移除。已知：深色模式白字對 `#F4873D` 對比約 2.5:1（Jim 知情後決定維持）。版面用 inline，**不要在 inline 寫 background／color／border**（會蓋掉 class）。2026-10-06 起共 12 顆套用 `CTA_CLASS`（原則：一般尺寸的實色主色按鈕全套，破壞性與太小的不套）：+ 新增專案、NavRow「下一步」（inline `background` 仍依步驟變色）、TasksTab「+ 新增任務」、任務 modal「新增任務／儲存變更」、「前往專案資訊」、Jira Epic modal「完成」與「確認建立」（Jira 藍）、「確認推送」、登入頁「寄送登入連結」、設定頁「儲存設定」、通知面板「啟用 Email 提醒」、專案頁「建立 Jira Epic 與任務」。這幾顆各自的停用／既有發光陰影樣式（`新增任務` 兩顆有 accent 發光）維持原樣；`.lg-cta:disabled` 只關邊緣光，不碰透明度。
 - **不套用 CTA 樣式的主色按鈕**：AI 送出鈕與 email 旁「新增」（太小）、「刪除選取」（紅色破壞性）。選中態純色填滿的切換元件（通知天數 chip、is_internal 開關、完成圓點、AI 鈕展開態）維持原樣；標籤／badge 同。
-- **玻璃材質稽核**：第二批資料卡片（未完成態用 `var(--surface)` 不透明底色）是漏改，已修成 `GLASS`（完成態＝紫色淡色疊在玻璃上）。`architecture.md` Batch 4 當時記載「第二批資料」已玻璃化，實際沒改到那兩處 `var(--surface)` 字面值。**2026-10-06 已補**：總覽頁兩張期限色塊（玻璃＋同色系淡色疊層）、TasksTab 批次操作列（玻璃＋accent 淡色疊層）；總覽「串接功能備註」區塊維持純色平面（`--purple-light` 底），邊框改用 `--lg-purple-border`（淺色 #C4B5FD、深色 #A78BFA 55%（原本整色太亮，看起來比旁邊 1px 灰框粗）、jim 用 `--purple` 70%）。**仍未處理**：全域 Header 的 🔔 通知鈕／AI 鈕（未選中）／使用者選單鈕與 `ThemeToggle` 外框（`surface-raised` 不透明）、（專案頁「訂閱此專案提醒」切換鈕已於 2026-10-06 改玻璃：未訂閱＝純玻璃、已訂閱＝accent 淡色疊玻璃。）輸入框、巢狀小面板、badge 依既有規則維持不透明。
+- **玻璃材質稽核**：第二批資料卡片（未完成態用 `var(--surface)` 不透明底色）是漏改，已修成 `GLASS`（完成態＝紫色淡色疊在玻璃上）。`architecture.md` Batch 4 當時記載「第二批資料」已玻璃化，實際沒改到那兩處 `var(--surface)` 字面值。**2026-10-06 已補**：總覽頁兩張期限色塊（玻璃＋同色系淡色疊層）、TasksTab 批次操作列（玻璃＋accent 淡色疊層）；總覽「串接功能備註」區塊維持純色平面（`--purple-light` 底），邊框改用 `--lg-purple-border`（淺色 #C4B5FD、深色 #A78BFA 55%（原本整色太亮，看起來比旁邊 1px 灰框粗）、jim 用 `--purple` 70%）。**不動（Jim 決定）**：全域 Header 的 🔔 通知鈕／AI 鈕（未選中）／使用者選單鈕與 `ThemeToggle` 外框（`surface-raised` 不透明，角色近似篩選列的下拉／搜尋欄）、（專案頁「訂閱此專案提醒」切換鈕已於 2026-10-06 改玻璃：未訂閱＝純玻璃、已訂閱＝accent 淡色疊玻璃。）輸入框、巢狀小面板、badge 依既有規則維持不透明。
+
+- **行事曆／本月事件列表透明化（2026-10-06）**：原本外層容器已是 `GLASS`，但 42 個日期格與事件列各自畫不透明底色（`C.white`／`surface-raised`／`accentLight`／`var(--surface)`），把玻璃整片蓋住。改法：日期格與事件列 `background:transparent`（外層那一個 backdrop-filter 透出來，**不在格子上各自套 blur**）；今天＝`--accent-subtle`；非本月＝`--lg-dim`（淺色 4% 黑、深色／jim 3% 白）。事件小標籤（`ev.bg`）維持不透明（資訊標示）。回退：把這三處 background 改回原值。
+- **「訂閱此專案提醒」切換鈕**：移除左上角高光（`RIM`），樣式比照「客戶存取」「同步 Jira」（`...GLASS` ＋ 1px `--border` ＋ hover 變 accent；已訂閱態＝accent 淡色疊玻璃，不吃 hover）。
+- **Header 四顆（🔔、AI 鈕、使用者選單、主題切換）決定不動**：角色跟專案篩選列的下拉／搜尋欄相近，維持不透明（Jim 2026-10-06）。
 
 ## 長期方向
 

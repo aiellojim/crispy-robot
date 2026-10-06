@@ -44,7 +44,8 @@ const LIGHT = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 62%, transparent);
     --lg-shadow-tint: rgb(28,38,84);
-    --lg-purple-border: #C4B5FD;`;
+    --lg-purple-border: #C4B5FD;
+    --lg-dim: rgba(0,0,0,0.04);`;
 
 const DARK = `
     --lg-sheen: rgba(255,255,255,0.09);
@@ -56,7 +57,8 @@ const DARK = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: rgba(255,255,255,0.5);
     --lg-shadow-tint: rgb(2,4,18);
-    --lg-purple-border: color-mix(in srgb, #A78BFA 55%, transparent);`;
+    --lg-purple-border: color-mix(in srgb, #A78BFA 55%, transparent);
+    --lg-dim: rgba(255,255,255,0.03);`;
 
 const JIM = `
     --lg-sheen: rgba(0,255,65,0.07);
@@ -68,7 +70,8 @@ const JIM = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 70%, transparent);
     --lg-shadow-tint: rgb(0,32,8);
-    --lg-purple-border: color-mix(in srgb, var(--purple) 70%, transparent);`;
+    --lg-purple-border: color-mix(in srgb, var(--purple) 70%, transparent);
+    --lg-dim: rgba(0,255,65,0.03);`;
 
 export const GLASS_FX_CSS = `
   :root {${LIGHT}
