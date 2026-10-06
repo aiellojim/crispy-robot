@@ -28,6 +28,28 @@
 ### zIndex 圖層順序
 日期格子(1) < Jira 狀態下拉(100) < 行事曆展開卡片(9999) < Global/專案頁 Header(10000)
 < 新增/編輯任務彈窗(20000) = 通知設定背板(20000) < 通知設定側邊欄(20001)
+< **站內確認框 ConfirmHost(30000，2026-10-06 新增)** < 彩蛋覆蓋層(99997–99999)
+（AI 面板 19998/19999；通知設定面板現在掛在 App 層，主頁與專案頁共用。）
+
+### 鍵盤／無障礙／確認框（2026-10-06 UX 改版）
+- **Esc 關閉**：`useEscClose(onClose[, active])`，全站只有一個 keydown listener，堆疊式（只關最上層；IME 組字中的 Esc 忽略）。
+  新增彈窗／側邊面板／下拉時，在元件裡呼叫它即可。堆疊放在 `window.__escStack`（HMR 安全）。已掛：通知設定、站內通知、AI、客戶存取、
+  SiteChat、使用者設定、行事曆彈窗與展開卡片、Jira Epic 建立彈窗（進行中不可關）、Jira 狀態下拉、站內確認框。
+- **可點 div 鍵盤化**：`<div {...kbd(handler)}>`（role=button、tabIndex=0、Enter／空白鍵觸發，且只在事件直接發生在該元素本身時才觸發）。
+  勾選型再加 `aria-pressed`／`aria-checked`。**不用在**：遮罩（用 Esc）、只為 stopPropagation 的包裝層、彩蛋觸發點、行事曆格子與事件標籤
+  （行事曆的鍵盤操作走下方「本月事件」列表裡的真 button）。
+- **焦點外框**：`GLOBAL_CSS` 有 `:focus-visible`（只在 Tab 聚焦時出現）。`role="button"` 的卡片用「往內」外框，因為很多卡片有
+  `overflow:hidden`／`clip-path`；input／textarea 不加（它們有自己的聚焦框線）。
+- **站內確認框**：`await askConfirm({ title, message, confirmLabel, cancelLabel, tone })` → boolean，取代 `window.confirm`／`alert`。
+  預設是破壞性（紅色確認鈕、預設聚焦「取消」）；`tone:"primary"` 是一般提示（CTA 確認鈕）。`<ConfirmHost/>` 在 App 層掛一次，
+  Portal 到 `document.body`、zIndex 30000。**層級重點**：一定要 Portal（外層玻璃的 backdrop-filter 會困住 `position:fixed`）；
+  新增 zIndex 要高於 20001 的浮層請用 30000 以上且低於 99997。
+- **通知面板從專案頁開啟**：`showNotif` 已提升到 App（跟 AiPanel 同層）；專案頁收 `onOpenNotif`／`notifVersion`，面板關閉時 `notifVersion+1`，
+  專案頁據此重新用 `fetchOwnPushSub(userId)` 讀取「是否已啟用 Email 提醒」（先用瀏覽器 endpoint，找不到再用 user_id，與 NotificationPanel 一致）。
+- **減少動態效果**：`GLOBAL_CSS` 的 `@media (prefers-reduced-motion: reduce)`——入場淡入、所有 hover 過渡關閉，整頁彩蛋特效不播；
+  卡片 3D 傾斜在 `onMouseMove` 用 `prefersReducedMotion()` 判斷。**刻意不碰** loading 動畫（OrganicLoader 有自己的規則）。
+- **窄螢幕**：專案卡片格線 `minmax(min(500px,100%),1fr)`、統計卡 `auto-fit minmax(min(200px,100%),1fr)`（≥約 920px 仍是 4 欄、尺寸與原本相同）。
+  已知限制：全域 Header 右側控制項（主題切換＋使用者＋新增專案）在約 600px 以下仍會撐出橫向捲動。
 
 ### Liquid Glass 視覺改版（2026-10-02 起）
 全站背景改成疊在 `body { background }` 上的三層大範圍 `radial-gradient`（`--canvas-glow-1/2/3`

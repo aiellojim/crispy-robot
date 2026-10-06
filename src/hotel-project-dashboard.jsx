@@ -328,6 +328,25 @@ const GLOBAL_CSS = `
   .jira-desc-html .jira-img-placeholder { display:inline-flex; align-items:center; gap:4px; background:var(--surface-raised); border:1px dashed var(--border-mid); color:var(--text-subtle); font-size:12px; padding:3px 8px; border-radius:6px; margin:2px 0; }
   .jira-desc-html code { background:var(--surface-raised); padding:1px 5px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
 
+  /* 減少動態效果（系統設定「減少動態效果」）：入場淡入／位移、所有 hover 過渡關掉；彩蛋的整頁特效
+     （旋轉、翻桌、震動、閃爍、色相循環、縮放）不播，閃爍用的覆蓋層直接隱藏。
+     卡片 3D 傾斜是 JS 即時算的，在 onMouseMove 裡另外判斷（prefersReducedMotion）。
+     loading 動畫（OrganicLoader）自己有 reduced-motion 規則（改成透明度呼吸），這裡刻意不碰 animation 全域。 */
+  @media (prefers-reduced-motion: reduce) {
+    [style*="fadeIn"] { animation:none !important; }
+    *, *::before, *::after { transition-duration:0.01ms !important; transition-delay:0s !important; }
+    body.barrel-roll-effect, body.shake-effect, body.flip-table-effect, html.trip-mode-effect,
+    body.microscope-effect, body.glass-shatter-effect, body.glitch-effect { animation:none !important; }
+    body.microscope-effect::after, body.glass-shatter-effect::after, body.glitch-effect::after { display:none !important; }
+  }
+
+  /* 鍵盤焦點外框：只在用鍵盤（Tab）聚焦時出現，滑鼠點擊不會（:focus-visible）。
+     不含 input／textarea：它們已經有自己的聚焦框線樣式（onFocus 改 borderColor）。
+     可點的卡片（role="button"）用「往內」的外框：很多卡片有 overflow:hidden／clip-path，往外的外框會被裁掉。 */
+  button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visible,
+  [role="checkbox"]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  [role="button"]:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+
   /* hover 樣式 class（取代原本逐元件的 onMouseEnter/onMouseLeave 手動改 style）。
      !important：元件 base 樣式寫在 inline style 裡，inline 的優先序比 class 高，不加就蓋不過去。
      :not(:disabled)：React 不會對 disabled 按鈕觸發 mouse 事件，CSS 的 :hover 會，所以要自己排除。
@@ -337,6 +356,7 @@ const GLOBAL_CSS = `
   .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
   .hv-danger:not(:disabled):hover { background:var(--red-subtle) !important; border-color:var(--red) !important; color:var(--red) !important; }
   .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:#fff !important; }
+  .hv-danger-solid:not(:disabled):hover { background:var(--red) !important; color:#fff !important; }
   .hv-row:hover { background:var(--surface-raised) !important; }
   .hv-bg:not(:disabled):hover { background:var(--bg) !important; }
   .hv-icon-accent:not(:disabled):hover { color:var(--accent) !important; background:var(--surface-raised) !important; }
@@ -762,7 +782,7 @@ const Chip = ({ label, active, onClick, color="var(--accent)" }) => (
 
 // CheckRow: simplified — checked always green-subtle, no red unchecked state
 const CheckRow = ({ label, checked, onChange }) => (
-  <div onClick={onChange} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
+  <div {...kbd(onChange,"checkbox")} aria-checked={checked} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
     borderRadius:8, cursor:"pointer", marginBottom:4,
     background: checked ? "var(--green-subtle)" : "transparent",
     border: `1px solid ${checked ? "var(--green)" : "var(--border)"}`,
@@ -815,7 +835,7 @@ const Batch2Card = ({ title, isDone, onToggle, note, onNote, link, onLink, badge
     border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
     borderRadius:12, marginBottom:12, overflow:"hidden" }}>
     {/* 卡片 header：點擊切換勾選 */}
-    <div onClick={onToggle}
+    <div {...kbd(onToggle)} aria-pressed={isDone}
       style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
       <div style={{ width:18, height:18, borderRadius:4, flexShrink:0,
         border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
@@ -989,6 +1009,152 @@ async function deleteSub(id) {
   await sb.from("push_subscriptions").delete().eq("id",id);
 }
 
+// 使用者是否開了系統的「減少動態效果」（卡片 3D 傾斜等 JS 驅動的動態用它判斷；CSS 動畫由 GLOBAL_CSS 的 media query 處理）
+const prefersReducedMotion = () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// 讓可點的 <div> 也能用鍵盤操作：Tab 可聚焦、Enter／空白鍵觸發 onClick。
+// 只在事件「直接發生在這個元素本身」時才觸發，避免卡片裡面的按鈕、輸入框的 Enter／空白鍵被卡片攔走。
+// 用法：<div {...kbd(handler)} /> 取代 <div onClick={handler} />；開關型再加 aria-pressed／aria-checked。
+// 沒有用在：遮罩（背景點擊關閉，鍵盤用 Esc）、只為了 stopPropagation 的包裝層、彩蛋觸發點。
+const kbd = (onClick, role = "button") => ({
+  role, tabIndex: 0, onClick,
+  onKeyDown: (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); }
+  },
+});
+
+// ─── Esc 關閉（堆疊式）────────────────────────────────────────
+// 全站只掛一個 keydown listener。每個「可關閉的最上層」（彈窗、側邊面板、下拉）掛載時把自己的 close
+// 推進堆疊、卸載時移除，Esc 只會關堆疊最上面那一個（例如確認框蓋在任務彈窗上時，先關確認框）。
+// 堆疊與 listener 旗標都放在 window 上，HMR 重新執行模組時才不會變成「舊 listener 看舊陣列」。
+// IME 組字中的 Esc 是取消組字，不是關閉，所以略過。用法：useEscClose(onClose[, active])。
+const escStack = typeof window !== "undefined" ? (window.__escStack = window.__escStack || []) : [];
+if (typeof window !== "undefined" && !window.__escStackListener) {
+  window.__escStackListener = true;
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || e.isComposing || e.keyCode === 229) return;
+    const top = escStack[escStack.length - 1];
+    if (top) top.current();
+  });
+}
+const useEscClose = (onClose, active = true) => {
+  const fnRef = useRef(onClose);
+  useEffect(() => { fnRef.current = onClose; });
+  useEffect(() => {
+    if (!active) return;
+    const entry = { current: () => fnRef.current() };
+    escStack.push(entry);
+    return () => { const i = escStack.indexOf(entry); if (i >= 0) escStack.splice(i, 1); };
+  }, [active]);
+};
+
+// ─── 站內確認框（取代 window.confirm／alert）───────────────────
+// 用法：const ok = await askConfirm({ title, message, confirmLabel, cancelLabel, tone });
+//   tone 預設是破壞性操作（紅色確認鈕、預設聚焦「取消」，避免手滑按 Enter 就刪）；tone:"primary" 是一般提示
+//   （主色確認鈕、預設聚焦確認）。回傳 Promise<boolean>。ConfirmHost 沒掛載時（理論上不會）退回 window.confirm。
+// 層級：Portal 到 document.body、zIndex 30000——高於所有面板／彈窗（最高 20001）、低於彩蛋（99997 起）。
+//   一定要 Portal：外層玻璃（backdrop-filter）會讓 position:fixed 被困在父層裡（見 InAppNotifModal 的註解）。
+// Esc／點背景＝取消；Esc 走 useEscClose 堆疊，確認框蓋在彈窗上時只會先關確認框。
+let confirmHost = null;
+const askConfirm = (opts) => new Promise((resolve) => {
+  if (confirmHost) confirmHost({ ...opts, resolve });
+  else resolve(typeof window !== "undefined" ? window.confirm(opts.message) : false);
+});
+
+const ConfirmHost = () => {
+  const [req, setReq] = useState(null);
+  const reqRef = useRef(null);
+  const cancelRef = useRef(null);
+  const okRef = useRef(null);
+
+  useEffect(() => {
+    confirmHost = (r) => {
+      if (reqRef.current) reqRef.current.resolve(false); // 理論上不會同時兩個；真的發生就把前一個當取消
+      reqRef.current = r; setReq(r);
+    };
+    return () => { confirmHost = null; };
+  }, []);
+
+  const close = (result) => {
+    const r = reqRef.current;
+    reqRef.current = null; setReq(null);
+    if (r) r.resolve(result);
+  };
+  useEscClose(() => close(false), !!req);
+
+  // 開啟時聚焦、關閉時把焦點還給原本的元素
+  useEffect(() => {
+    if (!req) return;
+    const prev = document.activeElement;
+    (req.tone === "primary" ? okRef : cancelRef).current?.focus();
+    return () => { if (prev && prev.focus) prev.focus(); };
+  }, [req]);
+
+  if (!req) return null;
+  const danger = req.tone !== "primary";
+  const btnBase = { borderRadius:8, padding:"8px 18px", fontSize:13, cursor:"pointer", fontFamily:"inherit", transition:"all 0.12s" };
+  // 只有兩顆按鈕，Tab 在兩者之間循環（不讓焦點跑到後面被蓋住的頁面）
+  const trapTab = (e) => {
+    if (e.key !== "Tab") return;
+    const first = cancelRef.current, last = okRef.current;
+    if (!first || !last) return;
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  return createPortal(
+    <div onClick={e=>{ if (e.target === e.currentTarget) close(false); }}
+      style={{ position:"fixed", inset:0, zIndex:30000, background:"rgba(0,0,0,0.25)",
+        display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg"
+        onKeyDown={trapTab}
+        style={{ ...GLASS, border:"1px solid var(--border)", borderRadius:14, padding:24, width:"100%",
+          maxWidth:400, boxShadow:MODAL_SHADOW, animation:"fadeIn 0.15s ease" }}>
+        <div id="confirm-title" style={{ fontSize:16, fontWeight:500, color:"var(--text)", marginBottom:8 }}>
+          {req.title || (danger ? "確認操作" : "提醒")}
+        </div>
+        <div id="confirm-msg" style={{ fontSize:13, lineHeight:1.6, color:"var(--text-mid)", marginBottom:20, whiteSpace:"pre-line" }}>
+          {req.message}
+        </div>
+        <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
+          <button ref={cancelRef} onClick={()=>close(false)} className="hv-accent"
+            style={{ ...btnBase, background:"transparent", border:"1px solid var(--border)", color:"var(--text-mid)" }}>
+            {req.cancelLabel || "取消"}
+          </button>
+          {danger
+            ? <button ref={okRef} onClick={()=>close(true)} className="hv-danger-solid"
+                style={{ ...btnBase, background:"var(--red-subtle)", border:"1px solid var(--red)", color:"var(--red)", fontWeight:500 }}>
+                {req.confirmLabel || "確定"}
+              </button>
+            : <button ref={okRef} onClick={()=>close(true)} className={CTA_CLASS}
+                style={{ ...btnBase, fontWeight:400 }}>
+                {req.confirmLabel || "確定"}
+              </button>}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// 取得「這個瀏覽器／這個使用者」的推播訂閱列：先用瀏覽器 endpoint 找，找不到再用 user_id（換裝置時仍能恢復，
+// 同 NotificationPanel 的做法）。專案頁用它判斷「是否已啟用 Email 提醒」。
+async function fetchOwnPushSub(userId) {
+  if (!("serviceWorker" in navigator)) return null;
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (!reg) return null;
+  const pushSub = await reg.pushManager.getSubscription();
+  if (pushSub) {
+    const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint", pushSub.endpoint).maybeSingle();
+    if (data) return data;
+  }
+  if (userId) {
+    const { data } = await sb.from("push_subscriptions").select("*").eq("user_id", userId).maybeSingle();
+    if (data) return data;
+  }
+  return null;
+}
+
 const NOTIFY_OPTIONS = [
   { label:"當日提醒", value:0 },
   { label:"提前 1 天", value:1 },
@@ -997,6 +1163,7 @@ const NOTIFY_OPTIONS = [
 ];
 
 const NotificationPanel = ({ projects, session, profile, onClose }) => {
+  useEscClose(onClose);
   const [sub,     setSub]     = useState(null);
   const [loading, setLoading] = useState(false);
   const [status,  setStatus]  = useState(""); // "" | "unsupported" | "denied"
@@ -1132,7 +1299,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                   {projects.map(proj=>{
                     const active=(sub.subscribed_projects||[]).includes(proj.id);
                     return (
-                      <div key={proj.id} onClick={()=>handleToggleProject(proj.id)}
+                      <div key={proj.id} {...kbd(()=>handleToggleProject(proj.id))} aria-pressed={active}
                         style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                           padding:"10px 14px", borderRadius:10, cursor:"pointer",
                           background:active?C.accentLight:C.bg,
@@ -1169,6 +1336,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
 // ─── InAppNotifModal ──────────────────────────────────────────
 const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen }) => {
+  useEscClose(onClose);
   const totalBadge = urgentNotifs.length + customerNotifs.length;
   // 用 Portal 掛到 document.body：這個元件固定從全域 Header 的鈴鐺按鈕觸發，而 Header 本身
   // 有 ...GLASS（backdropFilter），巢狀在它底下會讓這裡自己的 backdropFilter 採樣不到真正的
@@ -1205,7 +1373,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
           {customerNotifs.map((n, i) => {
             const p = n.payload ?? {};
             return (
-              <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.project_id); }}
+              <div key={i} {...kbd(()=>{ onClose(); onProjectOpen(n.project_id); })}
                 style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
                   borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s",
                   background:n.read?"transparent":"var(--accent-subtle)" }}
@@ -1239,7 +1407,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
           <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:500, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--red)" }}>即將到期</div>
           {urgentNotifs.map((n, i) => (
-            <div key={i} onClick={()=>{ onClose(); onProjectOpen(n.projId); }}
+            <div key={i} {...kbd(()=>{ onClose(); onProjectOpen(n.projId); })}
               style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
                 borderBottom:"1px solid var(--border)", cursor:"pointer", transition:"background 0.1s" }}
               className="hv-row">
@@ -1323,9 +1491,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
   const openAddModal  = (dateStr) => { setDraft({ projectId:projects[0]?.id||"", name:"", description:"", type:"deadline", deadline:dateStr, period_start:dateStr, period_end:"", url:"", is_internal:true }); setModal({ mode:"add", date:dateStr }); };
   const openEditModal = (task)    => { setDraft({ projectId:task.project_id, name:task.name, description:task.description||"", type:task.type, deadline:task.deadline||"", period_start:task.period_start||"", period_end:task.period_end||"", url:task.url||"", is_internal:task.is_internal??true, taskId:task.id }); setModal({ mode:"edit", date:task.deadline||task.period_start||task.period_end||"" }); };
   const closeModal    = ()        => { setModal(null); setSaving(false); };
+  useEscClose(closeModal, !!modal);
+  useEscClose(() => { setExpandedDay(null); setExpandedPos(null); }, expandedDay !== null);
 
   const deleteTask = async (taskId) => {
-    if (!window.confirm("確定要刪除此任務嗎？此操作無法還原。")) return;
+    if (!(await askConfirm({ title:"刪除任務", message:"確定要刪除此任務嗎？此操作無法還原。", confirmLabel:"刪除" }))) return;
     setExpandedDay(null); setExpandedPos(null); closeModal();
     await sb.from("tasks").delete().eq("id", taskId);
     onTaskDeleted(taskId);
@@ -1635,7 +1805,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                   </div>
                 ))}
               </div>
-              <div onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}
+              <div {...kbd(()=>{ setExpandedDay(null); setExpandedPos(null); })}
                 style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"6px 0",
                   borderTop:`1px solid ${C.border}`, cursor:"pointer", flexShrink:0 }}>▲ 收起</div>
             </div>
@@ -1692,13 +1862,12 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
 
 
 // ─── HomePage ─────────────────────────────────────────────────
-const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
+const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
   const [search,        setSearch]        = useState("");
   const [regionFilter,  setRegionFilter]  = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [picFilter,     setPicFilter]     = useState("all");
   const [sortBy,        setSortBy]        = useState("created_desc");
-  const [showNotif,     setShowNotif]     = useState(false);
   const [overdueFilter, setOverdueFilter] = useState(false);
   const [soonFilter,    setSoonFilter]    = useState(false);
   const [doneFilter,    setDoneFilter]    = useState(false);
@@ -1770,9 +1939,9 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
   return (
     <div style={{ padding:"28px 40px 80px", maxWidth:1200, margin:"0 auto" }}>
       {/* Stat cards */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(200px,100%),1fr))", gap:12, marginBottom:28 }}>
         {stats.map(({ label, value, icon, color, sub, onClick, isActive }) => (
-          <div key={label} onClick={onClick} className="lg-live"
+          <div key={label} {...(onClick?kbd(onClick):null)} aria-pressed={onClick?!!isActive:undefined} className="lg-live"
             style={{ ...GLASS,
               border:`1px solid ${isActive ? color : "var(--border)"}`,
               borderRadius:12, padding:"18px 20px", animation:"fadeIn 0.2s ease",
@@ -1827,7 +1996,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
             { value:"launch_desc",  label:"上線日期（最遠）" },
           ]} placeholder="排序"/>
           {/* 通知設定 */}
-          <button onClick={()=>setShowNotif(true)}
+          <button onClick={onOpenNotif}
             style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6,
               background:"transparent", border:"1px solid var(--border)", borderRadius:8,
               padding:"7px 13px", cursor:"pointer", fontFamily:"inherit",
@@ -1851,7 +2020,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
           </div>
         </div>
       ) : (
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(500px,1fr))", gap:20 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(500px,100%),1fr))", gap:20 }}>
           {filtered.map((proj) => {
             const pct = calcPct(proj);
             const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(proj.info.products, proj.info.integrations);
@@ -1880,7 +2049,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                   boxShadow:`var(--shadow-sm), ${RIM}`,
                   transition:"border-color 0.15s, box-shadow 0.25s, background 0.25s, transform 0.45s cubic-bezier(0.34,1.56,0.64,1)",
                   animation:"fadeIn 0.2s ease" }}
-                onClick={()=>onOpen(proj.id)}
+                {...kbd(()=>onOpen(proj.id))}
                 onMouseEnter={e=>{
                   e.currentTarget.style.borderColor="var(--accent-border)";
                   e.currentTarget.style.boxShadow=`0 10px 28px ${tint(0.14)}, var(--shadow), ${RIM_HOVER}`;
@@ -1909,7 +2078,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                   // perspective 距離也要拉遠，手感才會跟 demo 一致（而不是同角度套用在更大的卡片上）。
                   const MAX_TILT = 2;
                   const rx = (0.5 - py) * MAX_TILT * 2, ry = (px - 0.5) * MAX_TILT * 2;
-                  e.currentTarget.style.transform = `translateY(-4px) perspective(1800px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+                  if (!prefersReducedMotion()) e.currentTarget.style.transform = `translateY(-4px) perspective(1800px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
                 }}
                 onMouseLeave={e=>{
                   e.currentTarget.style.borderColor="var(--border)";
@@ -1948,7 +2117,7 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
                       <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
                     </div>}
                   </div>
-                  <button onClick={e=>{ e.stopPropagation(); if(window.confirm(`確定要移除「${proj.info.name||"此專案"}」嗎？`)) onDelete(proj.id); }}
+                  <button onClick={async e=>{ e.stopPropagation(); if(await askConfirm({ title:"移除專案", message:`確定要移除「${proj.info.name||"此專案"}」嗎？`, confirmLabel:"移除" })) onDelete(proj.id); }}
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
                       cursor:"pointer", fontSize:13, color:C.textLight, lineHeight:1,
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
@@ -2054,7 +2223,6 @@ const HomePage = ({ projects, onOpen, onDelete, session, profile }) => {
         </div>
       )}
       {/* Notification panel */}
-      {showNotif&&<NotificationPanel projects={projects} session={session} profile={profile} onClose={()=>setShowNotif(false)}/>}
     </div>
   );
 };
@@ -2505,6 +2673,7 @@ function renderMarkdown(md) {
 const AI_INPUT_MAX_H = 128;
 
 const AiPanel = ({ projects, allTasks, onClose }) => {
+  useEscClose(onClose);
   const [msgs,   setMsgs]   = useState([]);
   const [input,  setInput]  = useState("");
   const [busy,   setBusy]   = useState(false);
@@ -2804,6 +2973,7 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
 
 // ─── CustomerAccessPanel ──────────────────────────────────────
 const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
+  useEscClose(onClose);
   const [emails,   setEmails]   = useState([]);
   const [newEmail, setNewEmail] = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -2973,6 +3143,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
 // 這裡改成輪詢 `loadHistory()`：只要還有 pending/processing 的列，就每 3 秒自動重新查一次，
 // 不需要手動重新整理就能看到 agent 處理完的結果。
 const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
+  useEscClose(onClose);
   const [settings, setSettings] = useState(null);
   const [history,  setHistory]  = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -3235,6 +3406,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
   const [error,       setError]       = useState("");
   const [transitions, setTransitions] = useState({});
   const [activeKey,   setActiveKey]   = useState(null);
+  useEscClose(() => setActiveKey(null), activeKey !== null);
   const [updating,    setUpdating]    = useState({});
   const [descLoading, setDescLoading] = useState(false);
   const [descSuccess, setDescSuccess] = useState(false);
@@ -3382,7 +3554,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             // Issue 徽章逾期變色：用偏灰、不飽和的磚紅，跟月曆的做法一樣避免太刺眼
             const isIssueOverdue = issue.dueDate && issue.statusCategory !== "done" && daysUntil(issue.dueDate) < 0;
             return (
-              <div key={issue.key} onClick={()=>toggleExpand(issue.key)} className="lg-live"
+              <div key={issue.key} {...kbd(()=>toggleExpand(issue.key))} className="lg-live"
                 style={{ ...GLASS,
                 border:`1px solid ${C.border}`,
                 boxShadow:RIM,
@@ -3590,7 +3762,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
   };
 
   const removeTask = async (id) => {
-    if (!window.confirm("確定要刪除此任務嗎？此操作無法還原。")) return;
+    if (!(await askConfirm({ title:"刪除任務", message:"確定要刪除此任務嗎？此操作無法還原。", confirmLabel:"刪除" }))) return;
     onTasksChange(tasks.filter(t=>t.id!==id));
     setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
     await sb.from("tasks").delete().eq("id", id);
@@ -3598,7 +3770,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
   const removeSelected = async () => {
     if (!selectedIds.size) return;
-    if (!window.confirm(`確定要刪除選取的 ${selectedIds.size} 筆任務嗎？此操作無法還原。`)) return;
+    if (!(await askConfirm({ title:"刪除任務", message:`確定要刪除選取的 ${selectedIds.size} 筆任務嗎？此操作無法還原。`, confirmLabel:"刪除" }))) return;
     const ids = [...selectedIds];
     onTasksChange(tasks.filter(t => !ids.includes(t.id)));
     setSelectedIds(new Set());
@@ -3718,7 +3890,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                     {task.completed && <Ico name="check" size={12} color="#fff" strokeWidth={3}/>}
                   </button>
                   {/* Checkbox */}
-                  <div onClick={(e)=>{e.stopPropagation(); toggleSelect(task.id);}}
+                  <div {...kbd((e)=>{e.stopPropagation(); toggleSelect(task.id);},"checkbox")} aria-checked={isSelected}
                     style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
                       border:`2px solid ${isSelected ? C.accent : C.borderMid}`,
                       background:isSelected ? C.accent : C.white,
@@ -3855,7 +4027,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 };
 
 // ─── ProjectDetail ────────────────────────────────────────────
-const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session, profile }) => {
+const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, session, profile, onOpenNotif, notifVersion }) => {
   const [step, setStep] = useState(isNew ? 0 : 5);
   const [info,          setInfoLocal]     = useState(project.info);
   const [basicChecked,  setBasicChecked]  = useState(project.basicChecked);
@@ -3872,6 +4044,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const [projSub,       setProjSub]       = useState(null);
   const [subLoading,    setSubLoading]    = useState(false);
   const [jiraBoot, setJiraBoot] = useState({ open:false, step:"idle", epicKey:"", epicUrl:"", created:0, failed:[], issueTypeName:"", reporterName:"", errorMsg:"" });
+  // 建立 Epic／子任務進行中不能關（跟點背景關閉的判斷一致）
+  useEscClose(() => { if (!["creating_epic","creating_tasks"].includes(jiraBoot.step)) setJiraBoot(p=>({...p,open:false})); }, jiraBoot.open);
   const saveTimer = useRef(null);
   // Guards the autosave effect below against firing on mount, before the user has actually
   // touched anything (2026-07-28). Without this, the effect's guaranteed first run - which
@@ -3900,15 +4074,21 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
       }
 
       // ── Push subscription 恢復 ──────────────────────────────────────
-      if (!("serviceWorker" in navigator)) return;
-      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
-      if (!reg) return;
-      const pushSub = await reg.pushManager.getSubscription();
-      if (!pushSub) return;
-      const { data } = await sb.from("push_subscriptions").select("*").eq("endpoint",pushSub.endpoint).maybeSingle();
-      if (data) setProjSub(data);
+      const subRow = await fetchOwnPushSub(session?.user?.id);
+      if (subRow) setProjSub(subRow);
     })();
   }, [project.id]); // eslint-disable-line
+
+  // 從專案頁開通知面板、啟用（或停用）Email 提醒後，關閉面板時重新讀取訂閱狀態（notifVersion 由 App 在關閉時 +1）
+  useEffect(() => {
+    if (!notifVersion) return;
+    let alive = true;
+    (async () => {
+      const subRow = await fetchOwnPushSub(session?.user?.id);
+      if (alive) setProjSub(subRow);
+    })();
+    return () => { alive = false; };
+  }, [notifVersion]); // eslint-disable-line
 
   useEffect(() => {
     if (!didMountRef.current) {
@@ -4596,7 +4776,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {/* Subscribe toggle */}
                 <button disabled={subLoading} onClick={async()=>{
                   setSubLoading(true);
-                  if (!projSub) { alert("請先至主頁的「🔔 通知設定」啟用 Email 提醒，再回來訂閱此專案。"); setSubLoading(false); return; }
+                  if (!projSub) {
+                    setSubLoading(false);
+                    // 不再用 alert（死路）：確認框附「開啟通知設定」，直接打開 App 層的通知面板（見 App 的 showNotif）
+                    if (await askConfirm({ title:"尚未啟用 Email 提醒", tone:"primary", confirmLabel:"開啟通知設定", cancelLabel:"稍後再說",
+                      message:"要訂閱此專案的提醒，需要先在「通知設定」啟用 Email 提醒。" })) onOpenNotif?.();
+                    return;
+                  }
                   const isSubscribed=(projSub.subscribed_projects||[]).includes(project.id);
                   const curr=projSub.subscribed_projects||[];
                   const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
@@ -4996,6 +5182,7 @@ const LoginPage = ({ theme, setTheme }) => {
 
 // ─── UserSettingsPanel ────────────────────────────────────────
 const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
+  useEscClose(onClose);
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [jiraEmail,   setJiraEmail]   = useState(profile?.jira_email   || "");
   const [jiraToken,   setJiraToken]   = useState(profile?.jira_token   || "");
@@ -5094,6 +5281,10 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
 export default function App() {
   const [page,     setPage]     = useState("home");
   const [view,     setView]     = useState("home");
+  // 通知設定面板放在 App 層（跟 AiPanel 同層）：主頁和專案頁都能開，且不會被各頁面的玻璃元素（backdrop-filter）困住。
+  // notifVersion：面板關閉時 +1，專案頁據此重新讀取「是否已啟用 Email 提醒」。
+  const [showNotif,    setShowNotif]    = useState(false);
+  const [notifVersion, setNotifVersion] = useState(0);
   const [projects, setProjects] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -5529,6 +5720,12 @@ export default function App() {
         </div>
       )}
 
+      {/* 通知設定面板（App 層；主頁與專案頁共用） */}
+      {showNotif && <NotificationPanel projects={projects} session={session} profile={profile} onClose={()=>{ setShowNotif(false); setNotifVersion(v=>v+1); }}/>}
+
+      {/* 站內確認框（取代 window.confirm／alert；Portal 到 body，zIndex 30000） */}
+      <ConfirmHost/>
+
       {/* AI Panel */}
       {showAi && <AiPanel projects={projects} allTasks={allTasks} onClose={()=>setShowAi(false)}/>}
 
@@ -5559,7 +5756,7 @@ export default function App() {
 
       {/* Content */}
       {isDetailView
-        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session} profile={profile}/>
+        ? <ProjectDetail project={activeProject} isNew={isNew} onUpdate={handleUpdate} onBack={()=>setView("home")} onDelete={handleDelete} allPics={allPics} session={session} profile={profile} onOpenNotif={()=>setShowNotif(true)} notifVersion={notifVersion}/>
         : page==="calendar"
           ? <CalendarPage projects={projects} allTasks={allTasks} accessToken={session?.access_token} onTaskAdded={(task, isEdit) => {
               setAllTasks(prev => isEdit
@@ -5579,7 +5776,7 @@ export default function App() {
               setAllTasks(prev => prev.filter(t => t.id !== taskId));
               setProjects(prev => prev.map(p => ({ ...p, tasks: p.tasks.filter(t => t.id !== taskId) })));
             }}/>
-          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics} session={session} profile={profile}/>
+          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics} onOpenNotif={()=>setShowNotif(true)}/>
       }
     </div>
   );

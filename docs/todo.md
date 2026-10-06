@@ -137,6 +137,21 @@
   4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
 - **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
 
+### UX 優化 1–5（2026-10-06 已做，待 Jim 實機確認）
+- 還原點：`git tag before-ux-1-5-2026-10-06`。說明見 architecture.md「鍵盤／無障礙／確認框」。
+- 做了：① Esc 關閉（堆疊式）；② 全域 `:focus-visible`＋10 個可點卡片鍵盤化；③ `alert`／`window.confirm` 改站內確認框（含「開啟通知設定」直達通知面板；通知面板提升到 App 層）；④ 專案卡片／統計卡格線窄螢幕不再撐破；⑤ 減少動態效果。
+- 驗證：用「假 Supabase 後端＋假登入」在無頭瀏覽器跑真正 build 出來的 App，實測約 50 項（Esc 各層、確認框 zIndex／Portal／焦點／Tab 循環、確認框蓋在展開卡片上時 Esc 先關確認框、專案頁→通知面板→啟用後訂閱狀態刷新、減少動態、窄螢幕）。**未測**：真實 Supabase 資料、真實 Web Push 訂閱流程（用假 service worker 模擬）。
+- 已知限制／後續候選：Header 右側控制項 <600px 仍橫向捲動（Header 四顆 Jim 決定不動）；其餘純圖示按鈕仍只有 `title`、缺 `aria-label`；行事曆格子／事件標籤沒做鍵盤操作；Esc 關閉面板與點背景一樣會丟掉未儲存內容（AI 對話、使用者設定）——若要防誤觸可加「有內容時先確認」。
+
+### 剩餘 4 個 lint 錯誤（react-hooks 新版規則，2026-10-06 評估，未動手）
+- 性質：都不是會出錯的 bug，線上行為正常、不影響 build；是 `eslint-plugin-react-hooks` 新規則（`set-state-in-effect`、`immutability`）對寫法的抱怨。不做的代價只有：日後若啟用 React Compiler，這幾個元件會被略過、享受不到自動優化。
+- 4 個修法都已貼到暫存副本跑過 eslint：各自能消掉對應錯誤、沒有新增警告。**尚未做 build、也未實機測試**（1、4 涉及 Supabase／瀏覽器通知，需登入實機確認）。
+1. `NotificationPanel`（`useEffect` 內同步 `setStatus("unsupported"/"denied")`）：把「是否支援／權限是否被拒」改成 `useState` 惰性初始值，effect 只留 `if (status) return;`。風險低；差異＝不支援/被拒的瀏覽器第一次渲染就顯示對應狀態，不再閃一格正常畫面。**建議做。**
+2. `CalendarPage`（Jira 抓取 effect 內同步 `setJiraLoading(true)`）：把 `setJiraLoading(true)` 搬進 async IIFE 內。執行時零差異（IIFE 第一個 `await` 前本來就同步執行），**純粹消 lint，沒解決底層問題**。真正的問題是這個 effect（deps `[projects, accessToken]`）沒有取消機制，專案資料連續變動時舊請求可能後到、蓋掉新結果；要根治需加 `let alive = true` 旗標（會稍微改變時序）。**選做。**
+3. 主元件 `loadProfile`（`immutability`：auth effect 先用、宣告在後面）：把 `loadProfile` 整段搬到 auth effect 上方，內容不動。只調順序，風險幾乎為零（它只用穩定的 setter，`[]` 依賴不會有舊值問題）。**建議做。**
+4. 主元件 `fetchCustomerNotifs`（effect 一掛載就呼叫，setState 在 `await` 後，屬保守誤報）：把抓取邏輯直接寫進 effect（`run`）、保留 30 秒輪詢、加 `alive` 旗標，並刪掉只被這裡用到的 `useCallback`（已 grep 確認無其他使用處）。風險低；多出的行為＝離開頁面後不再寫入 state。**建議做，改完需實機確認客戶通知照常更新。**
+- 判斷：1、3、4 一起做可讓 lint 錯誤歸零且畫面無變化；2 視需要。完成後記得重跑 `npx eslint src/hotel-project-dashboard.jsx` 與 build。
+
 ### 程式碼易維護性重構 Batch 2（2026-10-06，輸出刻意不變，待 Jim 實機確認）
 - 還原點：`git tag before-refactor-batch2-2026-10-06`（Batch 1 已 commit：57661a7）。
 - 做了：① 19 處純樣式 hover（共 23 組 handler 中的 19 組）改成 `GLOBAL_CSS` 的 `.hv-*` class（說明見 architecture.md「Hover 樣式 class」）；② `GLOBAL_CSS` 改為 `<head>` 單次注入（原本 5 個渲染分支各一份 `<style>`）。
