@@ -917,7 +917,7 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
     {onBack && <button onClick={onBack} style={{ background:"transparent", color:"var(--text-mid)",
       border:"1px solid var(--border)", borderRadius:8, padding:"9px 20px",
       fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
-    {onNext && <button onClick={onNext} style={{ background:nextColor, color:"#fff", border:"none",
+    {onNext && <button onClick={onNext} className={CTA_CLASS} style={{ background:nextColor, color:"#fff",
       borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:400,
       cursor:"pointer", fontFamily:"inherit" }}>{nextLabel}</button>}
   </div>
@@ -1561,8 +1561,8 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
         </div>
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
           <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
-          <button onClick={saveTask} disabled={!draft.name.trim()||saving}
-            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"#fff", border:"none", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
+          <button onClick={saveTask} disabled={!draft.name.trim()||saving} className={CTA_CLASS}
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"#fff", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
           </button>
         </div>
@@ -3189,8 +3189,8 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
                   推送處理中——內網 agent 正在或即將認領這筆任務，下方紀錄會自動更新，不用手動重新整理。
                 </div>
               )}
-              <button onClick={handlePush} disabled={pushing || hasInFlight}
-                style={{ width:"100%", padding:"10px 0", borderRadius:10, border:"none",
+              <button onClick={handlePush} disabled={pushing || hasInFlight} className={CTA_CLASS}
+                style={{ width:"100%", padding:"10px 0", borderRadius:10,
                   background: (pushing || hasInFlight) ? "var(--border)" : "var(--accent)",
                   color: (pushing || hasInFlight) ? "var(--text-subtle)" : "#fff", fontFamily:"inherit",
                   fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
@@ -3724,7 +3724,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               {isAllSelected ? "取消全選" : "全選"}
             </button>
           )}
-          <button onClick={addTask} style={{ background:C.accent, color:"#fff", border:"none",
+          <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"#fff",
             borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:500,
             cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.accent}40` }}>+ 新增任務</button>
         </div>
@@ -4132,7 +4132,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
       <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
       <div style={{ fontSize:15, fontWeight:400, color:C.textMid, marginBottom:20 }}>{msg}</div>
-      <button onClick={()=>setStep(0)} style={{ background:C.accent, color:"#fff", border:"none",
+      <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"#fff",
         borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:500,
         cursor:"pointer", fontFamily:"inherit" }}>前往專案資訊</button>
     </div>
@@ -4314,8 +4314,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
                             style={{ padding:"8px 18px", background:"transparent", border:"1px solid var(--border)",
                               borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit", color:"var(--text-mid)" }}>取消</button>
-                          <button onClick={bootstrapJira}
-                            style={{ padding:"8px 20px", background:"#0052cc", color:"#fff", border:"none",
+                          <button onClick={bootstrapJira} className={CTA_CLASS}
+                            style={{ padding:"8px 20px", background:"#0052cc", color:"#fff",
                               borderRadius:8, fontSize:13, fontWeight:400, cursor:"pointer", fontFamily:"inherit" }}>確認建立</button>
                         </div>
                       </>)}
@@ -4384,8 +4384,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                             </div>
                           )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
-                            <button onClick={()=>setJiraBoot(p=>({...p,open:false}))}
-                              style={{ padding:"8px 20px", background:"var(--accent)", color:"#fff", border:"none",
+                            <button onClick={()=>setJiraBoot(p=>({...p,open:false}))} className={CTA_CLASS}
+                              style={{ padding:"8px 20px", background:"var(--accent)", color:"#fff",
                                 borderRadius:8, fontSize:13, fontWeight:400, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
                           </div>
                         </div>
@@ -5098,9 +5098,9 @@ const LoginPage = ({ theme, setTheme }) => {
             onFocus={e=>(e.target.style.borderColor="var(--accent)")}
             onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
           {err && <div style={{ fontSize:12, color:"var(--red)", marginBottom:8 }}>{err}</div>}
-          <button onClick={send} disabled={loading||!email.trim()}
+          <button onClick={send} disabled={loading||!email.trim()} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0", background:email.trim()?"var(--accent)":"var(--border)",
-              color:email.trim()?"#fff":"var(--text-subtle)", border:"none", borderRadius:8,
+              color:email.trim()?"#fff":"var(--text-subtle)", borderRadius:8,
               fontSize:14, fontWeight:400, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
             {loading ? "寄送中…" : "寄送登入連結"}
           </button>
@@ -5203,10 +5203,10 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
               </a>&nbsp;建立 API token
             </div>
           </div>
-          <button onClick={save} disabled={saving}
+          <button onClick={save} disabled={saving} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0",
               background:saved?"var(--green)":"var(--accent)", color:"#fff",
-              border:"none", borderRadius:8, fontSize:13, fontWeight:400,
+              borderRadius:8, fontSize:13, fontWeight:400,
               cursor:"pointer", fontFamily:"inherit", transition:"background 0.2s" }}>
             {saving?"儲存中…":saved?"✓ 已儲存":"儲存設定"}
           </button>

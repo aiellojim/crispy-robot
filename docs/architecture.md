@@ -301,7 +301,7 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 新增 `--lg-*` token 要在 `glassFx.js` 的五個區塊都定義：`:root`、dark media、`html[data-theme=light]`、
 `html[data-theme=dark]`、`html.jim-mode-effect`（jim 放最後，同 specificity 靠順序）。
 5. 主色 CTA：`CTA_CLASS`（`.lg-cta`）——維持原本的實色平面（accent 底、白字），只加半透明白邊框與游標邊緣光；
-   不做高光／陰影／上浮（試過，Jim 覺得立體感突兀）。目前只套在主頁「+ 新增專案」，其餘主色按鈕的盤點在 `todo.md`。
+   不做高光／陰影／上浮（試過，Jim 覺得立體感突兀）。已套用在主頁「+ 新增專案」與 9 顆一般尺寸主色按鈕（清單在 `todo.md`）。
 還原：tag `before-glass-v2-2026-10-06`，或把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import。
 `color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器只會失去大陰影。
 

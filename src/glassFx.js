@@ -56,7 +56,7 @@ const DARK = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: rgba(255,255,255,0.5);
     --lg-shadow-tint: rgb(2,4,18);
-    --lg-purple-border: #A78BFA;`;
+    --lg-purple-border: color-mix(in srgb, #A78BFA 55%, transparent);`;
 
 const JIM = `
     --lg-sheen: rgba(0,255,65,0.07);
@@ -111,7 +111,8 @@ export const GLASS_FX_CSS = `
     background: var(--accent); color: #fff; border: 1px solid rgba(255,255,255,0.28);
     cursor: pointer; font-family: inherit;
   }
-  .lg-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* 停用態各按鈕自己有灰底樣式，這裡只負責關掉邊緣光（不再疊透明度，避免雙重變淡） */
+  .lg-cta:disabled::after { display: none; }
   .lg-cta.lg-live::after {
     background: radial-gradient(120px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.85), transparent 70%);
   }
