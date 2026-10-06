@@ -1,0 +1,147 @@
+/* ============================================================================
+   Liquid Glass v2（提案）— 全站「玻璃材質」的唯一來源。
+   上線時這整份內容貼進 GLOBAL_CSS；元件只用 className（lg / lg-2 / lg-3 / lg-ctl ...），
+   不再在 inline style 裡手寫 background / backdropFilter / boxShadow。
+   想整站調整質感 = 只改這個檔案上方的 token（見「調整區」）。
+
+   主題切換用 CSS light-dark()：同一個 token 一行寫出淺色值與深色值，不必再複製到
+   :root / prefers-color-scheme / data-theme=light / data-theme=dark 四個區塊。
+   ⚠ 前提是 color-scheme 要跟著主題走（下面三行）。正式導入前要實測它對原生控制項
+     （date picker、scrollbar、autofill）的影響——現行 GLOBAL_CSS 用 invert() 手動處理
+     深色 date picker，color-scheme: dark 之後那條要拿掉。
+   ⚠ jim mode（html.jim-mode-effect）要另外覆寫 --lg-* 這批 token（跟之前 --glass-surface 同一個坑）。
+   ========================================================================== */
+
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* ─── 調整區（token）───────────────────────────────────────────────────── */
+:root {
+  /* 圓角尺度：控制項 < 卡片 < modal；巢狀元素用「外圈圓角 − padding」 */
+  --lg-r-ctl: 10px;
+  --lg-r-card: 16px;
+  --lg-r-modal: 22px;
+
+  /* 底色。alpha 與現行 --glass-surface（0.62 / 0.55）同值，既有的文字對比分析仍然適用。
+     1=卡片  2=Header/側邊欄（更不透明）  3=modal（最不透明、可讀性優先）  ctl=按鈕等小控制項 */
+  --lg-tint-1: light-dark(rgba(255,255,255,.62), rgba(33,33,43,.55));
+  --lg-tint-1-hover: light-dark(rgba(255,255,255,.78), rgba(42,42,54,.72));
+  --lg-tint-2: light-dark(rgba(255,255,255,.74), rgba(33,33,43,.70));
+  --lg-tint-3: light-dark(rgba(255,255,255,.88), rgba(35,35,47,.84));
+  --lg-tint-ctl: light-dark(rgba(255,255,255,.72), rgba(52,52,66,.62));
+  --lg-solid: light-dark(#FFFFFF, #21212B); /* 不支援 backdrop-filter／要求減少透明度時的實心備援 */
+
+  /* 光線：左上來光的斜向亮面（sheen）＋ 邊緣高光（rim）＋ 內發光 */
+  --lg-sheen: linear-gradient(135deg, light-dark(rgba(255,255,255,.55), rgba(255,255,255,.055)) 0%, transparent 56%);
+  --lg-rim-hi: light-dark(rgba(255,255,255,.95), rgba(255,255,255,.17));
+  --lg-rim-lo: light-dark(rgba(20,32,90,.09), rgba(0,0,0,.38));
+  --lg-glow-in: light-dark(rgba(255,255,255,.32), rgba(255,255,255,.022));
+  --lg-edge: light-dark(rgba(255,255,255,.6), rgba(255,255,255,.075));
+
+  /* 陰影：近＋遠兩層，顏色帶藍紫色調（不是純黑），淺色模式才會有「浮起來」的感覺 */
+  --lg-shadow-near: light-dark(rgba(24,36,96,.10), rgba(0,0,0,.42));
+  --lg-shadow-far: light-dark(rgba(24,36,96,.17), rgba(0,0,0,.55));
+
+  /* 細顆粒（SVG feTurbulence，當成靜態背景圖，只算一次，不是即時濾鏡） */
+  --lg-grain: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%27160%27%20height=%27160%27%3E%3Cfilter%20id=%27n%27%20x=%270%27%20y=%270%27%20width=%27100%25%27%20height=%27100%25%27%3E%3CfeTurbulence%20type=%27fractalNoise%27%20baseFrequency=%27.85%27%20numOctaves=%272%27%20stitchTiles=%27stitch%27/%3E%3CfeColorMatrix%20values=%27.9%200%200%200%200%20%20.9%200%200%200%200%20%20.9%200%200%200%200%20%200%200%200%200%20.07%27/%3E%3C/filter%3E%3Crect%20width=%27100%25%27%20height=%27100%25%27%20filter=%27url%28%23n%29%27/%3E%3C/svg%3E");
+
+  /* 跟著游標的邊緣光、分隔線 */
+  --lg-live: light-dark(rgba(232,98,26,.80), rgba(244,135,61,.90));
+  --lg-hair: light-dark(rgba(20,32,90,.14), rgba(255,255,255,.12));
+
+  /* 畫布上讓玻璃有東西可折射的靜態形狀（色相沿用既有 --prod-* / --accent） */
+  --lg-shape-1: light-dark(rgba(30,111,181,.22), rgba(77,144,212,.30));
+  --lg-shape-2: light-dark(rgba(232,98,26,.32), rgba(244,135,61,.44));
+  --lg-shape-3: light-dark(rgba(14,122,90,.22), rgba(34,164,116,.28));
+  --lg-dot: light-dark(rgba(20,32,90,.16), rgba(255,255,255,.14));
+}
+
+/* ─── 材質 ─────────────────────────────────────────────────────────────────
+   一個基底 class + 三個層級修飾：
+     .lg    卡片（預設）      .lg-2  Header／側邊欄       .lg-3  modal
+     .lg-ctl 小型控制項（次要按鈕、篩選 chip）：不做 backdrop-filter，省 GPU，改用較高不透明度保可讀性
+   層級差異全部由 --_ 開頭的區域變數決定，要新增第四級只要多寫一個修飾 class。 */
+.lg {
+  --_tint: var(--lg-tint-1);
+  --_blur: 16px;
+  --_y: 14px; --_b: 30px; --_s: -12px; /* 遠陰影的 y 位移 / 模糊 / 擴張 */
+  background-color: var(--_tint);
+  background-image: var(--lg-grain), var(--lg-sheen);
+  -webkit-backdrop-filter: blur(var(--_blur)) saturate(170%);
+  backdrop-filter: blur(var(--_blur)) saturate(170%);
+  border: 1px solid var(--lg-edge);
+  border-radius: var(--lg-r-card);
+  box-shadow:
+    inset 1px 1px 0 var(--lg-rim-hi),
+    inset -1px -1px 0 var(--lg-rim-lo),
+    inset 0 0 22px var(--lg-glow-in),
+    0 1px 2px var(--lg-shadow-near),
+    0 var(--_y) var(--_b) var(--_s) var(--lg-shadow-far);
+  transition: background-color .25s ease, box-shadow .25s ease, transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.lg-2 { --_tint: var(--lg-tint-2); --_blur: 22px; --_y: 6px; --_b: 24px; --_s: -10px; border-radius: 0; }
+.lg-3 { --_tint: var(--lg-tint-3); --_blur: 28px; --_y: 30px; --_b: 70px; --_s: -18px; border-radius: var(--lg-r-modal); }
+.lg-ctl {
+  --_tint: var(--lg-tint-ctl);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border-radius: var(--lg-r-ctl);
+  box-shadow: inset 1px 1px 0 var(--lg-rim-hi), inset -1px -1px 0 var(--lg-rim-lo), 0 1px 2px var(--lg-shadow-near);
+}
+.lg-hover:hover { --_tint: var(--lg-tint-1-hover); }
+
+/* 跟著游標的邊緣光：只在 hover 的那一張卡片上畫一圈 1px 的漸層框，位置由 --mx / --my 決定。
+   純 CSS 遮罩 + 一個 pseudo-element，不需要額外 DOM、不用 filter:blur、也不用 mix-blend-mode。 */
+.lg-live { position: relative; }
+.lg-live::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, -30%), var(--lg-live), transparent 68%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity .3s ease;
+}
+.lg-live:hover::after { opacity: 1; }
+
+/* ─── 畫布 ─────────────────────────────────────────────────────────────────
+   正式版放在 body::before，position: fixed; inset: 0; z-index: -1（自己一層合成層，
+   取代現在 body 上的 background-attachment: fixed）。預覽頁是放在每個 pane 裡的 absolute 圖層。
+   三層色暈沿用現行 --canvas-glow-1/2/3；新增的是形狀（讓玻璃有東西可以模糊）與點陣＋顆粒。 */
+.lg-canvas {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(1200px 900px at 6% -8%, var(--canvas-glow-1), transparent 60%),
+    radial-gradient(1100px 850px at 100% 18%, var(--canvas-glow-2), transparent 55%),
+    radial-gradient(1000px 800px at 32% 115%, var(--canvas-glow-3), transparent 55%),
+    var(--bg);
+}
+.lg-canvas::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle 23vmin at 14% 16%, var(--lg-shape-1) 0, var(--lg-shape-1) 93%, transparent 100%),
+    radial-gradient(circle 17vmin at 88% 36%, transparent 0 80%, var(--lg-shape-2) 82% 91%, transparent 93%),
+    radial-gradient(circle 27vmin at 66% 94%, var(--lg-shape-3) 0, var(--lg-shape-3) 94%, transparent 100%);
+}
+.lg-canvas::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--lg-grain), radial-gradient(var(--lg-dot) 1px, transparent 1.7px);
+  background-size: 160px 160px, 26px 26px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 42%, #000 15%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 42%, #000 15%, transparent 78%);
+}
+
+/* ─── 細節 ─────────────────────────────────────────────────────────────── */
+.lg-type { font-weight: 400; letter-spacing: .004em; }          /* 內文 300 → 400：細字壓在半透明底上最吃力 */
+.lg-num { font-family: 'Inter', 'Noto Sans TC', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.lg-hr { height: 1px; border: 0; margin: 0; background: linear-gradient(90deg, transparent, var(--lg-hair) 18%, var(--lg-hair) 82%, transparent); }
+
+/* ─── 備援與無障礙 ──────────────────────────────────────────────────────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lg { background-color: var(--lg-solid); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lg { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--lg-solid); }
+  .lg-canvas::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg, .lg-live::after { transition: none; }
+}

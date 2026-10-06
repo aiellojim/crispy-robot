@@ -137,6 +137,14 @@
   4. **Fallback chain（esm.sh 失敗自動切換備援 CDN）**：保留不用管版本更新的方便性，但要把現有的靜態 `import` 改寫成動態 `await import()` 包 try/catch，是四個表單共用的 bootstrap 寫法要一起改，複雜度墊高；且多一層 fallback 邏輯本身也可能出錯，「易查錯」反而變差。
 - **狀態：待 Jim 選定方案，尚未排入 sprint。** 若選方案 1，動工時記得四個表單（`AVA basic settings`／`AVA UI settings`／`SiteChat Settings`／`ACA basic settings`）都要各自處理一次，不是單一 repo 的改動。
 
+### Glass v2 材質升級（2026-10-06 提案，評估中，尚未動正式程式）
+- 預覽：`dev/glass-preview.html`（`npm run dev` 後開 `/dev/glass-preview.html`），左＝現在、右＝提案，含深淺色、modal、游標邊緣光、「自動捲動」效能實測按鈕。提案的全部樣式在 `dev/glass-proposed.css`（token + `.lg` / `.lg-2` / `.lg-3` / `.lg-ctl` / `.lg-live` / `.lg-canvas`），`dev/glass-base.css` 只是預覽用的現行 token 拷貝。
+- **Jim 第一輪預覽回饋（2026-10-06）與 v2 調整**：1/2/3 可做但磨砂感太強、要更透明平滑 → 卡片不再疊顆粒（只剩畫布極淡的防色帶顆粒）；4 不要邊緣清楚的形狀、只要色暈 → 畫布改 5 團柔邊色暈（新增中段的紫、青，卡片滑過時玻璃吃到不同顏色）；5 modal 太實心、三級都要再透 → 底色 alpha 淺色 .52/.62/.72、深色 .44/.54/.66，模糊 14/20/26px，並提供「更透／最透」兩組預設在預覽頁比較；6、7 照做。透明度往下調的代價：色暈最濃處 text-mid 對比約 −0.3（試算：淺色 4.2~4.5 → 3.9~4.2），若要補償可把淺色 `--text-mid` 略調深，待 Jim 決定。
+- 導入範圍（2026-10-06 grep）：`...GLASS` 34 處、`glassToggle(` 6 處、手寫的 `inset 0 1px 0 rgba(255,255,255…` 邊緣高光 19 處、`var(--glass-surface` 直接引用 3 處、modal／側邊欄 zIndex 20000/20001 共 12 行。
+- 導入方式：新 CSS 貼進 `GLOBAL_CSS`（**不要做成 .css 檔讓 Vite 處理**：Vite 8 用 lightningcss 壓縮，`light-dark()` 會被改寫，行為要另外測）；元件改成 `className`，`GLASS` 常數退役；建議分批、每批後 Jim 手動檢查，沿用 Liquid Glass 的批次。
+- 待 Jim 決定／實測的風險：(1) `light-dark()` 需要 `color-scheme` 跟主題走，會影響原生控制項（date picker 現用 `invert()` 手動處理，要拿掉）；瀏覽器下限 Chrome 123 / Safari 17.5 / Firefox 120。(2) jim mode 要另外覆寫 `--lg-*`。(3) 畫布改 `body::before` fixed 層取代 `background-attachment: fixed`，需實測捲動效能。(4) 預覽內的效能數字在沙盒（軟體算圖）量的不具代表性，要在 Jim 的機器上跑。
+- 不動的既有規則：輸入框、主色 CTA、選中態純色填滿維持不透明；日曆 42 格與列表 row 不加 backdrop-filter。
+
 ## 長期方向
 
 - ACA 產品 checklist 擴充。
