@@ -5,7 +5,7 @@
 //   1. 斜向光   --lg-bg / --lg-bg-hover：左上角一道 135° 的柔光，疊在 --glass-surface 上面
 //   2. 邊緣光   .lg-live：游標移到元素上時，邊框（1px）會跟著游標位置亮起一小段
 //   3. 色調陰影 tint(a)：大陰影不用純黑，改成帶一點主題色的深色（淺色=藍灰、深色=靛黑、jim=深綠）
-//   4. 主色 CTA   .lg-cta：霧面實色＋斜向光＋邊緣光＋主色調陰影（CTA_CLASS）
+//   4. 主色 CTA   .lg-cta：實色平面＋半透明白邊框＋游標邊緣光（CTA_CLASS）；底色、文字色維持原本
 //   5. 文字細節 body 等寬數字（tabular-nums）、標題 text-wrap:balance
 //
 // 想調整外觀時只動這個檔案的 token（下面 GLASS_FX_CSS 的五個區塊）；jsx 那邊只引用
@@ -44,9 +44,7 @@ const LIGHT = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 62%, transparent);
     --lg-shadow-tint: rgb(28,38,84);
-    --lg-cta-base: color-mix(in srgb, var(--accent) 78%, #000);
-    --lg-cta-text: #fff;
-    --lg-cta-sheen: rgba(255,255,255,0.20);`;
+    --lg-purple-border: #C4B5FD;`;
 
 const DARK = `
     --lg-sheen: rgba(255,255,255,0.09);
@@ -58,9 +56,7 @@ const DARK = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: rgba(255,255,255,0.5);
     --lg-shadow-tint: rgb(2,4,18);
-    --lg-cta-base: var(--accent);
-    --lg-cta-text: #1A1108;
-    --lg-cta-sheen: rgba(255,255,255,0.24);`;
+    --lg-purple-border: #A78BFA;`;
 
 const JIM = `
     --lg-sheen: rgba(0,255,65,0.07);
@@ -72,9 +68,7 @@ const JIM = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 70%, transparent);
     --lg-shadow-tint: rgb(0,32,8);
-    --lg-cta-base: var(--accent);
-    --lg-cta-text: #001a08;
-    --lg-cta-sheen: rgba(255,255,255,0.24);`;
+    --lg-purple-border: color-mix(in srgb, var(--purple) 70%, transparent);`;
 
 export const GLASS_FX_CSS = `
   :root {${LIGHT}
@@ -83,10 +77,6 @@ export const GLASS_FX_CSS = `
     --lg-bg-hover: linear-gradient(135deg, var(--lg-sheen-hover) 0%, transparent 38%), var(--glass-surface-hover);
     --lg-rim: inset 0 1px 0 var(--lg-rim-hi), inset 1px 0 0 var(--lg-rim-side), inset 0 -1px 0 var(--lg-rim-lo);
     --lg-rim-hover: inset 0 1px 0 var(--lg-rim-hi-hover), inset 1px 0 0 var(--lg-rim-side), inset 0 -1px 0 var(--lg-rim-lo-hover);
-    /* 主色 CTA：霧面實色（不透明度 92%，可讀性不受底下色暈影響）＋斜向光＋邊緣高光＋主色調陰影 */
-    --lg-cta-bg: linear-gradient(135deg, var(--lg-cta-sheen) 0%, transparent 40%), color-mix(in srgb, var(--lg-cta-base) 92%, transparent);
-    --lg-cta-shadow: 0 6px 16px color-mix(in srgb, var(--lg-cta-base) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.16);
-    --lg-cta-shadow-hover: 0 10px 22px color-mix(in srgb, var(--lg-cta-base) 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.16);
   }
   @media (prefers-color-scheme: dark) {
     :root {${DARK}
@@ -114,19 +104,14 @@ export const GLASS_FX_CSS = `
   @media (hover: none) { .lg-live::after { display: none; } }
   @media (prefers-reduced-motion: reduce) { .lg-live::after { transition: none; } }
 
-  /* 主色 CTA 按鈕：jsx 只傳 className="lg-cta lg-live"，版面（height/padding/borderRadius/fontSize）自己用
-     inline style 決定；背景、文字色、陰影、hover/active/disabled 全在這裡（inline 寫了 background/boxShadow
-     會蓋掉這裡，所以不要寫）。標籤、選中態的純色填滿不用這個，維持原本的純色。 */
+  /* 主色 CTA 按鈕：維持原本的實色平面（background:var(--accent)、白字），只多一圈半透明白邊框跟游標邊緣光
+     （.lg-live）。jsx 只傳 className={CTA_CLASS}，版面（height/padding/borderRadius/fontSize）用 inline；
+     inline 寫了 background／color／border 會蓋掉這裡，所以不要寫。 */
   .lg-cta {
-    background: var(--lg-cta-bg); color: var(--lg-cta-text);
-    border: 1px solid rgba(255,255,255,0.28); box-shadow: var(--lg-cta-shadow);
-    -webkit-backdrop-filter: blur(12px) saturate(160%); backdrop-filter: blur(12px) saturate(160%);
+    background: var(--accent); color: #fff; border: 1px solid rgba(255,255,255,0.28);
     cursor: pointer; font-family: inherit;
-    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
   }
-  .lg-cta:hover { box-shadow: var(--lg-cta-shadow-hover); filter: brightness(1.06); transform: translateY(-1px); }
-  .lg-cta:active { transform: translateY(0); filter: brightness(0.97); }
-  .lg-cta:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; filter: saturate(0.5); transform: none; }
+  .lg-cta:disabled { opacity: 0.5; cursor: not-allowed; }
   .lg-cta.lg-live::after {
     background: radial-gradient(120px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.85), transparent 70%);
   }

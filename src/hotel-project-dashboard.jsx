@@ -3759,8 +3759,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
 
       {/* 批次操作列 */}
       {selectedIds.size > 0 && (
-        <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
-          background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, marginBottom:16 }}>
+        <div style={{ ...GLASS, display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
+          background:`linear-gradient(var(--accent-subtle),var(--accent-subtle)), ${GLASS_BG}`,
+          border:`1px solid ${C.accentBorder}`, boxShadow:RIM, borderRadius:12, marginBottom:16 }}>
           <span style={{ fontSize:13, color:C.accent, fontWeight:400 }}>已選取 {selectedIds.size} 筆</span>
           <button onClick={removeSelected}
             style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"#fff", border:"none",
@@ -4761,10 +4762,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             {(info.batch1Deadline||info.batch2Deadline)&&(
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }}>
                 {[
-                  { label:"第一批資料期限", date:info.batch1Deadline, sub:"基礎設定 ＋ FAQ", color:C.green, bg:C.greenLight },
-                  { label:"第二批資料期限", date:info.batch2Deadline, sub:"Showcase ＋ 廣告 ＋ QR", color:C.purple, bg:C.purpleLight },
-                ].map(({ label, date, sub, color, bg })=>(
-                  <div key={label} style={{ background:bg, border:`1px solid ${color}33`, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                  { label:"第一批資料期限", date:info.batch1Deadline, sub:"基礎設定 ＋ FAQ", color:C.green, tintVar:"var(--green-subtle)" },
+                  { label:"第二批資料期限", date:info.batch2Deadline, sub:"Showcase ＋ 廣告 ＋ QR", color:C.purple, tintVar:"var(--purple-subtle)" },
+                ].map(({ label, date, sub, color, tintVar })=>(
+                  // 玻璃＋同色系淡色疊層（跟第二批資料卡片完成態同一做法），不再用不透明的 xxxLight 底色
+                  <div key={label} style={{ ...GLASS, background:`linear-gradient(${tintVar},${tintVar}), ${GLASS_BG}`,
+                    border:`1px solid ${color}33`, boxShadow:RIM, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
                     <Ico name="calendar" size={22} color={color}/>
                     <div>
                       <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:500 }}>{label}</div>
@@ -4860,7 +4863,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                 )}
                 {info.integrations.some(k=>info.integrationNotes[k])&&(
-                  <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:10, border:`1px solid ${C.purple}33` }}>
+                  <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:10, border:"1px solid var(--lg-purple-border)" }}>
                     <div style={{ fontSize:11, color:C.purple, letterSpacing:1, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>串接功能備註</div>
                     {info.integrations.filter(k=>info.integrationNotes[k]).map(k=>(
                       <div key={k} style={{ marginBottom:10, paddingBottom:10, borderBottom:`1px solid ${C.purple}22` }}>
