@@ -1166,9 +1166,9 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                 fontSize:13, color:"var(--text)" }}>
                 通知顯示名稱：<strong>{displayName || "（請先至個人設定填入顯示名稱）"}</strong>
               </div>
-              <button onClick={handleSubscribe} disabled={loading}
+              <button onClick={handleSubscribe} disabled={loading} className={CTA_CLASS}
                 style={{ width:"100%", padding:"10px 0", background:C.accent, color:"#fff",
-                  border:"none", borderRadius:8, fontSize:14, fontWeight:500,
+                  borderRadius:8, fontSize:14, fontWeight:500,
                   cursor:"pointer", fontFamily:"inherit" }}>
                 {loading?"啟用中…":"啟用 Email 提醒"}
               </button>
@@ -4264,11 +4264,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       </div>
                     )}
                     <button onClick={()=>setJiraBoot(p=>({ ...p, open:true, step:"idle" }))}
-                      disabled={info.products.length === 0}
+                      disabled={info.products.length === 0} className={CTA_CLASS}
                       style={{ display:"inline-flex", alignItems:"center", gap:7, padding:"7px 15px",
                         background:info.products.length === 0 ? "var(--border)" : "#0052cc",
                         color: info.products.length === 0 ? "var(--text-subtle)" : "#fff",
-                        border:"none", borderRadius:8,
+                        borderRadius:8,
                         fontSize:13, fontWeight:400,
                         cursor: info.products.length === 0 ? "not-allowed" : "pointer",
                         fontFamily:"inherit" }}>
@@ -4737,10 +4737,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   const next=isSubscribed?curr.filter(id=>id!==project.id):[...curr,project.id];
                   const updated=await updateSub(projSub.id,{ subscribed_projects:next });
                   setProjSub(updated); setSubLoading(false);
-                }} style={{ flexShrink:0, display:"flex", alignItems:"center", gap:6,
+                }} style={{ ...GLASS, boxShadow:RIM, flexShrink:0, display:"flex", alignItems:"center", gap:6,
                   padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
-                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentLight:C.bg,
+                  background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?`linear-gradient(var(--accent-subtle),var(--accent-subtle)), ${GLASS_BG}`:GLASS_BG,
                   color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accent:C.textMid,
                   fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
                   {projSub&&(projSub.subscribed_projects||[]).includes(project.id)
