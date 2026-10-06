@@ -88,3 +88,10 @@ UI 品味與產品決策只能問 Jim；高知識密度題（如 Safari RFC 8291
 - 規則：esbuild 對 JSX 語法錯誤（如漏 `}}`）可能誤報成 regex 錯誤；先檢查報錯位置附近的括號配對，不要照字面找 regex
 - 正例：從報錯行往回找最近的 JSX 屬性 `{{...}}` 是否漏關
 - 反例：全檔搜尋 `/` 找「未終止的 regex」
+
+### #8 CSS 旋轉動畫的元素不要把起始角度寫在同一個 transform 上
+- 日期：2026-10-06
+- 觸發情境：OrganicLoader 的橢圓設了靜態 `transform: rotate(40deg)`，keyframes 只寫 `to { transform: rotate(360deg) }`，結果每轉一圈就「跳」回 40°（肉眼看是一跳一跳，且各顆速度不一）
+- 規則：只有 `to` 的 keyframes，起點會取元素本身的 transform，轉動量變成 360−起始角。起始角度改放外層另一個元素／`<g transform>`，旋轉的元素本身不帶 transform
+- 驗證法：暫停動畫，把 `currentTime` 設在 duration−1ms 與 duration+1ms，比較兩次 computed transform 的角度差，應接近 0
+- 反例：`style={{ transform:"rotate(40deg)", animation:"olSpin 3s linear infinite" }}`

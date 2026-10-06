@@ -32,8 +32,8 @@ const ORBIT = {
   blur: 4,
   alpha: "18 -7",
   breatheSec: 3.4,
-  // rot＝reduced-motion（不播動畫）時的靜態角度，讓靜止畫面是散開的團塊，不會排成直線（像驚嘆號）。
-  // 有動畫時 rot 不影響，動畫自己從 0° 轉起。
+  // rot＝起始角度（度）。reduced-motion 不播動畫時，靜止畫面靠它散成團塊、不會排成直線（像驚嘆號）；
+  // 有動畫時它只是起點，旋轉每圈依舊無縫。
   core: [
     { cx: 50, cy: 50, rx: 14, ry: 12, sec: 5.2, reverse: false, rot: 0 },
     { cx: 52.5, cy: 49, rx: 11, ry: 9.5, sec: 3.6, reverse: true, rot: 40 },
@@ -101,12 +101,24 @@ if (typeof document !== "undefined") {
 
 const dur = (s) => `${(s / SPEED).toFixed(2)}s`;
 
-const spinAround = (sec, reverse, rot = 0) => ({
+// 旋轉的 <g>：只放動畫（olSpin 固定 0→360°，所以每圈無縫接續）。
+// 靜態起始角度 rot 不能寫在這個 <g> 的 transform 上——keyframes 只有 to{} 時，起點會取該 transform，
+// 變成 rot→360° 每圈跳回 rot（一跳一跳）。因此 rot 放在外面另包一層 <g transform>，見 Spin。
+const spinStyle = (sec, reverse) => ({
   transformOrigin: "50px 50px",
   transformBox: "view-box",
-  transform: `rotate(${rot}deg)`,
   animation: `olSpin ${dur(sec)} linear infinite${reverse ? " reverse" : ""}`,
 });
+
+function Spin({ sec, reverse, rot = 0, children }) {
+  return (
+    <g transform={`rotate(${rot} 50 50)`}>
+      <g data-ol style={spinStyle(sec, reverse)}>
+        {children}
+      </g>
+    </g>
+  );
+}
 
 function Orbit({ gid }) {
   // 每個實例各自一個 filter id（useId），避免多個 loader 同時存在時互相參照
@@ -129,15 +141,15 @@ function Orbit({ gid }) {
           }}
         >
           {ORBIT.core.map((e, i) => (
-            <g key={i} data-ol style={spinAround(e.sec, e.reverse, e.rot)}>
+            <Spin key={i} sec={e.sec} reverse={e.reverse} rot={e.rot}>
               <ellipse cx={e.cx} cy={e.cy} rx={e.rx} ry={e.ry} />
-            </g>
+            </Spin>
           ))}
         </g>
         {ORBIT.satellites.map((s, i) => (
-          <g key={i} data-ol style={spinAround(s.sec, s.reverse, s.rot)}>
+          <Spin key={i} sec={s.sec} reverse={s.reverse} rot={s.rot}>
             <ellipse cx={50} cy={s.cy} rx={s.rx} ry={s.ry} />
-          </g>
+          </Spin>
         ))}
       </g>
     </svg>

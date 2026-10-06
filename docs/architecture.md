@@ -287,6 +287,22 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 這組數值是起始推薦值，不是精算出來的定論——沒辦法在這個環境肉眼確認實際濃淡，Jim 看過實際效果
 覺得太濃/太淡，直接調 `onMouseMove` 裡那兩個 0.4/0.16 數字即可，不用動其他邏輯。
 
+### Loading 動畫（2026-10-06 起）
+
+全站 loading 動畫統一由 `src/OrganicLoader.jsx` 提供，jsx 內只用 `<OrganicLoader size={…} />`，
+**不得再在呼叫端手寫 `animation:"spin …"` 或自帶 keyframes**。目前共 11 處呼叫
+（`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`）。
+
+- 款式：`orbit`（Gooey Orbit，預設）、`ripple`；換款式改該檔 `DEFAULT_VARIANT`，或呼叫端傳 `variant`。
+- 外觀參數（速度 `SPEED`、橢圓尺寸、軌道、黏連度）全在該檔上方的 `ORBIT` / `RIPPLE` 設定物件。
+- keyframes 在 `LOADER_CSS`，模組載入時以固定 id `organic-loader-css` 注入 `<head>`：
+  不放進 `GLOBAL_CSS`、不新增 CSS 變數，所以不需同步主題區塊與 jim mode 區塊。
+- 上色用 `currentColor`，預設 `var(--accent)`，隨主題自動變色；按鈕內有底色時傳 `color="#fff"` 之類。
+- 尺寸慣例：按鈕內 13、區塊 24~28、全頁 56；AI 打字中 18。
+- `prefers-reduced-motion`：所有會動的元素帶 `data-ol`，統一改為透明度呼吸。
+- 每個實例用 `useId` 產生獨立的 SVG filter id，多個 loader 同時存在不會互相干擾。
+- 舊的 `@keyframes spin`（`GLOBAL_CSS`）已無使用者，暫留未刪。
+
 ## 資料表
 
 | 資料表 | 說明 |
@@ -379,5 +395,5 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 ## 還原點（git tags，2026-07-03 實查）
 
 `before-jira-bootstrap`、`jira-bootstrap-stable`、`before-phase-C-ui-redesign`、
-`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`。
+`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`。
 慣例：任何重大改動前先打描述性 tag（`/checkpoint`）。
