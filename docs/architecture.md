@@ -295,11 +295,13 @@ Jim 回報淺色模式下卡片底色本來就接近白色，光暈原本的白�
 2. 游標邊緣光：加 `className="lg-live"`（目前：專案卡片、統計卡、Jira issue 卡）；1px 邊框跟著游標亮一段，
    全站一個 delegated、rAF 節流的 `pointermove` listener，觸控裝置停用。
 3. 色調陰影：大陰影用 `tint(a)`（`color-mix` 帶主題色，強度＝原本 rgba(0,0,0,a) 的 a）；邊緣高光用 `RIM`／`RIM_HOVER`。
-4. 文字：`tabular-nums`、`h1–h3 text-wrap:balance`、深色模式內文字重 400（`--lg-body-weight`）。
+4. 文字：`tabular-nums`、`h1–h3 text-wrap:balance`（字重維持原本的 300，Jim 決定不動）。
    深色的 `--text-mid`／`--text-subtle` 也在同一天調亮（#B8B8C2／#A4A4B0）——斜向光會把卡片左上角底色提亮，
    原值在最壞情況（藍色暈 + 光）對比掉到約 3.4:1。
 新增 `--lg-*` token 要在 `glassFx.js` 的五個區塊都定義：`:root`、dark media、`html[data-theme=light]`、
 `html[data-theme=dark]`、`html.jim-mode-effect`（jim 放最後，同 specificity 靠順序）。
+5. 主色 CTA：`CTA_CLASS`（`.lg-cta`）——霧面實色＋斜向光＋邊緣光＋主色調陰影；淺色白字、深色／jim 深色字（對比數字見 `todo.md`）。
+   目前只套在主頁「+ 新增專案」，其餘主色按鈕的盤點在 `todo.md`。
 還原：tag `before-glass-v2-2026-10-06`，或把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import。
 `color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器只會失去大陰影。
 
@@ -413,5 +415,5 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 ## 還原點（git tags，2026-07-03 實查）
 
 `before-jira-bootstrap`、`jira-bootstrap-stable`、`before-phase-C-ui-redesign`、
-`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`、`before-glass-v2-2026-10-06`。
+`before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`、`before-glass-v2-2026-10-06`、`before-cta-tabicons-2026-10-06`。
 慣例：任何重大改動前先打描述性 tag（`/checkpoint`）。

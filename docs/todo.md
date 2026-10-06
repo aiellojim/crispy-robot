@@ -146,11 +146,18 @@
   4. **文字細節**：`body{font-variant-numeric:tabular-nums}`、`h1–h3{text-wrap:balance}`。（`index.css` 本來就有 `optimizeLegibility`＋antialiased；百分比大數字本來就是 DM Mono 等寬。）
 - 新增 token 的規則：`--lg-*` 要在 `glassFx.js` 的五個區塊（`:root`、dark media、`html[data-theme=light]`、`html[data-theme=dark]`、`html.jim-mode-effect`）都定義，jim 放最後。
 - 還原：`git tag before-glass-v2-2026-10-06`；或只把 `GLASS.background` 改回 `"var(--glass-surface)"` 並拿掉 import，即回到原本材質。
-- **2026-10-06 追加（Jim 實機回饋：深色次級文字可讀性）**：深色 `--text-mid` #A3A3A3→#B8B8C2、`--text-subtle` #8C8C8C→#A4A4B0，深色/jim 內文字重 300→400（`glassFx.js` 的 `--lg-body-weight`，要退回改成 300）。
+- **2026-10-06 追加（Jim 實機回饋：深色次級文字可讀性）**：深色 `--text-mid` #A3A3A3→#B8B8C2、`--text-subtle` #8C8C8C→#A4A4B0。字重曾試過深色 300→400，Jim 決定不動，已移除。
 - 驗證狀況：build、eslint（0 新增問題）通過；無頭 Chromium 渲染確認淺/深色的斜向光、邊緣光（mask 只留 1px 邊框）、色調陰影都有生效。**真實頁面的實際觀感未驗證，需 Jim 實機看。**
 - 已知限制：`color-mix()` 需 Chrome 111／Safari 16.2／Firefox 113 以上，更舊的瀏覽器大陰影會消失（不影響功能）。
-- 可選的後續（Jim 沒要求、沒動）：body `font-weight` 300→400、細線（hairline）處理、圓角階層。
+- 可選的後續（Jim 沒要求、沒動）：細線（hairline）處理、圓角階層。
 - `dev/glass-preview.*`、`dev/glass-base.css`、`dev/glass-proposed.css` 是**被否決的 v2 提案**的 A/B 預覽，已過時，建議之後 `git rm`；已發佈的 claude.ai 預覽 artifact 同理。
+
+### CTA 玻璃化／tab icon／AI 輸入欄（2026-10-06，等 Jim 實機確認）
+- **AI 輸入欄**：`rows={1}` 預設單行，`useEffect([input])` 依 `scrollHeight` 自動長高，上限 `AI_INPUT_MAX_H`=128px（5 行）後內部捲動；行高改 20px、上下 padding 14px，單行高度＝48px，送出鈕（32px、bottom:8）剛好置中，多行時貼在最後一行旁。
+- **專案頁 tab bar**：圓圈編號換成 16px SVG icon（`STEP_ICONS`：building／clipboardList／layers／checkSquare／calendar／grid，鎖定時顯示 lock）；`ICONS` 新增 `layers`、`checkSquare`。
+- **主色 CTA 樣式**（`glassFx.js` 的 `.lg-cta`，jsx 用 `className={CTA_CLASS}`）：92% 不透明霧面實色＋斜向光＋邊緣高光＋游標邊緣光＋主色調陰影；淺色底色＝accent 78%＋22% 黑（實測白字對比約 4.5–4.8:1，只有最左上角約 3.9）、深色改深色字（約 6.5–7.7:1，原本白字 2.5:1）、jim 用近黑字。版面（height/padding/radius）用 inline，**不要在 inline 寫 background／boxShadow／color**（會蓋掉 class）。目前只套在主頁「+ 新增專案」。
+- **其他主色按鈕盤點（尚未套用，待 Jim 看過預覽再決定）**：NavRow「下一步」（`nextColor` 會依步驟變 accent/purple/green，需要支援 `--lg-cta-base` 覆寫）、TasksTab「+ 新增任務」、任務 modal「新增任務／儲存變更」、「前往專案資訊」、Jira Epic modal「完成」與「確認建立」（Jira 藍 #0052cc）、「確認推送」、登入頁「寄送登入連結」、設定頁「儲存設定」、通知面板「訂閱」與 email「新增」、AI 送出鈕（小型 icon 鈕）。「刪除選取」是紅色破壞性按鈕，建議之後獨立做紅色版本。標籤／badge／選中態純色填滿維持原樣。
+- **玻璃材質稽核**：第二批資料卡片（未完成態用 `var(--surface)` 不透明底色）是漏改，已修成 `GLASS`（完成態＝紫色淡色疊在玻璃上）。`architecture.md` Batch 4 當時記載「第二批資料」已玻璃化，實際沒改到那兩處 `var(--surface)` 字面值。其餘尚未處理的疑似遺漏：全域 Header 的 🔔 通知鈕／AI 鈕（未選中）／使用者選單鈕與 `ThemeToggle` 外框（`surface-raised` 不透明）、總覽頁三張期限色塊（`C.xxxLight` 不透明）、專案頁「訂閱通知」切換鈕未選中態（`C.bg`）、TasksTab 批次操作列。輸入框、巢狀小面板、badge 依既有規則維持不透明。
 
 ## 長期方向
 

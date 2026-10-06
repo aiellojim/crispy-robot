@@ -64,7 +64,7 @@
 - `src/App.jsx`（122 行）：Vite 官方樣板 counter，**與本專案無關**，勿誤讀。
 - `src/main.jsx`（8 行）：進入點。
 - `src/OrganicLoader.jsx`（2026-10-06 新增）：全站 loading 動畫的**唯一替換點**。jsx 內共 11 處 `<OrganicLoader .../>`（`grep -n "<OrganicLoader" src/hotel-project-dashboard.jsx`），取代原本的 `animation:"spin ..."` 轉圈。
-- `src/glassFx.js`（2026-10-06 新增）：Liquid Glass 的質感加成層，模組載入時把 CSS 注入 `<head>`（id=`glass-fx-css`）並掛一個全站 `pointermove` listener。匯出 `GLASS_BG`／`GLASS_BG_HOVER`（斜向光背景）、`RIM`／`RIM_HOVER`（邊緣高光）、`tint(a)`（色調陰影）；`className="lg-live"` 啟用游標邊緣光。jsx 內引用處：`grep -n "GLASS_BG\|RIM\|tint(\|lg-live" src/hotel-project-dashboard.jsx`。材質參數（透明度/blur）仍在 `GLASS` 常數與 GLOBAL_CSS 的 `--glass-surface`，不在這個檔案。細節見 `docs/todo.md`「Glass v2」。
+- `src/glassFx.js`（2026-10-06 新增）：Liquid Glass 的質感加成層，模組載入時把 CSS 注入 `<head>`（id=`glass-fx-css`）並掛一個全站 `pointermove` listener。匯出 `GLASS_BG`／`GLASS_BG_HOVER`（斜向光背景）、`RIM`／`RIM_HOVER`（邊緣高光）、`tint(a)`（色調陰影）、`CTA_CLASS`（主色 CTA 按鈕，目前只有「+ 新增專案」）；`className="lg-live"` 啟用游標邊緣光。jsx 內引用處：`grep -n "GLASS_BG\|RIM\|tint(\|lg-live" src/hotel-project-dashboard.jsx`。材質參數（透明度/blur）仍在 `GLASS` 常數與 GLOBAL_CSS 的 `--glass-surface`，不在這個檔案。細節見 `docs/todo.md`「Glass v2」。
   - 改外觀只動此檔：`DEFAULT_VARIANT`（orbit / ripple）、`SPEED`、`ORBIT` / `RIPPLE` 設定物件、`VARIANTS` 註冊表、`LOADER_CSS`（keyframes，模組載入時自動注入 `<head>`，不動 `GLOBAL_CSS`、不新增 CSS 變數）。
   - 呼叫端 props：`size`（高度；按鈕 13、區塊 24~28、全頁 56）、`color`（預設 `var(--accent)`）、`variant`（`orbit` / `ripple` / `cradle`）、`label`、`style`。
   - 唯一不用預設款的地方：AI 打字泡泡（`grep -n 'variant="cradle"'`）用 `cradle`（牛頓擺，size 20，寬約 3.7 倍高）。

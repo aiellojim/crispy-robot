@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import OrganicLoader from "./OrganicLoader.jsx";
-import { GLASS_BG, GLASS_BG_HOVER, RIM, RIM_HOVER, tint } from "./glassFx.js";
+import { GLASS_BG, GLASS_BG_HOVER, RIM, RIM_HOVER, CTA_CLASS, tint } from "./glassFx.js";
 
 // ─── Supabase ─────────────────────────────────────────────────
 const sb = createClient(
@@ -676,6 +676,8 @@ const ICONS = {
   bellOff:     "M13.73 21a2 2 0 0 1-3.46 0 M18.63 13A17.89 17.89 0 0 1 18 8 M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14 M18 8a6 6 0 0 0-9.33-5 M1 1l22 22",
   clipboardList:"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z M9 12h6 M9 16h4",
   repeat:      "M17 2l4 4-4 4 M3 11V9a4 4 0 0 1 4-4h14 M7 22l-4-4 4-4 M21 13v2a4 4 0 0 1-4 4H3",
+  layers:      "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
+  checkSquare: "M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
   lock:        "M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z M7 11V7a5 5 0 0 1 10 0v4",
   refresh:     "M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15",
 };
@@ -2585,6 +2587,10 @@ function renderMarkdown(md) {
   return h;
 }
 
+// AI 輸入欄：預設單行，隨內容自動長高，超過 5 行（5×20px 行高 + 上下 padding 28px）改成內部捲動。
+// 送出鈕貼底（bottom:8），單行時剛好置中、多行時貼在最後一行旁邊——慣例見 todo.md／對話紀錄。
+const AI_INPUT_MAX_H = 128;
+
 const AiPanel = ({ projects, allTasks, onClose }) => {
   const [msgs,   setMsgs]   = useState([]);
   const [input,  setInput]  = useState("");
@@ -2593,6 +2599,15 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
   const inputRef    = useRef(null);
   const composingRef = useRef(false);
   const andersonRef = useRef({ step: 0, at: 0 }); // 🥚🥚 wake up, mr. anderson combo 進度
+
+  // 輸入內容變動（含送出後清空）就重算高度：先設 auto 才能量到縮小後的 scrollHeight。
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, AI_INPUT_MAX_H) + "px";
+    el.style.overflowY = el.scrollHeight > AI_INPUT_MAX_H ? "auto" : "hidden";
+  }, [input]);
 
   // Build project context summary — projects + progress + tasks
   const projectCtx = useMemo(() => {
@@ -2849,12 +2864,12 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
             <textarea ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
               onCompositionStart={()=>{ composingRef.current = true; }}
               onCompositionEnd={()=>{ composingRef.current = false; }}
-              onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={2}
+              onKeyDown={handleKey} placeholder="輸入問題，Enter 送出…" rows={1}
               disabled={!GEMINI_API_KEY}
               style={{ display:"block", width:"100%", border:"none", background:"transparent",
-                resize:"none", fontSize:13, lineHeight:1.6, outline:"none",
+                resize:"none", fontSize:13, lineHeight:"20px", outline:"none", overflowY:"hidden",
                 color:"var(--text)", fontFamily:"inherit",
-                padding:"10px 48px 10px 14px", boxSizing:"border-box" }}/>
+                padding:"14px 48px 14px 14px", boxSizing:"border-box" }}/>
             <button onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
               style={{ position:"absolute", right:8, bottom:8, width:32, height:32,
                 borderRadius:9, border:"none",
@@ -4109,6 +4124,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
 
   // Steps: 0=info, 1=batch1, 2=batch2, 3=jira, 4=tasks, 5=overview
   const STEPS = ["專案資訊","第一批資料","第二批資料","Jira 子任務","任務紀錄","總覽"];
+  // 每個分頁對應的 SVG icon（原本是圓圈編號，數字在圓圈裡視覺偏下，換成 icon 就沒有這個問題）
+  const STEP_ICONS = ["building","clipboardList","layers","checkSquare","calendar","grid"];
 
   const LockScreen = ({ msg }) => (
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
@@ -4169,13 +4186,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 cursor:locked?"not-allowed":"pointer", fontSize:13,
                 fontWeight:step===i?700:500, transition:"all 0.15s",
                 display:"flex", alignItems:"center", gap:7 }}>
-              <span style={{ width:20, height:20, borderRadius:"50%", display:"inline-flex",
-                alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:500,
-                background:locked?C.bg:step===i?C.accentLight:C.bg,
-                border:`1.5px solid ${locked?C.border:step===i?C.accent:C.border}`,
-                color:locked?C.border:step===i?C.accent:C.textLight }}>
-                {locked?<Ico name="lock" size={11} color="currentColor"/>:i+1}
-              </span>
+              <Ico name={locked?"lock":STEP_ICONS[i]} size={16} color="currentColor" strokeWidth={step===i?1.9:1.6}
+                style={{ flexShrink:0, display:"block" }}/>
               {s}
             </button>
           );
@@ -4627,8 +4639,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {hasAva&&BATCH2_ITEMS.map((item,idx)=>{
                   const isDone = !!batch2Checked[item];
                   return (
-                    <div key={item} style={{ background:isDone?"var(--purple-subtle)":"var(--surface)",
-                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
+                    <div key={item} style={{ ...GLASS,
+                      // 完成態＝紫色淡色疊在玻璃上（不是換成不透明底色），未完成＝純玻璃
+                      background:isDone?`linear-gradient(var(--purple-subtle),var(--purple-subtle)), ${GLASS_BG}`:GLASS_BG,
+                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
                       borderRadius:12, marginBottom:12, overflow:"hidden" }}>
                       {/* 卡片 header：點擊切換勾選 */}
                       <div onClick={()=>toggleCheck(setBatch2Checked, item, "batch2_checked")}
@@ -4653,8 +4667,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {hasGw&&(()=>{
                   const isDone = !!batch2Checked[GW_ITEM];
                   return (
-                    <div style={{ background:isDone?"var(--purple-subtle)":"var(--surface)",
-                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`,
+                    <div style={{ ...GLASS,
+                      // 完成態＝紫色淡色疊在玻璃上（不是換成不透明底色），未完成＝純玻璃
+                      background:isDone?`linear-gradient(var(--purple-subtle),var(--purple-subtle)), ${GLASS_BG}`:GLASS_BG,
+                      border:`1px solid ${isDone?"var(--purple)":"var(--border)"}`, boxShadow:RIM,
                       borderRadius:12, marginBottom:12, overflow:"hidden" }}>
                       <div onClick={()=>toggleCheck(setBatch2Checked, GW_ITEM, "batch2_checked")}
                         style={{ display:"flex", alignItems:"center", gap:10, padding:"14px 16px", cursor:"pointer" }}>
@@ -5602,10 +5618,9 @@ export default function App() {
                   )}
                 </div>
               </button>
-              <button onClick={handleNew}
-                style={{ height:36, background:"var(--accent)", color:"#fff", border:"none",
-                  borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:400,
-                  cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
+              <button onClick={handleNew} className={CTA_CLASS}
+                style={{ height:36, borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:500,
+                  whiteSpace:"nowrap" }}>
                 + 新增專案
               </button>
             </div>

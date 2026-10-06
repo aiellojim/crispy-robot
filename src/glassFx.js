@@ -1,11 +1,12 @@
 // glassFx — Liquid Glass 的「質感加成」層（2026-10-06）。
 //
-// 這個檔案只負責四件事，全部疊在既有毛玻璃（--glass-surface／blur(20px) saturate(160%)／
+// 這個檔案負責五件事，全部疊在既有毛玻璃（--glass-surface／blur(20px) saturate(160%)／
 // canvas 色暈）之上，不改變它們：
 //   1. 斜向光   --lg-bg / --lg-bg-hover：左上角一道 135° 的柔光，疊在 --glass-surface 上面
 //   2. 邊緣光   .lg-live：游標移到元素上時，邊框（1px）會跟著游標位置亮起一小段
 //   3. 色調陰影 tint(a)：大陰影不用純黑，改成帶一點主題色的深色（淺色=藍灰、深色=靛黑、jim=深綠）
-//   4. 文字細節 body 等寬數字（tabular-nums）、標題 text-wrap:balance、深色模式內文字重 400
+//   4. 主色 CTA   .lg-cta：霧面實色＋斜向光＋邊緣光＋主色調陰影（CTA_CLASS）
+//   5. 文字細節 body 等寬數字（tabular-nums）、標題 text-wrap:balance
 //
 // 想調整外觀時只動這個檔案的 token（下面 GLASS_FX_CSS 的五個區塊）；jsx 那邊只引用
 // GLASS_BG / GLASS_BG_HOVER / RIM / RIM_HOVER / tint()，不再手寫字面值。
@@ -22,6 +23,7 @@ export const GLASS_BG = "var(--lg-bg)";
 export const GLASS_BG_HOVER = "var(--lg-bg-hover)";
 export const RIM = "var(--lg-rim)";
 export const RIM_HOVER = "var(--lg-rim-hover)";
+export const CTA_CLASS = "lg-cta lg-live"; // 主色 CTA 按鈕用，樣式見 GLASS_FX_CSS 的 .lg-cta
 
 // 色調陰影：保留各處原本的強度（a = 原本 rgba(0,0,0,a) 的 alpha），只把顏色換成主題色調。
 // color-mix 需要 Chrome 111 / Safari 16.2 / Firefox 113 以上；更舊的瀏覽器整條 box-shadow 會失效
@@ -42,7 +44,9 @@ const LIGHT = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 62%, transparent);
     --lg-shadow-tint: rgb(28,38,84);
-    --lg-body-weight: 300;`;
+    --lg-cta-base: color-mix(in srgb, var(--accent) 78%, #000);
+    --lg-cta-text: #fff;
+    --lg-cta-sheen: rgba(255,255,255,0.20);`;
 
 const DARK = `
     --lg-sheen: rgba(255,255,255,0.09);
@@ -54,7 +58,9 @@ const DARK = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: rgba(255,255,255,0.5);
     --lg-shadow-tint: rgb(2,4,18);
-    --lg-body-weight: 400;`;
+    --lg-cta-base: var(--accent);
+    --lg-cta-text: #1A1108;
+    --lg-cta-sheen: rgba(255,255,255,0.24);`;
 
 const JIM = `
     --lg-sheen: rgba(0,255,65,0.07);
@@ -66,7 +72,9 @@ const JIM = `
     --lg-rim-lo-hover: rgba(0,0,0,0.06);
     --lg-edge: color-mix(in srgb, var(--accent) 70%, transparent);
     --lg-shadow-tint: rgb(0,32,8);
-    --lg-body-weight: 400;`;
+    --lg-cta-base: var(--accent);
+    --lg-cta-text: #001a08;
+    --lg-cta-sheen: rgba(255,255,255,0.24);`;
 
 export const GLASS_FX_CSS = `
   :root {${LIGHT}
@@ -75,6 +83,10 @@ export const GLASS_FX_CSS = `
     --lg-bg-hover: linear-gradient(135deg, var(--lg-sheen-hover) 0%, transparent 38%), var(--glass-surface-hover);
     --lg-rim: inset 0 1px 0 var(--lg-rim-hi), inset 1px 0 0 var(--lg-rim-side), inset 0 -1px 0 var(--lg-rim-lo);
     --lg-rim-hover: inset 0 1px 0 var(--lg-rim-hi-hover), inset 1px 0 0 var(--lg-rim-side), inset 0 -1px 0 var(--lg-rim-lo-hover);
+    /* 主色 CTA：霧面實色（不透明度 92%，可讀性不受底下色暈影響）＋斜向光＋邊緣高光＋主色調陰影 */
+    --lg-cta-bg: linear-gradient(135deg, var(--lg-cta-sheen) 0%, transparent 40%), color-mix(in srgb, var(--lg-cta-base) 92%, transparent);
+    --lg-cta-shadow: 0 6px 16px color-mix(in srgb, var(--lg-cta-base) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.16);
+    --lg-cta-shadow-hover: 0 10px 22px color-mix(in srgb, var(--lg-cta-base) 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.16);
   }
   @media (prefers-color-scheme: dark) {
     :root {${DARK}
@@ -102,12 +114,26 @@ export const GLASS_FX_CSS = `
   @media (hover: none) { .lg-live::after { display: none; } }
   @media (prefers-reduced-motion: reduce) { .lg-live::after { transition: none; } }
 
+  /* 主色 CTA 按鈕：jsx 只傳 className="lg-cta lg-live"，版面（height/padding/borderRadius/fontSize）自己用
+     inline style 決定；背景、文字色、陰影、hover/active/disabled 全在這裡（inline 寫了 background/boxShadow
+     會蓋掉這裡，所以不要寫）。標籤、選中態的純色填滿不用這個，維持原本的純色。 */
+  .lg-cta {
+    background: var(--lg-cta-bg); color: var(--lg-cta-text);
+    border: 1px solid rgba(255,255,255,0.28); box-shadow: var(--lg-cta-shadow);
+    -webkit-backdrop-filter: blur(12px) saturate(160%); backdrop-filter: blur(12px) saturate(160%);
+    cursor: pointer; font-family: inherit;
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+  }
+  .lg-cta:hover { box-shadow: var(--lg-cta-shadow-hover); filter: brightness(1.06); transform: translateY(-1px); }
+  .lg-cta:active { transform: translateY(0); filter: brightness(0.97); }
+  .lg-cta:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; filter: saturate(0.5); transform: none; }
+  .lg-cta.lg-live::after {
+    background: radial-gradient(120px circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.85), transparent 70%);
+  }
+
   /* 文字細節：數字等寬（百分比、日期、計數跳動時不會左右抖動；字型沒有 tnum 時等於沒作用），
      標題換行平衡。 */
   body { font-variant-numeric: tabular-nums; }
-  /* 深色模式內文字重 300→400（細字在深底上發虛，次級文字最明顯）；淺色維持 300。
-     用 html body 提高 specificity，才壓得過 GLOBAL_CSS 的 body{font-weight:300}。要退回：把 DARK／JIM 的 --lg-body-weight 改成 300。 */
-  html body { font-weight: var(--lg-body-weight); }
   h1, h2, h3 { text-wrap: balance; }
 `;
 
