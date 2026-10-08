@@ -2393,11 +2393,15 @@ function triggerLumos() { applyThemeEgg("light"); }
 function triggerNox()   { applyThemeEgg("dark"); }
 
 // jim mode / go rogue：AI 語氣人設切換。isPersonaActive() 由 sendText 組 systemPrompt 時讀取，
-// 兩個開關獨立存在 localStorage，任一個開著人設就生效，互不覆蓋彼此的開關狀態。
+// 兩個開關獨立，任一個開著人設就生效，互不覆蓋彼此的開關狀態。
+// jim mode 存 localStorage（連同配色/HUD，重新整理後保留）；go rogue 只存在記憶體，
+// 重新整理頁面就回到正常語氣（2026-10-08：之前存 localStorage 會跨重整殘留且畫面無指示，
+// 使用者以為是關的再打一次其實是關掉）。舊版留在 localStorage 的 key 載入時順手清掉。
 const JIM_MODE_KEY   = "hotel-dash-jim-mode";
-const ROGUE_MODE_KEY = "hotel-dash-rogue-mode";
+let rogueModeOn = false;
+try { localStorage.removeItem("hotel-dash-rogue-mode"); } catch { /* 安靜失敗 */ }
 function isJimMode()       { return localStorage.getItem(JIM_MODE_KEY) === "1"; }
-function isRogueMode()     { return localStorage.getItem(ROGUE_MODE_KEY) === "1"; }
+function isRogueMode()     { return rogueModeOn; }
 function isPersonaActive() { return isJimMode() || isRogueMode(); }
 
 // jim mode 同時橋接到 App 的 setJimMode，一次切三件事：hacker CSS 主題
@@ -2406,10 +2410,8 @@ let toggleJimModeEgg = () => {};
 function triggerJimMode() { toggleJimModeEgg(); }
 
 // go rogue 只切 AI 語氣人設，跟 jim mode 的視覺/HUD 部分無關，純 localStorage 開關，
-// 不需要橋接 React state。
-function triggerRogueMode() {
-  localStorage.setItem(ROGUE_MODE_KEY, isRogueMode() ? "0" : "1");
-}
+// 不需要橋接 React state（旗標在記憶體，重新整理即重置）。
+function triggerRogueMode() { rogueModeOn = !rogueModeOn; }
 
 const JIM_PERSONA_PROMPT =
   "現在切換成「Jim 專屬大姊姊」人設：說話直白、毒舌，喜歡吐槽數據和進度落後，但心地其實" +
@@ -2581,10 +2583,16 @@ const EASTER_EGGS = [
   // 本身）。內部代號（id/localStorage key/CSS class/DebugHud 標題等）維持 jimmode/jim-mode-effect
   // 不變，只有玩家輸入比對的字串換掉，reply 文字裡的「Jim mode」是功能顯示名稱不是觸發詞，不用改。
   { id:"jimmode",    match: (text) => /^execute order 66$/i.test(text),
-    reply: () => isJimMode() ? "Jim mode 關閉，恢復正常。" : "Jim mode 啟動。配色、debug 資訊、講話語氣都換了，再打一次關掉。",
+    // reply() 在 effect() 之前執行（見 sendText），所以這裡讀到的是「切換前」的狀態。
+    reply: () => isJimMode()
+      ? (isRogueMode() ? "Jim mode 關閉，配色與 debug 資訊恢復；go rogue 還開著，語氣維持不變。" : "Jim mode 關閉，恢復正常。")
+      : (isRogueMode() ? "Jim mode 啟動，配色與 debug 資訊換了；go rogue 已經開著，語氣沒有變化。" : "Jim mode 啟動。配色、debug 資訊、講話語氣都換了，再打一次關掉。"),
     effect: () => triggerJimMode() },
   { id:"gorogue",    match: (text) => /^go rogue$/i.test(text),
-    reply: () => isRogueMode() ? "收斂了，恢復正常語氣。" : "好，我豁出去了。",
+    // 同上，讀的是切換前的狀態；Jim mode 開著時 rogue 的切換不會改變實際語氣，要照實說。
+    reply: () => isRogueMode()
+      ? (isJimMode() ? "go rogue 收掉了，但 Jim mode 還開著，語氣維持不變。" : "收斂了，恢復正常語氣。")
+      : (isJimMode() ? "go rogue 記下了，不過 Jim mode 已經開著，語氣本來就是這樣。" : "好，我豁出去了。"),
     effect: () => triggerRogueMode() },
 
   // 2026-08-21 新增 7 個，湊到 35 個：3 個視覺效果 + 4 句電影台詞（純文字回應，跟其他非視覺彩蛋
@@ -2802,7 +2810,10 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     // 是否設定影響（純前端回覆），也不會出現在打給 Google 的請求內容裡。
     const egg = EASTER_EGGS.find(e => e.match(trimmed));
     if (egg) {
-      setMsgs(prev => [...prev, { role:"model", text: egg.reply({ projects, allTasks, msgs }) }]);
+      // reply 要在 effect() 之前先算好：updater 函式在 render 時才執行，那時 effect 早已翻轉
+      // 旗標，reply 讀到的會是切換後的狀態（回覆文字與實際開關相反的 bug，2026-10-08）。
+      const replyText = egg.reply({ projects, allTasks, msgs });
+      setMsgs(prev => [...prev, { role:"model", text: replyText }]);
       if (egg.id) recordEggUnlock(egg.id);
       egg.effect?.();
       return;

@@ -455,3 +455,11 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 `before-jira-bootstrap`、`jira-bootstrap-stable`、`before-phase-C-ui-redesign`、
 `before-push-subscriptions-refactor`、`before-web-push-encryption`、`before-harness-setup`、`before-organic-loader-2026-10-06`、`before-glass-v2-2026-10-06`、`before-cta-tabicons-2026-10-06`。
 慣例：任何重大改動前先打描述性 tag（`/checkpoint`）。
+
+## AI 人設切換（execute order 66 / go rogue）
+
+- `isPersonaActive() = isJimMode() || isRogueMode()`，兩個開關獨立，任一個開著 AI 就套用 `JIM_PERSONA_PROMPT`（同一份 prompt）。
+- **jim mode** 存 localStorage（`hotel-dash-jim-mode`，連同配色、DebugHud，重新整理後保留）；**go rogue** 只存在記憶體（`rogueModeOn`），**重新整理頁面即回到正常語氣**。舊版的 `hotel-dash-rogue-mode` localStorage key 載入時會清掉。
+- `EASTER_EGGS` 的 `reply()` 一律在 `effect()` 之前於 `sendText` 內先算好（`const replyText = egg.reply(...)`），再丟進 `setMsgs`。**不要把 `reply()` 放進 `setMsgs(prev => ...)` 的 updater**：updater 在 render 時才執行，那時 `effect()` 已翻轉旗標，回覆文字會與實際開關相反（2026-10-08 踩到：打 `go rogue` 回「豁出去了」但實際是被關掉）。
+- 兩個開關的回覆文字描述的是「切換後實際生效的語氣」：另一個開關還開著時，會明說語氣不變。
+- 還原點 tag：`before-rogue-fix-2026-10-08`。
