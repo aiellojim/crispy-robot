@@ -45,7 +45,7 @@ export const LIGHT_TOKENS = `
     --cal-period-bg: #FFE4E6; --cal-period-text:  #9F1239; --cal-period-border: #FCA5A5;
     --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0891b2; --prod-aca:#0e7a5a;
-    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca;
+    --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca; --prod-xviewer:#4d7c0f;
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
     --canvas-glow-1: rgba(30,111,181,0.40);
@@ -87,7 +87,7 @@ export const DARK_TOKENS = `
     --cal-period-bg: #2D0A14; --cal-period-text:  #FCA5A5; --cal-period-border: #881337;
     --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
-    --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8;
+    --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8; --prod-xviewer:#8cc63f;
     --glass-surface: rgba(33,33,43,0.55);
     --glass-surface-hover: rgba(42,42,54,0.72);
     --canvas-glow-1: rgba(77,144,212,0.40);

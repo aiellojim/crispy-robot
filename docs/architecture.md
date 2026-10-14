@@ -22,8 +22,10 @@
 → 3. Jira 子任務 → 4. 任務紀錄 → 5. 總覽
 
 ### 產品線與串接
-- 產品線：`AVA` / `AVT` / `ACA` / `TMSP` / `GW` / `KMS`
-- 串接功能：`PBX` / `PMS` / `TMS` / `RCU` / `POS` / `IPTV`
+- 產品線：`AVA` / `AVT` / `ACA` / `TMSP` / `GW` / `KMS` / `SiteChat` / `XViewer`
+  （`XViewer` 2026-10-14 新增：目前只是可勾選的產品標籤＋顏色 `--prod-xviewer`，**沒有**對應設定表單、checklist、
+  Jira 子任務範本——`jira-proxy` 的 `TEMPLATES[p] ?? []` 對沒有範本的產品直接略過，不會出錯）
+- 串接功能：`PBX` / `PMS` / `TMS` / `RCU` / `POS` / `IPTV` / `RSVN` / `Robot`
 
 ### zIndex 圖層順序
 日期格子(1) < Jira 狀態下拉(100) < 行事曆展開卡片(9999) < Global/專案頁 Header(10000)

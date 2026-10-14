@@ -12,7 +12,7 @@ const sb = createClient(
 );
 
 // ─── Constants ────────────────────────────────────────────────
-const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS", "SiteChat"];
+const PRODUCTS     = ["AVA", "AVT", "ACA", "TMSP", "GW", "KMS", "SiteChat", "XViewer"];
 const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV", "RSVN", "Robot"];
 // ACA 方案分級（2026-09-04）：同一個 ACA 產品換方案要重新簽約，但不會有一家飯店同時持有兩種
 // ACA 方案，所以刻意不比照 PRODUCTS 另開 "ACA Pro" 這種標籤——方案本身是 projects.aca_plan 的
@@ -26,7 +26,7 @@ const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞",
 const PIC_OPTIONS = ["MarkChen", "AlanFang"];
 const PRODUCT_COLORS = {
   AVA:"var(--prod-ava)", AVT:"var(--prod-avt)", ACA:"var(--prod-aca)",
-  TMSP:"var(--prod-tmsp)", GW:"var(--prod-gw)", KMS:"var(--prod-kms)", SiteChat:"var(--prod-sitechat)"
+  TMSP:"var(--prod-tmsp)", GW:"var(--prod-gw)", KMS:"var(--prod-kms)", SiteChat:"var(--prod-sitechat)", XViewer:"var(--prod-xviewer)"
 };
 
 // "TMS Pro 設定" 原本是這個陣列的第 10 項，但這個陣列整體只在 hasAva 時才會渲染/計入分母——
