@@ -471,3 +471,4 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - 前提：`user_profiles.display_name` 必須與 `projects.pic` 完全一致（例：`AlanFang`、`MarkChen`、`Daisy Chen`）。
 - `user_profiles` 由 `auth.users` AFTER INSERT trigger（`on_auth_user_created_profile` → `handle_new_user_profile()`，SECURITY DEFINER、search_path ''、已 revoke execute）自動建立，僅限 `@aiello.ai`；`display_name` 留空待本人填寫，`jira_email` 預設為登入 email。client portal 客戶帳號不建 profile。
 - 沒有 display_name 時，AI 會請使用者告知 PIC 名稱，不猜測。
+- 人設（`JIM_PERSONA_PROMPT`）僅在 `display_name` 為 Jim Chao 時附加（`isPersonaOwner`）；其他人觸發 jim mode / go rogue，AI 維持正常語氣。

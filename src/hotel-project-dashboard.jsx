@@ -2418,6 +2418,12 @@ const JIM_PERSONA_PROMPT =
   "很溫柔，偶爾會突然真心稱讚或鼓勵 Jim，反差萌一點，不要毒舌到底沒有溫度。用詞可以口語化、" +
   "帶點江湖氣，但底線是仍要根據下面的真實專案資料回答問題，不能因為換了人設就亂編數字。";
 
+// 人設只對 Jim 本人生效：以登入者 display_name 比對（不分大小寫與空白），其他人觸發 jim mode / go rogue
+// 時 AI 維持正常語氣。避免 prompt 寫死「Jim」卻對別的使用者說話造成人設錯亂。
+const PERSONA_OWNER_NAME = "Jim Chao";
+const isPersonaOwner = (name) =>
+  !!name && name.replace(/\s+/g, "").toLowerCase() === PERSONA_OWNER_NAME.replace(/\s+/g, "").toLowerCase();
+
 // 🥚 彩蛋成就收集 — 2026-08-21 從純 localStorage 改成 by-user 記錄在 Supabase
 // （dashboard_egg_unlocks 表），因為 Jim 要的「全部解鎖」皇冠徽章不能因為換瀏覽器/清快取就
 // 被洗掉。localStorage 還是保留當 fallback + 舊資料來源：initEggUnlocksForUser() 登入後跑一次，
@@ -2828,7 +2834,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
       parts: [{ text: m.text }],
     }));
 
-    const personaAddon = isPersonaActive() ? `\n\n【人設切換】${JIM_PERSONA_PROMPT}` : "";
+    const personaAddon = (isPersonaActive() && isPersonaOwner(userName)) ? `\n\n【人設切換】${JIM_PERSONA_PROMPT}` : "";
     // 使用者身份：display_name 與 projects.pic 完全一致（見 user_profiles 建立規則），只傳名字，不傳 email / Jira 憑證
     const identityCtx = userName
       ? `目前使用者：${userName}。使用者說「我的」「我負責的」時，指 PIC 等於「${userName}」的專案（比對不分大小寫與空白）。若沒有任何專案的 PIC 相符，直接回答找不到 PIC 為「${userName}」的專案，不要猜測。`
