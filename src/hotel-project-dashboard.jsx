@@ -2680,7 +2680,7 @@ function renderMarkdown(md) {
 // 送出鈕貼底（bottom:8），單行時剛好置中、多行時貼在最後一行旁邊——慣例見 todo.md／對話紀錄。
 const AI_INPUT_MAX_H = 128;
 
-const AiPanel = ({ projects, allTasks, onClose }) => {
+const AiPanel = ({ projects, allTasks, userName, onClose }) => {
   useEscClose(onClose);
   const [msgs,   setMsgs]   = useState([]);
   const [input,  setInput]  = useState("");
@@ -2829,7 +2829,11 @@ const AiPanel = ({ projects, allTasks, onClose }) => {
     }));
 
     const personaAddon = isPersonaActive() ? `\n\n【人設切換】${JIM_PERSONA_PROMPT}` : "";
-    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n專案資料：\n${projectCtx}${personaAddon}`;
+    // 使用者身份：display_name 與 projects.pic 完全一致（見 user_profiles 建立規則），只傳名字，不傳 email / Jira 憑證
+    const identityCtx = userName
+      ? `目前使用者：${userName}。使用者說「我的」「我負責的」時，指 PIC 等於「${userName}」的專案（比對不分大小寫與空白）。若沒有任何專案的 PIC 相符，直接回答找不到 PIC 為「${userName}」的專案，不要猜測。`
+      : `目前使用者身份未知（尚未設定顯示名稱）。使用者提到「我的」時，請先請對方告知自己的 PIC 名稱，不要猜測。`;
+    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n${identityCtx}\n\n專案資料：\n${projectCtx}${personaAddon}`;
 
     try {
       const res = await fetch(
@@ -5738,7 +5742,7 @@ export default function App() {
       <ConfirmHost/>
 
       {/* AI Panel */}
-      {showAi && <AiPanel projects={projects} allTasks={allTasks} onClose={()=>setShowAi(false)}/>}
+      {showAi && <AiPanel projects={projects} allTasks={allTasks} userName={profile?.display_name || ""} onClose={()=>setShowAi(false)}/>}
 
       {/* 🥚 Konami code overlay — 示範用，內容/動畫自己改 */}
       {eggFired && (

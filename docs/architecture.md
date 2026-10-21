@@ -465,3 +465,9 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - `EASTER_EGGS` 的 `reply()` 一律在 `effect()` 之前於 `sendText` 內先算好（`const replyText = egg.reply(...)`），再丟進 `setMsgs`。**不要把 `reply()` 放進 `setMsgs(prev => ...)` 的 updater**：updater 在 render 時才執行，那時 `effect()` 已翻轉旗標，回覆文字會與實際開關相反（2026-10-08 踩到：打 `go rogue` 回「豁出去了」但實際是被關掉）。
 - 兩個開關的回覆文字描述的是「切換後實際生效的語氣」：另一個開關還開著時，會明說語氣不變。
 - 還原點 tag：`before-rogue-fix-2026-10-08`。
+
+## AI 使用者身份（2026-10-21）
+- `AiPanel` 接收 `userName`（= `profile.display_name`），system prompt 加入「目前使用者」段落，讓「查詢我的專案進度」比對 `projects.pic`。只傳名字，不傳 email / Jira 憑證。
+- 前提：`user_profiles.display_name` 必須與 `projects.pic` 完全一致（例：`AlanFang`、`MarkChen`、`Daisy Chen`）。
+- `user_profiles` 由 `auth.users` AFTER INSERT trigger（`on_auth_user_created_profile` → `handle_new_user_profile()`，SECURITY DEFINER、search_path ''、已 revoke execute）自動建立，僅限 `@aiello.ai`；`display_name` 留空待本人填寫，`jira_email` 預設為登入 email。client portal 客戶帳號不建 profile。
+- 沒有 display_name 時，AI 會請使用者告知 PIC 名稱，不猜測。
