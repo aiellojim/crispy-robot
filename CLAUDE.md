@@ -25,7 +25,7 @@ React（Vite）+ 純 inline style 前端（Vercel）＋ Supabase 後端（Postgr
 | 改 loading 動畫（換款式、速度、形狀、尺寸慣例） | `src/OrganicLoader.jsx`（檔頭註解即用法；詳見 `docs/architecture.md`「Loading 動畫」） |
 | 改玻璃質感（斜向光、邊緣光、陰影色調、深色字重）或新增 `--lg-*` token | `src/glassFx.js`（檔頭註解；詳見 `docs/architecture.md`「Glass v2 質感加成」） |
 | 目前待辦與方案評估 | `docs/todo.md` |
-| 動 RLS／policy／新增資料表／新增 RPC（含方案 B 的 anon 隔離） | `docs/rls-baseline-2026-10-21.md`（現況基準、分階段與回滾 SQL）＋ `docs/todo.md` #6 |
+| 動 RLS／policy／新增資料表／新增 RPC（含方案 B 的 anon 隔離）；**建表 migration 一律要同時寫 GRANT＋RLS（Supabase 2026-10-30 起不再自動授權）** | `docs/rls-baseline-2026-10-21.md`（現況基準、第 7 節新增資料表規則、分階段與回滾 SQL）＋ `docs/todo.md` #6 |
 | 要派 subagent（大量掃描、結案驗證） | `docs/delegation.md` + `docs/templates/` |
 | 想知道這套制度的由來 | `docs/harness-notes.md` |
 | 動 AVA basic settings／AVA UI settings／SiteChat Settings 等飯店端表單（header/sidebar、語言切換、banner、自動存檔、Supabase 慣例） | `docs/aiello-forms-spec.md` |

@@ -53,6 +53,12 @@
 - 「使用的前端」是在 `hotel-dashboard`、`AVA basic settings`、`AVA UI settings`、`ACA basic settings`、`SiteChat settings`、
   `customer-portal` 六個資料夾搜尋 `.from('表名')` 得到的靜態結果。`diffRepeater()` 這類用變數傳表名的呼叫沒有被字串搜尋
   直接抓到，但每張表在各自表單裡都至少有一次字面的 `select`，所以對應關係應該完整；**動工前仍要在實際表單裡再確認一次**。
+- **`projects` 的 anon UPDATE 實際只寫四個欄位**：`AVA basic settings` 的 `syncToSupabase()` 對 `projects` 只更新
+  `integration_notes`、`integrations`、`languages`、`music`（飯店勾選的串接功能／語言／音樂設定）；專案名稱、地址、產品線、
+  上線日期等欄位表單都不寫。方案 B 的 policy 除了限定「只能改自己那一列」，也可以考慮另外用資料庫端機制限制可寫欄位（額外加固，非必要）。
+- **為什麼 anon 需要寫入與刪除**：飯店端免登入填表（見 `docs/aiello-forms-spec.md` 第 1 節），所以表單所有操作在資料庫看來都是 `anon`。
+  INSERT＝新增一列（`diffRepeater()` 的 insert）、UPDATE＝改欄位、DELETE＝飯店在畫面上移除一列或刪除房型圖片、SELECT＝載入與 Realtime。
+  不是預填資料造成的，所以不能把 anon 寫入單純拿掉，只能換成「只能動自己專案的列」。
 - `hotel-dashboard`（內部員工，`authenticated` 角色）與 `customer-portal`（客戶 Magic Link）不使用 anon policy，
   方案 B 不影響它們。`customer-portal` 寫入走 `customer-check` Edge Function（service role）。
 - 所有表的 table-level GRANT 對 `anon` 都是預設的 SELECT/INSERT/UPDATE/DELETE，實際能做什麼完全由 RLS policy 決定。
@@ -90,6 +96,9 @@ RLS 的 permissive policy 是「任一條成立就放行」。利用這一點，
 - [ ] 續期機制（背景換新或失敗時換新）——「分頁開一整天慢慢填」的使用情境（todo #6 已記）。
 - [ ] Realtime：每個表單用 `supabase.realtime.setAuth(jwt)`；先確認哪些表單真的有 `postgres_changes` 訂閱（`AVA basic settings` 確認有，其餘動工前用 `grep postgres_changes` 查）。
 - [ ] 如果專案方案支援 Supabase branching，可以先在 branch 上演練（`create_branch` 工具可用；是否可用取決於方案，尚未確認）。
+      **注意（2026-10-30 起）**：branch 會重播目前 46 筆 migration，那些 migration 建表時沒寫 `GRANT`（當時由系統自動授權），
+      所以 10/30 之後建出來的 branch，所有表對 Data API 都會是 `permission denied`；演練前要先在 branch 上補一份
+      全表 GRANT（見第 7 節），否則看到的錯誤不是方案 B 造成的。
 - [ ] 準備好回滾 SQL（第 6 節）並先在隔離環境驗證可以執行。
 
 盤點查詢（唯讀）：
@@ -135,7 +144,59 @@ create policy "anon: update via link" on public.projects as permissive for updat
 create policy "anon: read for AVA form" on public.project_progress as permissive for select to anon using (true);
 ```
 
-## 7. 風險紀錄
+## 7. 新增資料表的規則（Supabase 2026-10-30 起不再自動 GRANT）
+
+來源：[Supabase changelog #45329](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)。
+**現有表不受影響**（保留現有權限）。10/30 起新建的 `public` 表，必須明確 `GRANT`，Data API（supabase-js／PostgREST）才摸得到；
+沒有授權會回 `permission denied`。目前專案的預設權限（`pg_default_acl`）對 `anon`／`authenticated`／`service_role`
+的資料表、序列、函式都是自動全開，10/30 之後這個自動授權會停止（公告明確寫到資料表與序列；函式部分公告沒有說明，不確定）。
+
+**每個「建表」migration 都要同時包含：**
+
+1. `GRANT`——**預設不給 `anon`**。依用途選：
+   - 內部表（只有 hotel-dashboard 員工用）：`grant select, insert, update, delete on public.<t> to authenticated;`＋`to service_role`；policy 用 `staff: full access`。
+   - 飯店端表單用的表：是否給 `anon` 要等方案 B 定案；**不要再沿用 `anon: edit via link USING(true)`**（見 todo #6）。
+   - 只被 Edge Function／agent（service role）用的表：只授權 `service_role`。
+2. `alter table public.<t> enable row level security;`
+3. 對應的 policy（`GRANT` 決定「能不能碰這張表」，RLS 決定「能看／改哪些列」，兩者都要）。
+4. 有自己的序列（`serial`／`identity` 以外的 sequence）時，記得一併授權序列的 `usage`。
+5. 新增 RPC 預設 `security invoker`，不要新增 anon 可呼叫的 `security definer`（見第 1 節）。
+
+範本（內部表）：
+
+```sql
+create table public.example_internal (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete cascade,
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+
+grant select, insert, update, delete on public.example_internal to authenticated;
+grant select, insert, update, delete on public.example_internal to service_role;
+
+alter table public.example_internal enable row level security;
+
+create policy "staff: full access" on public.example_internal
+  as permissive for all to authenticated
+  using ((select auth.email()) like '%@aiello.ai')
+  with check ((select auth.email()) like '%@aiello.ai');
+```
+
+### migration 歷史的現況（影響 branch／`supabase db reset`／重建環境）
+
+- 資料庫目前有 **46 筆** migration，`hotel-dashboard/supabase/migrations/` 只有 5 個檔；其餘是用 Supabase MCP 套用的，
+  **repo 裡的檔案不是完整的 schema 來源**。
+- 這 46 筆建表時都沒有寫 `GRANT`。10/30 之後用它們重播出來的環境（preview branch、本機 `supabase db reset`）會讓所有表都 `permission denied`。
+  要重建環境時，必須在重播之後另外補一份全表 GRANT；補的內容要依「這張表該不該給 anon」逐表決定，不要整批 `grant ... to anon`。
+- 2026-10-21 的 `dashboard_egg_unlocks` RLS 是 Jim 在 SQL Editor 手動執行的，**沒有出現在 migration 歷史**；
+  用歷史重播出來的環境，這張表會是 RLS 關閉的狀態。需要時可補一筆同內容的 migration 記錄（內容見第 1 節）。
+
+## 8. 數字備註（2026-10-21 查詢）
+
+`public` schema 共 34 張表，RLS 全部啟用；migration 歷史 46 筆。
+
+## 9. 風險紀錄
 
 - 這份快照只涵蓋 `public` schema 的 RLS／policy；Storage bucket policy 與 `auth` schema 沒有檢查。
 - Supabase security advisor（2026-10-21）沒有列出任何 `rls_policy_always_true` 類型的項目，儘管這些 policy 確實存在，
