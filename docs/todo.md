@@ -27,7 +27,7 @@
   5. `node --check` 兩邊都過，commit：`AVA basic settings` `dc2f12d`、`AVA UI settings` `1d00a1d`。
 - **範圍內判斷保留、沒有一併做的部分**：`ad_settings`/`qr_popups` 的 `content` 欄位本身是 JSONB（單一欄位內含標題/內容/圖片等多個子欄位），這次的欄位級 diff 只能做到「`content` 這個欄位有沒有變」的粒度——兩人同時改同一列 `content` 內的不同子欄位（例如一人改標題、一人改圖片）還是會互相覆蓋，要做到子欄位原子更新需要新增 `jsonb_build_object` 合併模式的 RPC（比照 `update_check_item`），這是需要額外新增 anon 可呼叫的 SECURITY DEFINER function 的設計決策，這次沒有一併做，Jim 之後想做再另外確認。
 
-### 6. Anon RLS 對 AVA 表單相關 12 張表完全沒有 project 隔離（2026-07-21 發現，安全性問題）
+### 6. Anon RLS 對 AVA 表單相關 25 張表完全沒有 project 隔離（2026-07-21 發現，2026-10-21 重新盤點為 25 張，安全性問題）
 - 現況：`projects`（UPDATE）、`hotel_form_config`、`hotel_team_members`、`aiello_team_members`、`phone_buttons`、`web_portal_users`、`floor_wifi_rooms`、`tmsp_space_rows`、`room_types`、`room_type_images`、`welcome_messages` 的 anon RLS policy 都是 `USING(true)`——任何人持有 anon key（表單前端本來就公開）即可讀寫任意飯店資料，不受 `?p=<project.id>` 連結限制。`floor_wifi_rooms` 還存明碼 WiFi 密碼。
 - **2026-07-21 新增**：`project_progress` 也加了一條 anon SELECT policy（`anon: read for AVA form`，`USING(true)`）——AVA 表單總覽頁的 checklist「前往」按鈕要讀 `sheet_links`（PM 在內部儀表填的 FAQ／Showcase／廣告／QR code 連結）才能運作。範圍比其他 11 張表小（只開 SELECT，沒有寫入權限），但一樣沒有 project 隔離，之後方案 B 要一併涵蓋這張表。
 - **2026-07-22 新增**：Showcase 功能新增的 `showcase_sections`／`showcase_cards` 兩張表，比照同一套 `anon: edit via link USING(true)` 開放 policy 建立（跟其他 12 張表同款、同樣的已知缺口，沒有另外設計更嚴謹的隔離），方案 B 要一併涵蓋這兩張新表，缺口總數變成 14 張。
@@ -46,6 +46,12 @@
   - `projects`（UPDATE）、`project_progress`（SELECT）兩張表 hotel-dashboard／AVA 總覽頁也會用到，方案 B 上線時要一併決定這兩張是否跟著 basic settings 這一波做，還是留到之後。
 - **2026-09-03 再更新：暫緩動工**。Jim 顧慮現在飯店端正有人在填表單，這時候動 RLS／bootstrap 邏輯萬一出錯會直接影響正在使用的客戶，風險太高，決定先不碰，等找到合適時機（例如離峰時段、或先有更完整的測試環境）再開始。**範圍決定不變**：真的動工時先從 `AVA basic settings` 開始，其他表單之後再擴大。
 - **狀態：暫緩，先不動工**。方向已定（`AVA basic settings` 優先），但實際開始的時間點由 Jim 決定；下一步一樣是需要 Jim 提供 `AVA basic settings` 原始碼資料夾路徑，但這件事也先不急著要，等 Jim 說可以開始再要。
+
+- **2026-10-21 重新盤點（Jim 確認先準備基準、暫不動工；飯店持續在更新表單，出錯代價大）**：
+  - 實際用 `pg_policies` 對正式資料庫盤點：anon 永遠為真的 policy 共涵蓋 **25 張表**（23 張 `ALL`、`projects` 的 `SELECT`+`UPDATE`、`project_progress` 的 `SELECT`），比上面記的 20 張多了 4 張 `aca_*` 表。`projects` 的 anon `UPDATE` 只有 `AVA basic settings` 在用（其他三個表單只讀）。
+  - 同日已修（不屬於方案 B 範圍，但相關）：`dashboard_egg_unlocks` 原本 RLS 關閉，已啟用並限制成只能讀／新增自己 email 的列；`update_check_item`／`update_progress_field` 原本是 anon 可呼叫的 SECURITY DEFINER（可繞過 RLS 改任意專案進度），已改 SECURITY INVOKER 並收回 anon 的 EXECUTE；四個函式固定 `search_path`。
+  - **方案 B 的基準與推出計畫已獨立成文件：`docs/rls-baseline-2026-10-21.md`**——內含 25 張表的現況與各自被哪個前端使用、建議分階段（階段 1 = 只被 `AVA basic settings` 使用的 12 張表 + `projects` UPDATE + `project_progress` SELECT；`web_portal_users` 被三個表單共用要放最後）、「新舊 policy 並存、最後才拿掉舊的」的零停機順序、動工前檢查清單、以及可直接貼上的 26 條回滾 SQL。
+  - 狀態不變：**暫緩，待 Jim 決定時機**。新增資料表時，不要再沿用 `anon: edit via link USING(true)`（見上面 2026-08-13 那條）。
 
 ### 7. AVA 表單「自訂分頁」功能（2026-07-22 討論，尚未動工）
 - 需求：PIN 解鎖後的人員可以像 Excel 加分頁一樣，自行在 AVA 表單新增分頁與欄位，不需要每次都改 code。
