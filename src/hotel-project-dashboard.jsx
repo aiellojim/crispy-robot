@@ -4914,6 +4914,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ["串接功能",info.integrations.join("、")||"無"],
                     info.products.includes("AVA")&&["AVA 裝機 / 備品 / 房間數",`${info.avaUnits||"—"} 台 / ${info.avaSpare||"—"} 台 / ${info.installingRooms||"—"} 房`],
                     info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
+                    info.products.includes("ACA")&&["ACA 方案 / 線路數 / 處理通話",`${info.acaPlan||"—"} / ${info.acaLines?info.acaLines+" 線":"—"} / ${info.acaCallScope||"—"}`],
                     info.products.includes("TMSP")&&["TMSP 房間數 / 最大空間數",`${info.tmspRoomCount||"—"} 房 / ${info.tmspMaxSpaces||"—"} 間`],
                   ].filter(Boolean).map(([k,v])=>(
                     <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
