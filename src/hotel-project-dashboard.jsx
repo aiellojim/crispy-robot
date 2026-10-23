@@ -3579,7 +3579,10 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                 style={{ ...GLASS,
                 border:`1px solid ${C.border}`,
                 boxShadow:RIM,
-                borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer" }}>
+                // 每列有 ...GLASS（backdropFilter）→ 自成 stacking context，內部 zIndex:100 的狀態下拉只在該列內有效，
+                // 會被 DOM 順序在後的列蓋住。下拉展開時把該列整體抬高（仍低於 Header 10000）。
+                borderRadius:12, padding:"12px 16px", position:"relative", cursor:"pointer",
+                zIndex: isOpen ? 100 : undefined }}>
                 <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 160px 140px 20px",
                   gap:12, alignItems:"center" }}>
                   {/* Key */}
