@@ -19,6 +19,8 @@ const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV", "RSVN", "Robot"
 // 值，跟 products 陣列是否包含 "ACA" 是兩個獨立欄位，邏輯上比照 tmsp_max_spaces/installing_rooms
 // 那類「已選 ACA 之後才追問的細節欄位」，不是新的 product。
 const ACA_PLANS    = ["Original", "SuperLite", "SuperPro"];
+// ACA 處理通話範圍（2026-10-23）：projects.aca_call_scope，空字串 = 未設定。
+const ACA_CALL_SCOPES = ["內線", "外線", "內外線都接聽"];
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 // PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
 // 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
@@ -439,7 +441,7 @@ const dbToUi = (row, prog) => ({
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
     products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
     installingRooms: row.installing_rooms ?? "", tmspMaxSpaces: row.tmsp_max_spaces ?? "",
-    tmspRoomCount: row.tmsp_room_count ?? "", acaLines: row.aca_lines ?? "", acaPlan: row.aca_plan ?? "",
+    tmspRoomCount: row.tmsp_room_count ?? "", acaLines: row.aca_lines ?? "", acaPlan: row.aca_plan ?? "", acaCallScope: row.aca_call_scope ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -467,7 +469,7 @@ const uiToDb = (p) => ({
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
     products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
     installing_rooms: p.info.installingRooms, tmsp_max_spaces: p.info.tmspMaxSpaces,
-    tmsp_room_count: p.info.tmspRoomCount, aca_lines: p.info.acaLines, aca_plan: p.info.acaPlan,
+    tmsp_room_count: p.info.tmspRoomCount, aca_lines: p.info.acaLines, aca_plan: p.info.acaPlan, aca_call_scope: p.info.acaCallScope,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -497,7 +499,7 @@ const newProject = () => {
   createdAt: new Date().toISOString(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", acaLines:"", acaPlan:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", acaLines:"", acaPlan:"", acaCallScope:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -4575,12 +4577,13 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
-                  {/* 50/50 兩欄，跟 TMSP 房間數/最大空間數那個 grid 同一套版型；兩個 label 各自佔
-                      第一列自然對齊，alignItems:"center" 讓第二列較矮的方案 pill 群跟較高的線路數
-                      輸入框沿水平中線對齊，不用猜像素偏移量。 */}
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, alignItems:"center" }}>
+                  {/* 三欄等寬（線路數／ACA 方案／處理通話）；三個 label 各自佔第一列自然對齊，
+                      alignItems:"center" 讓第二列較矮的方案 pill 群跟輸入框、下拉沿水平中線對齊，不用猜像素偏移量。
+                      minmax(0,1fr)：避免 pill 群或下拉內容把某一欄撐寬，三欄才會真正平分。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(0, 1fr))", gap:16, alignItems:"center" }}>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>處理通話</label>
                     <input type="number" value={info.acaLines} onChange={e=>setInfo(p=>({ ...p, acaLines:e.target.value }))}
                       placeholder="例：4" style={baseInput}
                       onFocus={e=>(e.target.style.borderColor="var(--accent)")}
@@ -4588,6 +4591,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
                       {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
                     </div>
+                    {/* 處理通話：下拉；外觀沿用 FilterSelect 的箭頭寫法，但底色用 baseInput 的實色 */}
+                    <select value={info.acaCallScope} onChange={e=>setInfo(p=>({ ...p, acaCallScope:e.target.value }))}
+                      style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
+                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
+                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                      onBlur={e=>(e.target.style.borderColor="var(--border)")}>
+                      <option value="">請選擇</option>
+                      {ACA_CALL_SCOPES.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select>
                   </div>
                 </div>
               )}
