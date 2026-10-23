@@ -3620,7 +3620,9 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                     {/* Dropdown */}
                     {isOpen && trans.length>0 && (
                       <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0,
-                        ...GLASS,
+                        // 實色而非 ...GLASS：下拉巢狀在有 backdropFilter 的任務卡片內（backdrop root，採樣不到頁面背景），
+                        // 又會蓋在其他卡片上，半透明底色會讓下方文字透出來難以辨讀。與輸入框/select 一樣，功能性控制項維持不透明。
+                        background:"var(--surface-raised)",
                         border:`1px solid ${C.border}`, borderRadius:10,
                         boxShadow:`0 8px 24px ${tint(0.12)}, ${RIM}`, zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
