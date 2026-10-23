@@ -4577,20 +4577,21 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
-                  {/* 三欄等寬（線路數／ACA 方案／處理通話）；三個 label 各自佔第一列自然對齊，
-                      alignItems:"center" 讓第二列較矮的方案 pill 群跟輸入框、下拉沿水平中線對齊，不用猜像素偏移量。
-                      minmax(0,1fr)：避免 pill 群或下拉內容把某一欄撐寬，三欄才會真正平分。 */}
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3, minmax(0, 1fr))", gap:16, alignItems:"center" }}>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
+                  {/* 欄序：ACA 方案 → 線路數 → 處理通話。方案欄寬度 = 三顆 pill 單行排開所需的 max-content
+                      （pill 容器 nowrap、Chip 不收縮，保證標籤單行），線路數與處理通話兩欄平分剩下的寬度
+                      （minmax(0,1fr) 避免內容撐寬某一欄）。三個 label 在第一列、控制項在第二列，
+                      alignItems:"center" 讓高度不同的控制項沿水平中線對齊。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", gap:16, alignItems:"center" }}>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>處理通話</label>
+                    <div style={{ display:"flex", flexWrap:"nowrap", gap:10, whiteSpace:"nowrap" }}>
+                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
+                    </div>
                     <input type="number" value={info.acaLines} onChange={e=>setInfo(p=>({ ...p, acaLines:e.target.value }))}
                       placeholder="例：4" style={baseInput}
                       onFocus={e=>(e.target.style.borderColor="var(--accent)")}
                       onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
-                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
-                    </div>
                     {/* 處理通話：下拉；外觀沿用 FilterSelect 的箭頭寫法，但底色用 baseInput 的實色 */}
                     <select value={info.acaCallScope} onChange={e=>setInfo(p=>({ ...p, acaCallScope:e.target.value }))}
                       style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
