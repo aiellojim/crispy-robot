@@ -20,7 +20,14 @@ const INTEGRATIONS = ["PBX", "PMS", "TMS", "RCU", "POS", "IPTV", "RSVN", "Robot"
 // 那類「已選 ACA 之後才追問的細節欄位」，不是新的 product。
 const ACA_PLANS    = ["Original", "SuperLite", "SuperPro"];
 // ACA 處理通話範圍（2026-10-23）：projects.aca_call_scope，空字串 = 未設定。
-const ACA_CALL_SCOPES = ["內線", "外線", "內外線都接聽"];
+// 2026-10-27 起資料庫存「代碼」（internal / external / both），不存顯示文字——改措辭不用動資料；
+// ACA basic settings 表單也讀這個欄位（internal / both 才顯示「內線接聽設備」卡片），兩邊都比對代碼。
+const ACA_CALL_SCOPES = [
+  { value:"internal", label:"內線" },
+  { value:"external", label:"外線" },
+  { value:"both",     label:"內外線都接聽" },
+];
+const acaCallScopeLabel = (v) => ACA_CALL_SCOPES.find(o=>o.value===v)?.label || "";
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 // PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
 // 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
@@ -4600,7 +4607,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       onFocus={e=>(e.target.style.borderColor="var(--accent)")}
                       onBlur={e=>(e.target.style.borderColor="var(--border)")}>
                       <option value="">請選擇</option>
-                      {ACA_CALL_SCOPES.map(o=><option key={o} value={o}>{o}</option>)}
+                      {ACA_CALL_SCOPES.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -4914,7 +4921,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     ["串接功能",info.integrations.join("、")||"無"],
                     info.products.includes("AVA")&&["AVA 裝機 / 備品 / 房間數",`${info.avaUnits||"—"} 台 / ${info.avaSpare||"—"} 台 / ${info.installingRooms||"—"} 房`],
                     info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
-                    info.products.includes("ACA")&&["ACA 方案 / 線路數 / 處理通話",`${info.acaPlan||"—"} / ${info.acaLines?info.acaLines+" 線":"—"} / ${info.acaCallScope||"—"}`],
+                    info.products.includes("ACA")&&["ACA 方案 / 線路數 / 處理通話",`${info.acaPlan||"—"} / ${info.acaLines?info.acaLines+" 線":"—"} / ${acaCallScopeLabel(info.acaCallScope)||"—"}`],
                     info.products.includes("TMSP")&&["TMSP 房間數 / 最大空間數",`${info.tmspRoomCount||"—"} 房 / ${info.tmspMaxSpaces||"—"} 間`],
                   ].filter(Boolean).map(([k,v])=>(
                     <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>

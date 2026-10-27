@@ -473,4 +473,4 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - 沒有 display_name 時，AI 會請使用者告知 PIC 名稱，不猜測。
 - 人設（`JIM_PERSONA_PROMPT`）僅在 `display_name` 為 Jim Chao 時附加（`isPersonaOwner`）；其他人觸發 jim mode / go rogue，AI 維持正常語氣。
 
-- 2026-10-23：ACA 設定新增「處理通話」下拉（內線／外線／內外線都接聽），欄位 `projects.aca_call_scope`（migration 20261023_add_aca_call_scope.sql），與線路數、ACA 方案同列三欄等寬。上線順序：先 migration、後前端。
+- 2026-10-23：ACA 設定新增「處理通話」下拉（內線／外線／內外線都接聽），欄位 `projects.aca_call_scope`（2026-10-27 起存代碼 internal/external/both，ACA basic settings 表單也讀它）（migration 20261023_add_aca_call_scope.sql），與線路數、ACA 方案同列三欄等寬。上線順序：先 migration、後前端。
