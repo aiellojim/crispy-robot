@@ -313,6 +313,7 @@ const GLOBAL_CSS = `
        --glass-surface-hover 同樣比照「= --surface-raised 的 RGB，alpha 0.72」）。
        canvas-glow 三色沒有照抄其他主題的藍/橙/綠三色，改成同一個駭客綠在不同濃淡，跟這個區塊
        整體「單一強調色」的美術方向一致，避免跟代碼雨/掃描線效果搶視覺。 */
+    --row-hover: #0c140c;
     --glass-surface: rgba(6,10,6,0.55);
     --glass-surface-hover: rgba(12,20,12,0.72);
     --canvas-glow-1: rgba(0,255,65,0.18);
@@ -370,6 +371,7 @@ const GLOBAL_CSS = `
   .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:var(--on-accent) !important; }
   .hv-danger-solid:not(:disabled):hover { background:var(--red) !important; color:var(--on-solid) !important; }
   .hv-row:hover { background:var(--surface-raised) !important; }
+  .hv-attn:hover, .hv-attn:focus-visible { background:var(--row-hover) !important; outline:none; }
   .hv-bg:not(:disabled):hover { background:var(--bg) !important; }
   .hv-icon-accent:not(:disabled):hover { color:var(--accent-text) !important; background:var(--surface-raised) !important; }
   .hv-icon-red:not(:disabled):hover { color:var(--red) !important; background:var(--surface-raised) !important; }
@@ -2045,7 +2047,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif, meName }) => {
                   <button key={it.projId + it.label + i} onClick={() => onOpen(it.projId)}
                     style={{ display:"flex", alignItems:"center", gap:10, width:"100%", textAlign:"left", padding:"7px 8px", borderRadius:8,
                       border:"none", background:"transparent", cursor:"pointer", fontFamily:"inherit" }}
-                    className="hv-row">
+                    className="hv-attn">
                     <span style={{ fontSize:12, fontWeight:500, color:chipColor, background:chipBg, borderRadius:4, padding:"1px 8px", minWidth:76, textAlign:"center", flexShrink:0 }}>
                       {overdue ? `逾期 ${-it.days} 天` : it.days === 0 ? "今天" : `${it.days} 天後`}
                     </span>

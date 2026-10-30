@@ -49,6 +49,7 @@ export const LIGHT_TOKENS = `
     --cal-jira-bg: #F5F5F4; --cal-jira-text: #57534E; --cal-jira-border: #D6D3D1;
     --prod-ava:#1e6fb5; --prod-avt:#0e7490; --prod-aca:#0e7a5a;
     --prod-tmsp:#7c3aed; --prod-gw:#b45309; --prod-kms:#be185d; --prod-sitechat:#4338ca; --prod-xviewer:#4d7c0f;
+    --row-hover: rgba(232,98,26,0.14); /* 列表列 hover／focus：淺色用透明品牌橘（灰底在白玻璃上看不出來）；深色沿用 surface-raised */
     --glass-surface: rgba(255,255,255,0.62);
     --glass-surface-hover: rgba(255,255,255,0.78);
     --canvas-glow-1: rgba(30,111,181,0.40);
@@ -94,6 +95,7 @@ export const DARK_TOKENS = `
     --cal-jira-bg: #292524; --cal-jira-text: #D6D3D1; --cal-jira-border: #78716C;
     --prod-ava:#4d90d4; --prod-avt:#22c4de; --prod-aca:#22a474;
     --prod-tmsp:#a78bfa; --prod-gw:#f59e0b; --prod-kms:#e879a0; --prod-sitechat:#818cf8; --prod-xviewer:#8cc63f;
+    --row-hover: #2A2A36;
     --glass-surface: rgba(33,33,43,0.55);
     --glass-surface-hover: rgba(42,42,54,0.72);
     --canvas-glow-1: rgba(77,144,212,0.40);
