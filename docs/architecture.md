@@ -482,3 +482,5 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - **字級／圓角（UI 3）**：字級刻度 11/12/13/14/16/20/24/32/44、圓角 4/6/8/12/16/pill20（`theme.js` 的 `FONT_SCALE`/`RADIUS_SCALE`）。規則：非標籤文字最小 12，11 只給「全大寫＋字距」欄位標籤。
 - **Cmd/Ctrl+K（UX 4）**：`CommandPalette`（App 層、Portal、zIndex 25000）；空白時「我負責的」（PIC＝登入者 display_name）優先；Enter 開專案總覽。header 也有搜尋鈕。
 - **AI 回覆專案連結（UX 4）**：`linkifyProjects()` 在 `renderMarkdown` 輸出上、只改標籤外文字，專案名稱（≥3 字元、不分大小寫、長名優先、英數名要求前後非英數、同名取第一個）→ `<a data-project-id>`，點擊由 AiPanel 事件委派開專案並關面板。system prompt 要求 AI 照抄專案原名。
+- **首頁「我的」優先（UX 1，2026-10-30）**：`HomePage` 收 `meName`（= `profile.display_name`，比對 `projects.pic`，不分大小寫與空白）。專案列表＝我負責的排前面、其他人接在「其他人的專案（N）」分隔線後（兩組都有才顯示分隔線）；**所有人的專案一律照樣顯示**，不做預設篩選。頂部「我需要處理」只看我負責且未完成的專案：第一／二批期限逾期或 7 天內、上線日 14 天內、未完成 deadline 任務 7 天內（含逾期），依緊急度排序，預設顯示 6 項可展開。沒有 display_name 或沒有我負責的專案就不出現。
+- **Cmd+K 面板捲動**：開啟時 `focus({preventScroll:true})`、清單捲動只動自己的 scrollTop（不用 `scrollIntoView`），關閉時若頁面捲動位置被改動會還原（選專案換頁時不還原）。

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@supabase/supabase-js";
 import OrganicLoader from "./OrganicLoader.jsx";
@@ -362,7 +362,7 @@ const GLOBAL_CSS = `
      :not(:disabled)：React 不會對 disabled 按鈕觸發 mouse 事件，CSS 的 :hover 會，所以要自己排除。
      離開 hover 時瀏覽器自然回到 inline 的 base 值，不需要再手寫「還原」。
      用法：<button className="hv-accent">；有條件的 hover 用 className={cond ? "hv-x" : undefined}。 */
-  .ai-proj-link { color:var(--accent-text); text-decoration:underline; text-underline-offset:2px; font-weight:500; cursor:pointer; }
+  .ai-proj-link { color:var(--accent-text); text-decoration:underline; text-underline-offset:2px; font-weight:normal; cursor:pointer; }
   .ai-proj-link:hover { text-decoration-thickness:2px; }
   .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent) !important; }
   .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
@@ -1884,7 +1884,8 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
 
 
 // ─── HomePage ─────────────────────────────────────────────────
-const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
+const HomePage = ({ projects, onOpen, onDelete, onOpenNotif, meName }) => {
+  const [attnExpanded, setAttnExpanded] = useState(false);
   const [search,        setSearch]        = useState("");
   const [regionFilter,  setRegionFilter]  = useState("all");
   const [productFilter, setProductFilter] = useState("all");
@@ -1951,6 +1952,44 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
   const soonCount = projects.filter(p=>{ const d=daysUntil(p.info.launchDate); return d!==null&&d>=0&&d<=30; }).length;
   const doneCount = projects.filter(p=>calcPct(p)===100).length;
 
+  // ── UX 1：我負責的排前面、其他人的接在分隔線後；頂部「我需要處理」區塊（只看登入者的專案）──
+  // 比對規則同 AI 身份：display_name 與 projects.pic 一致，不分大小寫與空白。沒有 display_name 或沒有
+  // 我負責的專案就整組不出現（列表維持原順序）。別人的專案一律照樣顯示，只是排序在後。
+  const meKey = (meName || "").trim().toLowerCase().replace(/\s+/g, "");
+  const isMine = (p) => !!meKey && (p.info.pic || "").trim().toLowerCase().replace(/\s+/g, "") === meKey;
+  const ordered = useMemo(() => {
+    if (!meKey) return filtered;
+    return [...filtered.filter(isMine), ...filtered.filter(p => !isMine(p))];
+  }, [filtered, meKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mineCount = meKey ? ordered.filter(isMine).length : 0;
+  const showGroups = mineCount > 0 && mineCount < ordered.length;
+
+  const attention = useMemo(() => {
+    if (!meKey) return null;
+    const mine = projects.filter(isMine);
+    if (!mine.length) return null;
+    const items = [];
+    mine.forEach(proj => {
+      const pct = calcPct(proj);
+      const name = proj.info.name || "（未命名）";
+      if (pct < 100) {
+        [["第一批期限", proj.info.batch1Deadline], ["第二批期限", proj.info.batch2Deadline]].forEach(([label, date]) => {
+          const d = daysUntil(date);
+          if (d !== null && d <= 7) items.push({ projId:proj.id, name, label, date, days:d, extra:`完成度 ${pct}%` });
+        });
+        const dl = daysUntil(proj.info.launchDate);
+        if (dl !== null && dl >= 0 && dl <= 14) items.push({ projId:proj.id, name, label:"上線日", date:proj.info.launchDate, days:dl, extra:`完成度 ${pct}%` });
+      }
+      (proj.tasks || []).forEach(t => {
+        if (t.type !== "deadline" || t.completed || !t.deadline) return;
+        const d = daysUntil(t.deadline);
+        if (d !== null && d <= 7) items.push({ projId:proj.id, name, label:`任務：${t.name || "未命名"}`, date:t.deadline, days:d });
+      });
+    });
+    items.sort((a, b) => a.days - b.days);
+    return { items, mineTotal: mine.length };
+  }, [projects, meKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const stats = [
     { label:"專案總數",         value:projects.length, icon:"folder",  color:"var(--accent)",  sub:"所有專案" },
     { label:"逾期未完成",       value:overdueCount,    icon:"warning", color:overdueCount>0?"var(--red)":"var(--green)", sub:overdueCount>0?"需立即處理":"目前正常", onClick:overdueCount>0?()=>setOverdueFilter(v=>!v):undefined, isActive:overdueFilter },
@@ -1985,6 +2024,50 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
           </div>
         ))}
       </div>
+
+      {/* 我需要處理（只含我負責的專案；逾期 → 7 天內期限／任務 → 14 天內上線） */}
+      {attention && (
+        <div style={{ ...GLASS, border:"1px solid var(--border)", boxShadow:RIM, borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:attention.items.length?10:0 }}>
+            <Ico name={attention.items.length ? "warning" : "check"} size={15} color={attention.items.length ? "var(--amber)" : "var(--green)"}/>
+            <span style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>我需要處理</span>
+            <span style={{ fontSize:12, color:"var(--text-subtle)" }}>
+              {attention.items.length ? `${attention.items.length} 項（來自我負責的 ${attention.mineTotal} 個專案）` : `我負責的 ${attention.mineTotal} 個專案目前沒有逾期或 7 天內到期的項目`}
+            </span>
+          </div>
+          {attention.items.length > 0 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+              {(attnExpanded ? attention.items : attention.items.slice(0, 6)).map((it, i) => {
+                const overdue = it.days < 0, urgent = it.days >= 0 && it.days <= 3;
+                const chipColor = overdue ? "var(--red)" : urgent ? "var(--amber)" : "var(--text-mid)";
+                const chipBg = overdue ? "var(--red-subtle)" : urgent ? "var(--amber-subtle)" : "var(--surface-raised)";
+                return (
+                  <button key={it.projId + it.label + i} onClick={() => onOpen(it.projId)}
+                    style={{ display:"flex", alignItems:"center", gap:10, width:"100%", textAlign:"left", padding:"7px 8px", borderRadius:8,
+                      border:"none", background:"transparent", cursor:"pointer", fontFamily:"inherit" }}
+                    className="hv-row">
+                    <span style={{ fontSize:12, fontWeight:500, color:chipColor, background:chipBg, borderRadius:4, padding:"1px 8px", minWidth:76, textAlign:"center", flexShrink:0 }}>
+                      {overdue ? `逾期 ${-it.days} 天` : it.days === 0 ? "今天" : `${it.days} 天後`}
+                    </span>
+                    <span style={{ fontSize:13, fontWeight:500, color:"var(--text)", flexShrink:0 }}>{it.name}</span>
+                    <span style={{ fontSize:13, color:"var(--text-mid)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", minWidth:0 }}>{it.label}</span>
+                    <span style={{ marginLeft:"auto", fontSize:12, color:"var(--text-subtle)", fontFamily:"'DM Mono',monospace", flexShrink:0 }}>
+                      {it.date}{it.extra ? ` · ${it.extra}` : ""}
+                    </span>
+                  </button>
+                );
+              })}
+              {attention.items.length > 6 && (
+                <button onClick={() => setAttnExpanded(v => !v)}
+                  style={{ alignSelf:"flex-start", marginTop:4, padding:"4px 8px", background:"none", border:"none", cursor:"pointer",
+                    fontFamily:"inherit", fontSize:12, color:"var(--accent-text)" }}>
+                  {attnExpanded ? "收合" : `展開其餘 ${attention.items.length - 6} 項`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 篩選欄（含通知設定，統一外框） */}
       <div style={{ ...GLASS,
@@ -2043,7 +2126,14 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
         </div>
       ) : (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(500px,100%),1fr))", gap:20 }}>
-          {filtered.map((proj) => {
+          {ordered.map((proj, idx) => {
+            const mine = meKey && isMine(proj);
+            const divider = showGroups && (idx === 0 ? mine : (!mine && idx === mineCount))
+              ? <div key={"grp-"+idx} style={{ gridColumn:"1 / -1", display:"flex", alignItems:"center", gap:10, margin: idx===0 ? "0" : "8px 0 -4px" }}>
+                  <span style={{ fontSize:12, fontWeight:500, color:"var(--text-mid)" }}>{mine ? `我負責的（${mineCount}）` : `其他人的專案（${ordered.length - mineCount}）`}</span>
+                  <div style={{ flex:1, height:1, background:"var(--border)" }}/>
+                </div>
+              : null;
             const pct = calcPct(proj);
             const { hasAva, hasAca, hasGw, hasTmsp, hasIptv } = getFlags(proj.info.products, proj.info.integrations);
             const rd = proj.info.region==="其他"?(proj.info.regionOther||"其他"):proj.info.region;
@@ -2063,7 +2153,8 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
             const b2total   = (hasAva?BATCH2_ITEMS.length:0)+(hasGw?1:0);
 
             return (
-              <div key={proj.id} className="lg-live"
+              <Fragment key={proj.id}>{divider}
+              <div className="lg-live"
                 style={{ position:"relative", overflow:"hidden", clipPath:"inset(0px round 12px)",
                   ...GLASS,
                   border:"1px solid var(--border)", borderRadius:12,
@@ -2242,6 +2333,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                   <div style={{ fontSize:12, color:C.textLight, fontStyle:"italic" }}>未選購 AVA、ACA、GW 或 TMSP，無進度追蹤</div>
                 )}
               </div>
+              </Fragment>
             );
           })}
         </div>
@@ -5391,7 +5483,13 @@ const CommandPalette = ({ projects, meName, onOpenProject, onGoPage, onClose }) 
   const inputRef = useRef(null);
   const listRef  = useRef(null);
   const composingRef = useRef(false);
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  // preventScroll：避免瀏覽器為了「讓 input 可見」去捲動底下的頁面（Safari 對 fixed 浮層內元素會這樣）。
+  const y0 = useRef(typeof window !== "undefined" ? window.scrollY : 0);
+  const leavingRef = useRef(false); // 選了專案／頁面要換頁，關閉時不還原捲動位置
+  useEffect(() => {
+    inputRef.current?.focus({ preventScroll:true });
+    return () => { if (!leavingRef.current && window.scrollY !== y0.current) window.scrollTo(0, y0.current); };
+  }, []);
 
   const me = (meName || "").trim().toLowerCase().replace(/\s+/g, "");
   const items = useMemo(() => {
@@ -5415,10 +5513,18 @@ const CommandPalette = ({ projects, meName, onOpenProject, onGoPage, onClose }) 
     return [...list.slice(0, 30), ...pages];
   }, [q, projects, me]);
 
-  useEffect(() => { listRef.current?.querySelector(`[data-idx="${sel}"]`)?.scrollIntoView({ block:"nearest" }); }, [sel]);
+  // 只捲清單自己的 scrollTop；不用 scrollIntoView（它會連祖先／整個頁面一起捲）。
+  useEffect(() => {
+    const box = listRef.current, el = box?.querySelector(`[data-idx="${sel}"]`);
+    if (!box || !el) return;
+    const top = el.offsetTop, bottom = top + el.offsetHeight;
+    if (top < box.scrollTop) box.scrollTop = top - 6;
+    else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight + 6;
+  }, [sel]);
 
   const choose = (it) => {
     if (!it) return;
+    leavingRef.current = true;
     onClose();
     if (it.kind === "project") onOpenProject(it.id); else onGoPage(it.id);
   };
@@ -5445,7 +5551,7 @@ const CommandPalette = ({ projects, meName, onOpenProject, onGoPage, onClose }) 
               fontSize:14, fontFamily:"inherit" }}/>
           <span style={{ fontSize:11, color:"var(--text-subtle)", border:"1px solid var(--border)", borderRadius:4, padding:"1px 6px", fontFamily:"'DM Mono',monospace" }}>Esc</span>
         </div>
-        <div ref={listRef} role="listbox" style={{ overflowY:"auto", padding:6 }}>
+        <div ref={listRef} role="listbox" style={{ overflowY:"auto", padding:6, position:"relative" }}>
           {items.length === 0 && <div style={{ padding:"28px 16px", textAlign:"center", fontSize:13, color:"var(--text-subtle)" }}>找不到符合「{q}」的專案</div>}
           {items.map((it, i) => {
             const active = i === sel;
@@ -6017,7 +6123,7 @@ export default function App() {
               setAllTasks(prev => prev.filter(t => t.id !== taskId));
               setProjects(prev => prev.map(p => ({ ...p, tasks: p.tasks.filter(t => t.id !== taskId) })));
             }}/>
-          : <HomePage projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics} onOpenNotif={()=>setShowNotif(true)}/>
+          : <HomePage meName={profile?.display_name || ""} projects={projects} onNew={handleNew} onOpen={handleOpen} onDelete={handleDelete} allPics={allPics} onOpenNotif={()=>setShowNotif(true)}/>
       }
     </div>
   );
