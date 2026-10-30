@@ -484,3 +484,4 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - **AI 回覆專案連結（UX 4）**：`linkifyProjects()` 在 `renderMarkdown` 輸出上、只改標籤外文字，專案名稱（≥3 字元、不分大小寫、長名優先、英數名要求前後非英數、同名取第一個）→ `<a data-project-id>`，點擊由 AiPanel 事件委派開專案並關面板。system prompt 要求 AI 照抄專案原名。
 - **首頁「我的」優先（UX 1，2026-10-30）**：`HomePage` 收 `meName`（= `profile.display_name`，比對 `projects.pic`，不分大小寫與空白）。專案列表＝我負責的排前面、其他人接在「其他人的專案（N）」分隔線後（兩組都有才顯示分隔線）；**所有人的專案一律照樣顯示**，不做預設篩選。頂部「我需要處理」只看我負責且未完成的專案：第一／二批期限逾期或 7 天內、上線日 14 天內、未完成 deadline 任務 7 天內（含逾期），依緊急度排序，預設顯示 6 項可展開。沒有 display_name 或沒有我負責的專案就不出現。
 - **Cmd+K 面板捲動**：開啟時 `focus({preventScroll:true})`、清單捲動只動自己的 scrollTop（不用 `scrollIntoView`），關閉時若頁面捲動位置被改動會還原（選專案換頁時不還原）。
+- **深色模式品牌橘（2026-10-30）**：深色 `--accent` 由 #F4873D 改為 #D9531E（白字 4.0:1），所有品牌橘「填色」元件（header logo 底、主要按鈕、選中 chip、頭像、勾選、進度條）吃同一個 token 一起切換；文字／連結用的橘另走 `--accent-text`（深色維持亮橘 #F4873D，對深底 6.4:1）。新增 `--on-accent`（accent 填色上的字，淺深皆白）；`--on-solid` 只給綠／紫／紅等狀態色填色（深色為近黑字）。寫死橘色碼會漏掉這次切換，一律用 token。

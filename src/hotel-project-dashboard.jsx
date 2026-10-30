@@ -298,7 +298,7 @@ const GLOBAL_CSS = `
     --bg: #000000; --surface: #060a06; --surface-raised: #0c140c;
     --border: #113311; --border-mid: #1a4d1a;
     --text: #00ff41; --text-mid: #00cc33; --text-subtle: #009926;
-    --accent: #00ff41; --accent-text: #00ff41; --on-solid: #000000; --accent-light: #00330d;
+    --accent: #00ff41; --accent-text: #00ff41; --on-solid: #000000; --on-accent: #000000; --accent-light: #00330d;
     --accent-border: rgba(0,255,65,0.35); --accent-subtle: rgba(0,255,65,0.08);
     --green: #00ff41; --green-light: #001a08; --green-subtle: rgba(0,255,65,0.08);
     --amber: #ffcc00; --amber-light: #1a1500; --amber-subtle: rgba(255,204,0,0.08);
@@ -330,7 +330,7 @@ const GLOBAL_CSS = `
   .jira-desc-html { font-size:13px; line-height:1.6; color:var(--text); }
   .jira-desc-html p { margin:0 0 8px; }
   .jira-desc-html p:last-child { margin-bottom:0; }
-  .jira-desc-html a { color:var(--accent); }
+  .jira-desc-html a { color:var(--accent-text); }
   .jira-desc-html table { border-collapse:collapse; width:100%; margin:8px 0; font-size:12px; }
   .jira-desc-html th, .jira-desc-html td { border:1px solid var(--border); padding:6px 10px; text-align:left; }
   .jira-desc-html th { background:var(--surface-raised); font-weight:500; }
@@ -364,14 +364,14 @@ const GLOBAL_CSS = `
      用法：<button className="hv-accent">；有條件的 hover 用 className={cond ? "hv-x" : undefined}。 */
   .ai-proj-link { color:var(--accent-text); text-decoration:underline; text-underline-offset:2px; font-weight:normal; cursor:pointer; }
   .ai-proj-link:hover { text-decoration-thickness:2px; }
-  .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent) !important; }
+  .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent-text) !important; }
   .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
   .hv-danger:not(:disabled):hover { background:var(--red-subtle) !important; border-color:var(--red) !important; color:var(--red) !important; }
-  .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:var(--on-solid) !important; }
+  .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:var(--on-accent) !important; }
   .hv-danger-solid:not(:disabled):hover { background:var(--red) !important; color:var(--on-solid) !important; }
   .hv-row:hover { background:var(--surface-raised) !important; }
   .hv-bg:not(:disabled):hover { background:var(--bg) !important; }
-  .hv-icon-accent:not(:disabled):hover { color:var(--accent) !important; background:var(--surface-raised) !important; }
+  .hv-icon-accent:not(:disabled):hover { color:var(--accent-text) !important; background:var(--surface-raised) !important; }
   .hv-icon-red:not(:disabled):hover { color:var(--red) !important; background:var(--surface-raised) !important; }
   .hv-dim:hover { opacity:0.7 !important; }
   .hv-del:not(:disabled):hover { opacity:1 !important; color:var(--red) !important; }
@@ -734,7 +734,7 @@ function renderRichText(text) {
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   // Markdown links [label](url) → <a>
   h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;font-weight:400">$1</a>');
+    '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent-text);text-decoration:underline;font-weight:400">$1</a>');
   // Headers
   h = h.replace(/^### (.+)$/gm,"<div style='font-size:13px;font-weight:500;margin:8px 0 3px;color:var(--text)'>$1</div>");
   h = h.replace(/^## (.+)$/gm, "<div style='font-size:14px;font-weight:500;margin:10px 0 4px;color:var(--text)'>$1</div>");
@@ -797,7 +797,7 @@ const Chip = ({ label, active, onClick, color="var(--accent)", dot }) => dot ? (
 ) : (
   <button onClick={onClick} style={{ padding:"5px 13px", borderRadius:6, fontFamily:"inherit",
     border:`1px solid ${active?color:"var(--border)"}`, background:active?color:"transparent",
-    color:active?"var(--on-solid)":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:400, transition:"all 0.12s" }}>
+    color:active?"var(--on-accent)":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:400, transition:"all 0.12s" }}>
     {label}
   </button>
 );
@@ -883,7 +883,7 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
     {onBack && <button onClick={onBack} style={{ background:"transparent", color:"var(--text-mid)",
       border:"1px solid var(--border)", borderRadius:8, padding:"9px 20px",
       fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
-    {onNext && <button onClick={onNext} className={CTA_CLASS} style={{ background:nextColor, color:"var(--on-solid)",
+    {onNext && <button onClick={onNext} className={CTA_CLASS} style={{ background:nextColor, color:(nextColor==="var(--accent)"?"var(--on-accent)":"var(--on-solid)"),
       borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:400,
       cursor:"pointer", fontFamily:"inherit" }}>{nextLabel}</button>}
   </div>
@@ -1280,7 +1280,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                 通知顯示名稱：<strong>{displayName || "（請先至個人設定填入顯示名稱）"}</strong>
               </div>
               <button onClick={handleSubscribe} disabled={loading} className={CTA_CLASS}
-                style={{ width:"100%", padding:"10px 0", background:C.accent, color:"var(--on-solid)",
+                style={{ width:"100%", padding:"10px 0", background:C.accent, color:"var(--on-accent)",
                   borderRadius:8, fontSize:14, fontWeight:500,
                   cursor:"pointer", fontFamily:"inherit" }}>
                 {loading?"啟用中…":"啟用 Email 提醒"}
@@ -1303,7 +1303,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                     <button key={value} onClick={()=>handleNotifyDays(value)}
                       style={{ padding:"6px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontFamily:"inherit",
                         background:sub.notify_days_before===value?C.accent:C.bg,
-                        color:sub.notify_days_before===value?"var(--on-solid)":C.text,
+                        color:sub.notify_days_before===value?"var(--on-accent)":C.text,
                         border:`1px solid ${sub.notify_days_before===value?C.accent:C.border}`,
                         fontWeight:sub.notify_days_before===value?700:400 }}>
                       {label}
@@ -1676,7 +1676,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
           <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving} className={CTA_CLASS}
-            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"var(--on-solid)", borderRadius:8, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"var(--on-accent)", borderRadius:8, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
           </button>
         </div>
@@ -1758,7 +1758,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                       {/* Date + add button */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4, flexShrink:0 }}>
                         {isToday
-                          ? <span style={{ background:C.accent, color:"var(--on-solid)", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500 }}>{d}</span>
+                          ? <span style={{ background:C.accent, color:"var(--on-accent)", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500 }}>{d}</span>
                           : <span style={{ fontSize:13, color:col }}>{d}</span>}
                         {projects.length>0 && (
                           <button aria-label="新增任務" onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
@@ -3037,7 +3037,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose, onOpenProject }) => {
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:"var(--accent)",
               display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <Ico name="msgSquare" size={15} color="var(--on-solid)"/>
+              <Ico name="msgSquare" size={15} color="var(--on-accent)"/>
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>AI 助理</div>
@@ -3081,7 +3081,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose, onOpenProject }) => {
                 background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
                 border:m.role==="user"?"none":"1px solid var(--border)" }}>
                 {m.role==="user" ? (
-                  <span style={{ fontSize:13, color:"var(--on-solid)", lineHeight:1.6 }}>{m.text}</span>
+                  <span style={{ fontSize:13, color:"var(--on-accent)", lineHeight:1.6 }}>{m.text}</span>
                 ) : (
                   <div style={{ fontSize:13, color:"var(--text)", lineHeight:1.7 }}
                     onClick={e => {
@@ -3134,7 +3134,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose, onOpenProject }) => {
                 background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
                 cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
                 display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
-              <Ico name="send" size={14} color="var(--on-solid)"/>
+              <Ico name="send" size={14} color="var(--on-accent)"/>
             </button>
           </div>
           <div style={{ marginTop:6, fontSize:12, color:"var(--text-subtle)", textAlign:"center" }}>
@@ -3288,13 +3288,13 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
             <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
               style={{ padding:"0 16px", borderRadius:8, border:"none", flexShrink:0,
                 background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
-                color:"var(--on-solid)", fontFamily:"inherit", fontSize:13, fontWeight:500,
+                color:"var(--on-accent)", fontFamily:"inherit", fontSize:13, fontWeight:500,
                 cursor:newEmail.trim()&&!adding?"pointer":"default",
                 display:"flex", alignItems:"center", gap:6, transition:"background 0.15s",
                 whiteSpace:"nowrap" }}>
               {adding
-                ? <OrganicLoader size={13} color="var(--on-solid)" />
-                : <Ico name="user" size={13} color="var(--on-solid)"/>}
+                ? <OrganicLoader size={13} color="var(--on-accent)" />
+                : <Ico name="user" size={13} color="var(--on-accent)"/>}
               新增
             </button>
           </div>
@@ -3451,11 +3451,11 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
               <button onClick={handlePush} disabled={pushing || hasInFlight} className={CTA_CLASS}
                 style={{ width:"100%", padding:"10px 0", borderRadius:8,
                   background: (pushing || hasInFlight) ? "var(--border)" : "var(--accent)",
-                  color: (pushing || hasInFlight) ? "var(--text-subtle)" : "var(--on-solid)", fontFamily:"inherit",
+                  color: (pushing || hasInFlight) ? "var(--text-subtle)" : "var(--on-accent)", fontFamily:"inherit",
                   fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
                   alignItems:"center", justifyContent:"center", gap:6 }}>
                 {(pushing || hasInFlight)
-                  ? <OrganicLoader size={13} color="var(--on-solid)" />
+                  ? <OrganicLoader size={13} color="var(--on-accent)" />
                   : <Ico name="send" size={13} color="currentColor"/>}
                 {hasInFlight ? "推送處理中…" : "確認推送"}
               </button>
@@ -3989,7 +3989,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               {isAllSelected ? "取消全選" : "全選"}
             </button>
           )}
-          <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
+          <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-accent)",
             borderRadius:8, padding:"9px 18px", fontSize:13, fontWeight:500,
             cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.accent}40` }}>+ 新增任務</button>
         </div>
@@ -4006,7 +4006,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   cursor:"pointer", transition:"all 0.15s",
                   border:`1px solid ${filterMode===v?C.accent:C.border}`,
                   ...glassToggle(filterMode===v, C.accent),
-                  color:filterMode===v?"var(--on-solid)":C.textMid }}>
+                  color:filterMode===v?"var(--on-accent)":C.textMid }}>
                 {text}
               </button>
             ))}
@@ -4076,7 +4076,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       border:`2px solid ${isSelected ? C.accent : C.borderMid}`,
                       background:isSelected ? C.accent : C.white,
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {isSelected && <span style={{ color:"var(--on-solid)", fontSize:12, lineHeight:1 }}>✓</span>}
+                    {isSelected && <span style={{ color:"var(--on-accent)", fontSize:12, lineHeight:1 }}>✓</span>}
                   </div>
                   <span style={{ fontSize:12, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
@@ -4121,7 +4121,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                         cursor:"pointer", transition:"all 0.15s",
                         border:`1.5px solid ${task.type===v?C.accent:C.border}`,
                         ...glassToggle(task.type===v, C.accent),
-                        color:task.type===v?"var(--on-solid)":C.textMid,
+                        color:task.type===v?"var(--on-accent)":C.textMid,
                         display:"flex", alignItems:"center", gap:5 }}>
                       <Ico name={ico} size={13} color="currentColor"/>{text}
                     </button>
@@ -4404,7 +4404,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
       <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
       <div style={{ fontSize:14, fontWeight:400, color:C.textMid, marginBottom:20 }}>{msg}</div>
-      <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
+      <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-accent)",
         borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:500,
         cursor:"pointer", fontFamily:"inherit" }}>前往專案資訊</button>
     </div>
@@ -4655,7 +4655,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
                             <button onClick={()=>setJiraBoot(p=>({...p,open:false}))} className={CTA_CLASS}
-                              style={{ padding:"8px 20px", background:"var(--accent)", color:"var(--on-solid)",
+                              style={{ padding:"8px 20px", background:"var(--accent)", color:"var(--on-accent)",
                                 borderRadius:8, fontSize:13, fontWeight:400, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
                           </div>
                         </div>
@@ -5332,7 +5332,7 @@ const LoginPage = ({ theme, setTheme }) => {
         boxShadow:`0 4px 24px ${tint(0.08)}, ${RIM}` }}>
         <div style={{ width:56, height:56, borderRadius:12, background:"var(--accent)",
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
-          <Ico name="building" size={26} color="var(--on-solid)"/>
+          <Ico name="building" size={26} color="var(--on-accent)"/>
         </div>
         <h1 style={{ fontSize:20, fontWeight:500, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
         <p style={{ fontSize:13, color:"var(--text-mid)", margin:"0 0 28px" }}>輸入公司 email 以收取登入連結</p>
@@ -5346,7 +5346,7 @@ const LoginPage = ({ theme, setTheme }) => {
           {err && <div style={{ fontSize:12, color:"var(--red)", marginBottom:8 }}>{err}</div>}
           <button onClick={send} disabled={loading||!email.trim()} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0", background:email.trim()?"var(--accent)":"var(--border)",
-              color:email.trim()?"var(--on-solid)":"var(--text-subtle)", borderRadius:8,
+              color:email.trim()?"var(--on-accent)":"var(--text-subtle)", borderRadius:8,
               fontSize:14, fontWeight:400, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
             {loading ? "寄送中…" : "寄送登入連結"}
           </button>
@@ -5452,7 +5452,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
           </div>
           <button onClick={save} disabled={saving} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0",
-              background:saved?"var(--green)":"var(--accent)", color:"var(--on-solid)",
+              background:saved?"var(--green)":"var(--accent)", color:(saved?"var(--on-solid)":"var(--on-accent)"),
               borderRadius:8, fontSize:13, fontWeight:400,
               cursor:"pointer", fontFamily:"inherit", transition:"background 0.2s" }}>
             {saving?"儲存中…":saved?"✓ 已儲存":"儲存設定"}
@@ -5975,7 +5975,7 @@ export default function App() {
                 style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                   background:showAi?"var(--accent)":"var(--surface-raised)",
                   border:"1px solid var(--border)", borderRadius:8,
-                  cursor:"pointer", color:showAi?"var(--on-solid)":"var(--text-subtle)", transition:"all 0.12s" }}
+                  cursor:"pointer", color:showAi?"var(--on-accent)":"var(--text-subtle)", transition:"all 0.12s" }}
                 onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}}
                 onMouseLeave={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}}
                 title="AI 助理">
@@ -6003,7 +6003,7 @@ export default function App() {
                 )}
                 <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
                   background:"var(--accent)", display:"flex", alignItems:"center",
-                  justifyContent:"center", fontSize:12, fontWeight:500, color:"var(--on-solid)" }}>
+                  justifyContent:"center", fontSize:12, fontWeight:500, color:"var(--on-accent)" }}>
                   {(profile?.display_name || session?.user?.email || "?")[0].toUpperCase()}
                 </div>
                 <div style={{ textAlign:"left" }}>

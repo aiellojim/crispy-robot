@@ -22,6 +22,7 @@ export const LIGHT_TOKENS = `
     --text-subtle: #707070;
     --accent: #E8621A;
     --accent-text: #C2410C;
+    --on-accent: #FFFFFF;
     --on-solid: #FFFFFF;
     --accent-light: #FFF4EE;
     --accent-border: rgba(232,98,26,0.25);
@@ -64,8 +65,9 @@ export const DARK_TOKENS = `
     --text: #EDEDED;
     --text-mid: #B8B8C2;
     --text-subtle: #A4A4B0;
-    --accent: #F4873D;
+    --accent: #D9531E;
     --accent-text: #F4873D;
+    --on-accent: #FFFFFF;
     --on-solid: #1A0F05;
     --accent-light: #2A1A0A;
     --accent-border: rgba(244,135,61,0.3);
