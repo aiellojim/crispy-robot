@@ -474,3 +474,11 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - 人設（`JIM_PERSONA_PROMPT`）僅在 `display_name` 為 Jim Chao 時附加（`isPersonaOwner`）；其他人觸發 jim mode / go rogue，AI 維持正常語氣。
 
 - 2026-10-23：ACA 設定新增「處理通話」下拉（內線／外線／內外線都接聽），欄位 `projects.aca_call_scope`（2026-10-27 起存代碼 internal/external/both，ACA basic settings 表單也讀它）（migration 20261023_add_aca_call_scope.sql），與線路數、ACA 方案同列三欄等寬。上線順序：先 migration、後前端。
+
+## UI/UX 批次（2026-10-30）
+還原點：`before-ui-2-3-4-ux4-2026-10-30`。
+- **配色 token（UI 4）**：`--accent-text`（橘色當「文字」用，淺色 #C2410C／深色同 accent）；`--on-solid`（實心 accent／狀態色填色上的文字與勾勾，淺色白、深色近黑、jim mode 黑）。**凡是 `color:` 吃橘色用 `C.accentText`，填色底上的字用 `var(--on-solid)`，不要再寫 `#fff`**（Jira 藍按鈕與覆蓋層除外）。淺色 text-subtle/green/red 與 AVT 已微調到 AA。已知未解：淺色 `--accent #E8621A` 底 + 白字僅 3.4:1（主要按鈕），要過 AA 得把填色橘加深，屬品牌色決策。
+- **產品標籤（UI 2）**：專案卡片的產品標籤＝中性外框 + 7px 產品色圓點；`Chip` 有 `dot` 版本（選中＝深色實線外框）。飽和色只給狀態（逾期／完成／即將上線）。
+- **字級／圓角（UI 3）**：字級刻度 11/12/13/14/16/20/24/32/44、圓角 4/6/8/12/16/pill20（`theme.js` 的 `FONT_SCALE`/`RADIUS_SCALE`）。規則：非標籤文字最小 12，11 只給「全大寫＋字距」欄位標籤。
+- **Cmd/Ctrl+K（UX 4）**：`CommandPalette`（App 層、Portal、zIndex 25000）；空白時「我負責的」（PIC＝登入者 display_name）優先；Enter 開專案總覽。header 也有搜尋鈕。
+- **AI 回覆專案連結（UX 4）**：`linkifyProjects()` 在 `renderMarkdown` 輸出上、只改標籤外文字，專案名稱（≥3 字元、不分大小寫、長名優先、英數名要求前後非英數、同名取第一個）→ `<a data-project-id>`，點擊由 AiPanel 事件委派開專案並關面板。system prompt 要求 AI 照抄專案原名。

@@ -362,6 +362,8 @@ const GLOBAL_CSS = `
      :not(:disabled)：React 不會對 disabled 按鈕觸發 mouse 事件，CSS 的 :hover 會，所以要自己排除。
      離開 hover 時瀏覽器自然回到 inline 的 base 值，不需要再手寫「還原」。
      用法：<button className="hv-accent">；有條件的 hover 用 className={cond ? "hv-x" : undefined}。 */
+  .ai-proj-link { color:var(--accent-text); text-decoration:underline; text-underline-offset:2px; font-weight:500; cursor:pointer; }
+  .ai-proj-link:hover { text-decoration-thickness:2px; }
   .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent) !important; }
   .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
   .hv-danger:not(:disabled):hover { background:var(--red-subtle) !important; border-color:var(--red) !important; color:var(--red) !important; }
@@ -2704,11 +2706,42 @@ function renderMarkdown(md) {
   return h;
 }
 
+// AI 回覆裡的專案名稱 → 可點擊連結（UX 4）。在 renderMarkdown 已 escape 過的 HTML 上做：
+// 只改「標籤之外」的文字，名稱比對不分大小寫、長名字優先（避免短名吃掉長名）；英數名稱要求前後
+// 不是英數字（避免 "IC" 命中 "PICK"）；同名專案只連第一個，並且少於 3 個字元的名稱不連（誤中率太高）。
+// 連結只帶 data-project-id，真正的開啟動作由面板的 onClick 事件委派處理（不放 href / inline handler）。
+const escHtml = (t) => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const escMd   = (t) => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); // 與 renderMarkdown 的 escape 一致，名稱才比得到
+const escRe   = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function buildProjectLinkRegex(projects) {
+  const byName = new Map();
+  projects.forEach(p => {
+    const n = (p.info.name || "").trim();
+    if (n.length < 3) return;
+    const key = escMd(n).toLowerCase();
+    if (!byName.has(key)) byName.set(key, p.id);
+  });
+  if (!byName.size) return null;
+  const names = [...byName.keys()].sort((a,b) => b.length - a.length);
+  const re = new RegExp(`(?<![A-Za-z0-9])(${names.map(escRe).join("|")})(?![A-Za-z0-9])`, "gi");
+  return { re, byName };
+}
+function linkifyProjects(html, idx) {
+  if (!idx) return html;
+  return html.split(/(<[^>]+>)/g).map(seg => {
+    if (seg.startsWith("<")) return seg;
+    return seg.replace(idx.re, (m) => {
+      const id = idx.byName.get(m.toLowerCase());
+      return id ? `<a href="#" data-project-id="${escHtml(id)}" class="ai-proj-link">${m}</a>` : m;
+    });
+  }).join("");
+}
+
 // AI 輸入欄：預設單行，隨內容自動長高，超過 5 行（5×20px 行高 + 上下 padding 28px）改成內部捲動。
 // 送出鈕貼底（bottom:8），單行時剛好置中、多行時貼在最後一行旁邊——慣例見 todo.md／對話紀錄。
 const AI_INPUT_MAX_H = 128;
 
-const AiPanel = ({ projects, allTasks, userName, onClose }) => {
+const AiPanel = ({ projects, allTasks, userName, onClose, onOpenProject }) => {
   useEscClose(onClose);
   const [msgs,   setMsgs]   = useState([]);
   const [input,  setInput]  = useState("");
@@ -2779,6 +2812,8 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
       ].filter(l=>l!=="").join("\n");
     }).join("\n\n");
   }, [projects, allTasks]);
+
+  const linkIdx = useMemo(() => buildProjectLinkRegex(projects), [projects]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior:"smooth" });
@@ -2861,7 +2896,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
     const identityCtx = userName
       ? `目前使用者：${userName}。使用者說「我的」「我負責的」時，指 PIC 等於「${userName}」的專案（比對不分大小寫與空白）。若沒有任何專案的 PIC 相符，直接回答找不到 PIC 為「${userName}」的專案，不要猜測。`
       : `目前使用者身份未知（尚未設定顯示名稱）。使用者提到「我的」時，請先請對方告知自己的 PIC 名稱，不要猜測。`;
-    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。\n\n${identityCtx}\n\n專案資料：\n${projectCtx}${personaAddon}`;
+    const systemPrompt = `你是飯店專案進度儀表板的 AI 助理。請根據以下專案資料，簡短、精確地回答問題（繁體中文、300字以內）。提到專案時請完整照抄資料中的專案名稱（不要縮寫或翻譯），系統會自動把名稱變成可點擊的連結。\n\n${identityCtx}\n\n專案資料：\n${projectCtx}${personaAddon}`;
 
     try {
       const res = await fetch(
@@ -2957,7 +2992,13 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
                   <span style={{ fontSize:13, color:"var(--on-solid)", lineHeight:1.6 }}>{m.text}</span>
                 ) : (
                   <div style={{ fontSize:13, color:"var(--text)", lineHeight:1.7 }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }}/>
+                    onClick={e => {
+                      const a = e.target.closest?.("[data-project-id]");
+                      if (!a) return;
+                      e.preventDefault();
+                      onOpenProject?.(a.getAttribute("data-project-id"));
+                    }}
+                    dangerouslySetInnerHTML={{ __html: linkifyProjects(renderMarkdown(m.text), linkIdx) }}/>
                 )}
               </div>
             </div>
@@ -5338,6 +5379,119 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
   , document.body);
 };
 
+// ─── 全域搜尋／跳轉（Cmd/Ctrl+K，UX 4）────────────────────────────────────────
+// 只做「找專案 → 開總覽」與兩個頁面切換；不做資料寫入，所以不需要確認框。
+// 空白時：我負責的（PIC = 登入者）排最前面，其餘依上線日；輸入後比對名稱／Hotel ID／PIC／地區／產品。
+// 面板用不透明 surface-raised（功能性浮層，不用玻璃，見 docs/architecture.md「玻璃只給 chrome」）。
+const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "");
+const CommandPalette = ({ projects, meName, onOpenProject, onGoPage, onClose }) => {
+  useEscClose(onClose);
+  const [q, setQ] = useState("");
+  const [sel, setSel] = useState(0);
+  const inputRef = useRef(null);
+  const listRef  = useRef(null);
+  const composingRef = useRef(false);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const me = (meName || "").trim().toLowerCase().replace(/\s+/g, "");
+  const items = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const isMine = (p) => !!me && (p.info.pic || "").trim().toLowerCase().replace(/\s+/g, "") === me;
+    const pages = [
+      { kind:"page", id:"home",     label:"前往 專案列表", hint:"頁面" },
+      { kind:"page", id:"calendar", label:"前往 專案行事曆", hint:"頁面" },
+    ].filter(a => !needle || a.label.toLowerCase().includes(needle));
+    let list = projects.map(p => ({ kind:"project", id:p.id, p, mine:isMine(p),
+      hay:[p.info.name, p.info.hotelId, p.info.pic, p.info.region, ...(p.info.products||[])].filter(Boolean).join(" ").toLowerCase() }));
+    if (needle) {
+      const terms = needle.split(/\s+/).filter(Boolean);
+      list = list.filter(x => terms.every(t => x.hay.includes(t)));
+      // 名稱開頭命中 > 名稱包含 > 其他欄位命中；同級我負責的優先
+      const rank = (x) => { const n=(x.p.info.name||"").toLowerCase(); return n.startsWith(needle)?0 : n.includes(needle)?1 : 2; };
+      list.sort((a,b) => rank(a)-rank(b) || (b.mine-a.mine) || (a.p.info.name||"").localeCompare(b.p.info.name||""));
+    } else {
+      list.sort((a,b) => (b.mine-a.mine) || String(a.p.info.launchDate||"9999").localeCompare(String(b.p.info.launchDate||"9999")));
+    }
+    return [...list.slice(0, 30), ...pages];
+  }, [q, projects, me]);
+
+  useEffect(() => { listRef.current?.querySelector(`[data-idx="${sel}"]`)?.scrollIntoView({ block:"nearest" }); }, [sel]);
+
+  const choose = (it) => {
+    if (!it) return;
+    onClose();
+    if (it.kind === "project") onOpenProject(it.id); else onGoPage(it.id);
+  };
+  const onKey = (e) => {
+    if (composingRef.current || e.nativeEvent?.isComposing) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setSel(i => Math.min(i+1, items.length-1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel(i => Math.max(i-1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); choose(items[sel]); }
+  };
+
+  return createPortal(
+    <div style={{ position:"fixed", inset:0, zIndex:25000, background:"rgba(0,0,0,0.28)", display:"flex",
+      justifyContent:"center", alignItems:"flex-start", paddingTop:"12vh" }} onMouseDown={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="搜尋專案" onMouseDown={e=>e.stopPropagation()}
+        style={{ width:"min(620px, calc(100vw - 32px))", maxHeight:"68vh", display:"flex", flexDirection:"column",
+          background:"var(--surface-raised)", border:"1px solid var(--border-mid)", borderRadius:12, overflow:"hidden",
+          boxShadow:"0 24px 64px rgba(0,0,0,0.35)", fontFamily:"inherit" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+          <Ico name="search" size={16} color="var(--text-subtle)"/>
+          <input ref={inputRef} value={q} onChange={e=>{ setQ(e.target.value); setSel(0); }} onKeyDown={onKey}
+            onCompositionStart={()=>{ composingRef.current = true; }} onCompositionEnd={()=>{ composingRef.current = false; }}
+            placeholder="搜尋飯店名稱、Hotel ID、PIC、地區、產品…" aria-label="搜尋專案"
+            style={{ flex:1, minWidth:0, border:"none", outline:"none", background:"transparent", color:"var(--text)",
+              fontSize:14, fontFamily:"inherit" }}/>
+          <span style={{ fontSize:11, color:"var(--text-subtle)", border:"1px solid var(--border)", borderRadius:4, padding:"1px 6px", fontFamily:"'DM Mono',monospace" }}>Esc</span>
+        </div>
+        <div ref={listRef} role="listbox" style={{ overflowY:"auto", padding:6 }}>
+          {items.length === 0 && <div style={{ padding:"28px 16px", textAlign:"center", fontSize:13, color:"var(--text-subtle)" }}>找不到符合「{q}」的專案</div>}
+          {items.map((it, i) => {
+            const active = i === sel;
+            const base = { display:"flex", alignItems:"center", gap:10, width:"100%", textAlign:"left", padding:"9px 12px", borderRadius:8,
+              border:"none", cursor:"pointer", fontFamily:"inherit", background:active?"var(--accent-subtle)":"transparent",
+              outline:active?"1px solid var(--accent-border)":"none" };
+            if (it.kind === "page") return (
+              <button key={"pg-"+it.id} data-idx={i} role="option" aria-selected={active} onMouseEnter={()=>setSel(i)} onClick={()=>choose(it)} style={base}>
+                <Ico name={it.id==="home"?"home":"calendar"} size={14} color="var(--text-subtle)"/>
+                <span style={{ fontSize:13, color:"var(--text)" }}>{it.label}</span>
+                <span style={{ marginLeft:"auto", fontSize:12, color:"var(--text-subtle)" }}>{it.hint}</span>
+              </button>
+            );
+            const p = it.p, d = daysUntil(p.info.launchDate);
+            return (
+              <button key={it.id} data-idx={i} role="option" aria-selected={active} onMouseEnter={()=>setSel(i)} onClick={()=>choose(it)} style={base}>
+                <div style={{ minWidth:0, flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:14, fontWeight:500, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.info.name || "（未命名）"}</span>
+                    {it.mine && <span style={{ fontSize:12, color:"var(--green)", background:"var(--green-subtle)", borderRadius:4, padding:"0 6px", flexShrink:0 }}>我的</span>}
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:3, fontSize:12, color:"var(--text-subtle)" }}>
+                    <span>{p.info.pic || "未指派"}</span>
+                    {p.info.products.length>0 && <span style={{ display:"inline-flex", gap:8 }}>
+                      {p.info.products.map(x => <span key={x} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>
+                        <span aria-hidden="true" style={{ width:6, height:6, borderRadius:"50%", background:PRODUCT_COLORS[x]||C.accent }}/>{x}</span>)}
+                    </span>}
+                  </div>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0, fontSize:12, color:"var(--text-subtle)", fontFamily:"'DM Mono',monospace" }}>
+                  <div style={{ color:"var(--text-mid)" }}>{calcPct(p)}%</div>
+                  {p.info.launchDate && <div style={{ color:d!==null&&d<0?"var(--red)":"var(--text-subtle)" }}>{p.info.launchDate}</div>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display:"flex", gap:14, padding:"8px 16px", borderTop:"1px solid var(--border)", fontSize:12, color:"var(--text-subtle)" }}>
+          <span>↑↓ 選擇</span><span>Enter 開啟</span><span style={{ marginLeft:"auto" }}>{IS_MAC ? "⌘" : "Ctrl"} K 開關</span>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // ─── Root ─────────────────────────────────────────────────────
 export default function App() {
   const [page,     setPage]     = useState("home");
@@ -5355,12 +5509,23 @@ export default function App() {
   const [theme,    setTheme]    = useState(() => localStorage.getItem("hotel-dash-theme") || "system");
   const [showInAppNotif, setShowInAppNotif] = useState(false);
   const [showAi,         setShowAi]         = useState(false);
+  const [showPalette,    setShowPalette]    = useState(false); // Cmd/Ctrl+K 全域搜尋
   const [customerNotifs, setCustomerNotifs] = useState([]);
   const [eggFired,       setEggFired]       = useState(false); // 🥚 Konami code overlay
   const [logoEggFired,   setLogoEggFired]   = useState(false); // 🥚 連點 logo 7 下 overlay
   const [jimMode,        setJimMode]        = useState(() => localStorage.getItem("hotel-dash-jim-mode") === "1"); // 🥚 jim mode
   const [eggUnlockCount, setEggUnlockCount] = useState(0); // 🥚 by-user 彩蛋解鎖數，全解鎖皇冠徽章用
   const logoClickRef = useRef({ count:0, lastTime:0 });
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k" && !e.isComposing) {
+        e.preventDefault();
+        setShowPalette(v => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   // Auth
   const [session,      setSession]      = useState(null);
   const [profile,      setProfile]      = useState(null);
@@ -5689,6 +5854,16 @@ export default function App() {
                     onProjectOpen={id=>{ setShowInAppNotif(false); handleOpen(id); }}/>
                 )}
               </div>
+              {/* 全域搜尋（Cmd/Ctrl+K） */}
+              <button aria-label={`搜尋專案（${IS_MAC ? "⌘" : "Ctrl"} K）`} onClick={()=>setShowPalette(true)}
+                style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
+                  background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8,
+                  cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}
+                title={`搜尋專案（${IS_MAC ? "⌘" : "Ctrl"} K）`}>
+                <Ico name="search" size={16} color="currentColor"/>
+              </button>
               {/* AI assistant button */}
               <button aria-label="AI 助理" onClick={()=>setShowAi(v=>!v)}
                 style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
@@ -5788,7 +5963,12 @@ export default function App() {
       <ConfirmHost/>
 
       {/* AI Panel */}
-      {showAi && <AiPanel projects={projects} allTasks={allTasks} userName={profile?.display_name || ""} onClose={()=>setShowAi(false)}/>}
+      {showAi && <AiPanel projects={projects} allTasks={allTasks} userName={profile?.display_name || ""} onClose={()=>setShowAi(false)}
+        onOpenProject={id=>{ setShowAi(false); handleOpen(id); }}/>}
+
+      {/* 全域搜尋／跳轉（Cmd/Ctrl+K） */}
+      {showPalette && <CommandPalette projects={projects} meName={profile?.display_name || ""}
+        onOpenProject={handleOpen} onGoPage={id=>{ setView("home"); setPage(id); }} onClose={()=>setShowPalette(false)}/>}
 
       {/* 🥚 Konami code overlay — 示範用，內容/動畫自己改 */}
       {eggFired && (
