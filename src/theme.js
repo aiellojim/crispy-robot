@@ -21,7 +21,7 @@ export const LIGHT_TOKENS = `
     --text-mid: #6B6B6B;
     --text-subtle: #707070;
     --accent: #E8621A;
-    --accent-text: #C2410C;
+    --accent-text: #E8621A;
     --on-accent: #FFFFFF;
     --on-solid: #FFFFFF;
     --accent-light: #FFF4EE;
@@ -65,13 +65,13 @@ export const DARK_TOKENS = `
     --text: #EDEDED;
     --text-mid: #B8B8C2;
     --text-subtle: #A4A4B0;
-    --accent: #D9531E;
-    --accent-text: #F4873D;
+    --accent: #E8621A;
+    --accent-text: #E8621A;
     --on-accent: #FFFFFF;
     --on-solid: #1A0F05;
     --accent-light: #2A1A0A;
-    --accent-border: rgba(244,135,61,0.3);
-    --accent-subtle: rgba(244,135,61,0.08);
+    --accent-border: rgba(232,98,26,0.3);
+    --accent-subtle: rgba(232,98,26,0.08);
     --green: #22C55E;
     --green-light: #052E16;
     --green-subtle: rgba(34,197,94,0.1);
@@ -97,7 +97,7 @@ export const DARK_TOKENS = `
     --glass-surface: rgba(33,33,43,0.55);
     --glass-surface-hover: rgba(42,42,54,0.72);
     --canvas-glow-1: rgba(77,144,212,0.40);
-    --canvas-glow-2: rgba(244,135,61,0.36);
+    --canvas-glow-2: rgba(232,98,26,0.36);
     --canvas-glow-3: rgba(34,164,116,0.32);
     `;
 
