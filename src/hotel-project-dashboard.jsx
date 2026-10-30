@@ -158,7 +158,7 @@ const GLOBAL_CSS = `
     background-attachment: fixed; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 4px; }
   input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
   @media (prefers-color-scheme: dark) {
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
@@ -535,8 +535,8 @@ const CloseButton = ({ onClick, size=16, radius=8, padding="4px 10px", color="va
 
 // Linear-style thin progress bar (replaces Ring)
 const LinearProgress = ({ pct, color }) => (
-  <div style={{ height:3, background:"var(--border)", borderRadius:2, overflow:"hidden", width:"100%" }}>
-    <div style={{ height:"100%", borderRadius:2, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
+  <div style={{ height:3, background:"var(--border)", borderRadius:4, overflow:"hidden", width:"100%" }}>
+    <div style={{ height:"100%", borderRadius:4, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
   </div>
 );
 
@@ -554,7 +554,7 @@ const ProgressCard = ({ label, checked, total, color }) => {
       <LinearProgress pct={pct} color={color}/>
       <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
         <span style={{ fontSize:12, color:"var(--text-subtle)", fontFamily:"'DM Mono',monospace" }}>{checked}/{total}</span>
-        <span style={{ fontSize:11, color:total-checked===0?color:"var(--text-subtle)", fontWeight:total-checked===0?600:400 }}>
+        <span style={{ fontSize:12, color:total-checked===0?color:"var(--text-subtle)", fontWeight:total-checked===0?600:400 }}>
           {total-checked===0 ? "✓ 完成" : `剩 ${total-checked} 項`}
         </span>
       </div>
@@ -642,7 +642,7 @@ const DebugHud = ({ projects, allTasks }) => {
   return (
     <div style={{ position:"fixed", bottom:16, left:16, zIndex:99997,
       background:"rgba(0,10,0,0.88)", color:"#00ff41", fontFamily:"'DM Mono','Courier New',monospace",
-      fontSize:11, padding:"10px 14px", borderRadius:8, border:"1px solid rgba(0,255,65,0.35)",
+      fontSize:12, padding:"10px 14px", borderRadius:8, border:"1px solid rgba(0,255,65,0.35)",
       lineHeight:1.7, pointerEvents:"none", boxShadow:"0 4px 20px rgba(0,0,0,0.5)", minWidth:180 }}>
       <div style={{ fontWeight:600, marginBottom:2 }}>🖥️ JIM MODE</div>
       <div>{now.toLocaleTimeString("zh-TW", { hour12:false })}</div>
@@ -658,8 +658,8 @@ const Ico = ({ name, size=16, color="currentColor", strokeWidth=1.6, style={} })
 );
 
 const MiniBar = ({ pct, color }) => (
-  <div style={{ height:4, background:"var(--border)", borderRadius:2, overflow:"hidden", flex:1 }}>
-    <div style={{ height:"100%", borderRadius:2, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
+  <div style={{ height:4, background:"var(--border)", borderRadius:4, overflow:"hidden", flex:1 }}>
+    <div style={{ height:"100%", borderRadius:4, background:color, width:`${pct}%`, transition:"width 0.5s ease" }}/>
   </div>
 );
 
@@ -716,7 +716,7 @@ const SectionLabel = ({ title, icon, color="var(--accent-text)" }) => (
 
 const SectionCount = ({ title, checked, total, color }) => (
   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
-    <div style={{ fontSize:15, fontWeight:400, color:"var(--text)" }}>{title}</div>
+    <div style={{ fontSize:14, fontWeight:400, color:"var(--text)" }}>{title}</div>
     <div style={{ border:"1px solid var(--border)", borderRadius:8, padding:"4px 12px", background:"var(--surface-raised)" }}>
       <span style={{ fontSize:16, fontWeight:500, color, fontFamily:"'DM Mono',monospace" }}>{checked}</span>
       <span style={{ fontSize:12, color:"var(--text-subtle)" }}>/{total}</span>
@@ -811,10 +811,10 @@ const CheckRow = ({ label, checked, onChange }) => (
       border:`1.5px solid ${checked ? "var(--green)" : "var(--border-mid)"}`,
       background: checked ? "var(--green)" : "transparent",
       display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-      {checked && <span style={{ color:"var(--on-solid)", fontSize:10, fontWeight:500 }}>✓</span>}
+      {checked && <span style={{ color:"var(--on-solid)", fontSize:12, fontWeight:500 }}>✓</span>}
     </div>
     <span style={{ fontSize:13, color: checked ? "var(--text)" : "var(--text-mid)", flex:1 }}>{label}</span>
-    {!checked && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400 }}>待完成</span>}
+    {!checked && <span style={{ fontSize:12, color:"var(--text-subtle)", fontWeight:400 }}>待完成</span>}
   </div>
 );
 
@@ -831,7 +831,7 @@ const SheetLink = ({ value, onChange }) => {
   const invalid = value.length>0 && !value.startsWith("http");
   return (
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
-      border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
+      border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:8 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
         color:"var(--accent-text)", textTransform:"uppercase", marginBottom:7, fontWeight:400 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
@@ -839,7 +839,7 @@ const SheetLink = ({ value, onChange }) => {
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
         onFocus={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--accent)")}
         onBlur={e=>(e.target.style.borderColor=invalid?"var(--red)":"var(--border)")}/>
-      {invalid && <div style={{ marginTop:5, fontSize:11, color:"var(--red)" }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
+      {invalid && <div style={{ marginTop:5, fontSize:12, color:"var(--red)" }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
       {!invalid && value && <a href={value} target="_blank" rel="noreferrer"
         style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:7,
           fontSize:12, color:"var(--accent-text)", textDecoration:"none", fontWeight:400 }}>↗ 開啟連結</a>}
@@ -861,12 +861,12 @@ const Batch2Card = ({ title, isDone, onToggle, note, onNote, link, onLink, badge
         border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
         background:isDone?"var(--purple)":"transparent",
         display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-        {isDone && <span style={{ color:"var(--on-solid)", fontSize:10, fontWeight:500 }}>✓</span>}
+        {isDone && <span style={{ color:"var(--on-solid)", fontSize:12, fontWeight:500 }}>✓</span>}
       </div>
       <span style={{ fontSize:14, fontWeight:400, color:"var(--text)", flex:1 }}>{title}</span>
-      {badge && <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
-        border:"1px solid var(--amber)", borderRadius:5, padding:"2px 8px", fontWeight:400 }}>{badge}</span>}
-      {!isDone && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400, ...(badge?{ marginLeft:4 }:null) }}>待完成</span>}
+      {badge && <span style={{ fontSize:12, color:"var(--prod-gw)", background:"var(--amber-subtle)",
+        border:"1px solid var(--amber)", borderRadius:6, padding:"2px 8px", fontWeight:400 }}>{badge}</span>}
+      {!isDone && <span style={{ fontSize:12, color:"var(--text-subtle)", fontWeight:400, ...(badge?{ marginLeft:4 }:null) }}>待完成</span>}
     </div>
     {/* 卡片 body：備註 + 檔案連結 */}
     <div style={{ padding:"0 16px 16px" }}>
@@ -895,7 +895,7 @@ const OvCheckRow = ({ label, checked, note, color }) => (
       <div style={{ flex:1, minWidth:0 }}>
         <span style={{ fontSize:12, color:checked?"var(--text)":"var(--text-subtle)", lineHeight:1.5 }}>{label}</span>
         {note && <div style={{ marginTop:4, padding:"5px 9px", background:"var(--bg)",
-          border:"1px solid var(--border)", borderRadius:6, fontSize:11, color:"var(--text-mid)",
+          border:"1px solid var(--border)", borderRadius:6, fontSize:12, color:"var(--text-mid)",
           lineHeight:1.6, whiteSpace:"pre-wrap" }}>{note}</div>}
       </div>
     </div>
@@ -924,19 +924,19 @@ const OvBatch2Row = ({ item, checked, note, linkKey, sheetLinks }) => {
   const done=!!checked, hasNote=note&&note.trim();
   return (
     <div style={{ background:done?"var(--purple-subtle)":"transparent",
-      border:`1px solid ${done?"var(--purple)":"var(--border)"}`, borderRadius:10, padding:"11px 13px" }}>
+      border:`1px solid ${done?"var(--purple)":"var(--border)"}`, borderRadius:8, padding:"11px 13px" }}>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:(hasNote||sheetLinks[linkKey])?7:0 }}>
         <span style={{ fontSize:12, color:done?"var(--purple)":"var(--border-mid)", fontWeight:500 }}>{done?"✓":"○"}</span>
         <span style={{ fontSize:13, color:done?"var(--text)":"var(--text-subtle)", fontWeight:done?600:400 }}>{item}</span>
       </div>
       {hasNote && <div style={{ margin:"5px 0 7px 20px", padding:"5px 9px", background:"var(--bg)",
-        border:"1px solid var(--border)", borderRadius:6, fontSize:11, color:"var(--text-mid)",
+        border:"1px solid var(--border)", borderRadius:6, fontSize:12, color:"var(--text-mid)",
         lineHeight:1.6, whiteSpace:"pre-wrap" }}>{note}</div>}
       {sheetLinks[linkKey] && <div style={{ marginLeft:20 }}>
         <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
-          style={{ fontSize:11, color:"var(--purple)", textDecoration:"none", fontWeight:400,
+          style={{ fontSize:12, color:"var(--purple)", textDecoration:"none", fontWeight:400,
             background:"var(--purple-subtle)", border:"1px solid var(--purple)",
-            borderRadius:5, padding:"2px 9px", display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="link" size={11} color="currentColor"/> 連結</a>
+            borderRadius:6, padding:"2px 9px", display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="link" size={11} color="currentColor"/> 連結</a>
       </div>}
     </div>
   );
@@ -966,7 +966,7 @@ const THEME_OPTIONS = [
 
 const ThemeToggle = ({ theme, setTheme }) => (
   <div style={{ display:"flex", alignItems:"center", background:"var(--surface-raised)",
-    border:"1px solid var(--border)", borderRadius:9, padding:3, gap:2, height:36 }}>
+    border:"1px solid var(--border)", borderRadius:8, padding:3, gap:2, height:36 }}>
     {THEME_OPTIONS.map(({ value, label, icoName }) => {
       const active = theme === value;
       return (
@@ -1128,7 +1128,7 @@ const ConfirmHost = () => {
         display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
       <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg"
         onKeyDown={trapTab}
-        style={{ ...GLASS, border:"1px solid var(--border)", borderRadius:14, padding:24, width:"100%",
+        style={{ ...GLASS, border:"1px solid var(--border)", borderRadius:12, padding:24, width:"100%",
           maxWidth:400, boxShadow:MODAL_SHADOW, animation:"fadeIn 0.15s ease" }}>
         <div id="confirm-title" style={{ fontSize:16, fontWeight:500, color:"var(--text)", marginBottom:8 }}>
           {req.title || (danger ? "確認操作" : "提醒")}
@@ -1258,12 +1258,12 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
 
         <div style={{ flex:1, overflowY:"auto", padding:20 }}>
           {status==="unsupported" && (
-            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:8, padding:14, fontSize:13, color:C.red }}>
               此瀏覽器不支援 Email 提醒，建議改用 Chrome 或 Edge。
             </div>
           )}
           {status==="denied" && (
-            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:10, padding:14, fontSize:13, color:C.red }}>
+            <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}33`, borderRadius:8, padding:14, fontSize:13, color:C.red }}>
               通知權限已被封鎖，請至瀏覽器設定手動開啟後重試。
             </div>
           )}
@@ -1287,7 +1287,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
           )}
           {sub&&(
             <div>
-              <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:10,
+              <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:8,
                 padding:"10px 14px", fontSize:13, color:C.green, marginBottom:20,
                 display:"flex", alignItems:"center", gap:8 }}>
                 ✓ 已啟用 Email 提醒・{sub.pic_name}
@@ -1321,13 +1321,13 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                     return (
                       <div key={proj.id} {...kbd(()=>handleToggleProject(proj.id))} aria-pressed={active}
                         style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                          padding:"10px 14px", borderRadius:10, cursor:"pointer",
+                          padding:"10px 14px", borderRadius:8, cursor:"pointer",
                           background:active?C.accentLight:C.bg,
                           border:`1px solid ${active?C.accentBorder:"transparent"}`,
                           transition:"all 0.15s" }}>
                         <div>
                           <div style={{ fontSize:13, color:C.text, fontWeight:active?600:400 }}>{proj.info?.name||"未命名專案"}</div>
-                          {proj.info?.pic&&<div style={{ fontSize:11, color:C.textLight, marginTop:1 }}>👤 {proj.info.pic}</div>}
+                          {proj.info?.pic&&<div style={{ fontSize:12, color:C.textLight, marginTop:1 }}>👤 {proj.info.pic}</div>}
                         </div>
                         {active?<Ico name="bell" size={16} color="currentColor"/>:<Ico name="bellOff" size={16} color="currentColor"/>}
                       </div>
@@ -1340,7 +1340,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
               <div style={{ marginTop:28, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
                 <button onClick={handleUnsubscribe} disabled={loading}
                   style={{ width:"100%", padding:"8px 0", background:"none",
-                    border:`1px solid ${C.red}66`, borderRadius:10, color:C.red,
+                    border:`1px solid ${C.red}66`, borderRadius:8, color:C.red,
                     fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>
                   {loading?"處理中…":"取消所有 Email 提醒"}
                 </button>
@@ -1372,14 +1372,14 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
     <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.08)", zIndex:20000 }}/>
     <div style={{ position:"fixed", top:58, right:40, width:360, maxHeight:500,
       ...GLASS,
-      border:"1px solid var(--border)", borderRadius:14,
+      border:"1px solid var(--border)", borderRadius:12,
       boxShadow:`0 8px 30px ${tint(0.15)}, ${RIM}`, zIndex:20001,
       display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ padding:"14px 16px 10px", borderBottom:"1px solid var(--border)",
         display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>通知</div>
         {totalBadge>0 && (
-          <span style={{ fontSize:11, background:"var(--red-light)", color:"var(--red)",
+          <span style={{ fontSize:12, background:"var(--red-light)", color:"var(--red)",
             borderRadius:20, padding:"2px 9px", fontWeight:400 }}>
             {totalBadge} 筆
           </span>
@@ -1388,7 +1388,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
       <div style={{ overflowY:"auto", flex:1 }}>
         {/* 客戶更新 */}
         {customerNotifs.length>0 && (<>
-          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:500, letterSpacing:"0.08em",
+          <div style={{ padding:"8px 16px 4px", fontSize:11, fontWeight:500, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--accent-text)" }}>客戶更新</div>
           {customerNotifs.map((n, i) => {
             const p = n.payload ?? {};
@@ -1410,12 +1410,12 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
                     overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {n.projects?.name ?? p.hotel_id}
                   </div>
-                  <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
+                  <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2,
                     overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                     {p.email} · {p.checked?"已勾選":"已取消"} {p.item_key}
                   </div>
                 </div>
-                <div style={{ fontSize:10, color:"var(--text-subtle)", flexShrink:0 }}>
+                <div style={{ fontSize:12, color:"var(--text-subtle)", flexShrink:0 }}>
                   {new Date(n.created_at).toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}
                 </div>
               </div>
@@ -1424,7 +1424,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
         </>)}
         {/* 即將到期 */}
         {urgentNotifs.length>0 && (<>
-          <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:500, letterSpacing:"0.08em",
+          <div style={{ padding:"8px 16px 4px", fontSize:11, fontWeight:500, letterSpacing:"0.08em",
             textTransform:"uppercase", color:"var(--red)" }}>即將到期</div>
           {urgentNotifs.map((n, i) => (
             <div key={i} {...kbd(()=>{ onClose(); onProjectOpen(n.projId); })}
@@ -1441,7 +1441,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:400, color:"var(--text)",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.name}</div>
-                <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:2,
+                <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2,
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{n.label} · {n.date}</div>
               </div>
             </div>
@@ -1588,11 +1588,11 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.15)", zIndex:20000, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
       onClick={e=>{ if(e.target===e.currentTarget) closeModal(); }}>
       <div style={{ ...GLASS,
-        borderRadius:14, padding:28, width:"100%", maxWidth:520,
+        borderRadius:12, padding:28, width:"100%", maxWidth:520,
         boxShadow:MODAL_SHADOW, animation:"fadeIn 0.2s ease" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24 }}>
           <div>
-            <h3 style={{ fontSize:18, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
+            <h3 style={{ fontSize:16, fontWeight:500, color:C.text, margin:"0 0 4px" }}>{modal.mode==="add"?"新增任務":"編輯任務"}</h3>
             <div style={{ fontSize:12, color:C.textLight }}>{fmtDate(modal.date)}</div>
           </div>
           <CloseButton onClick={closeModal} color={C.textLight}/>
@@ -1622,7 +1622,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:400 }}>相關連結（選填）</label>
           <input type="url" value={draft.url} onChange={e=>setDraft(d=>({ ...d, url:e.target.value }))} placeholder="https://…" style={baseInput}
             onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-          {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
+          {draft.url && !draft.url.startsWith("http") && <div style={{ marginTop:5, fontSize:12, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
         </div>
         <div style={{ marginBottom:16 }}>
           <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:8, fontWeight:400 }}>類型</label>
@@ -1658,7 +1658,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           padding:"14px 0", borderTop:`1px solid ${C.border}`, marginBottom:4 }}>
           <div>
             <div style={{ fontSize:12, fontWeight:400, color:C.text }}>對客戶公開</div>
-            <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
+            <div style={{ fontSize:12, color:C.textLight, marginTop:2 }}>
               {draft.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
             </div>
           </div>
@@ -1672,9 +1672,9 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           </button>
         </div>
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-          <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
+          <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:8, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving} className={CTA_CLASS}
-            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"var(--on-solid)", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"var(--on-solid)", borderRadius:8, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
           </button>
         </div>
@@ -1714,7 +1714,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
               <span style={{ width:8, height:8, borderRadius:"50%", background:filters[k]?text:C.borderMid, flexShrink:0 }}/>{label}
             </button>
           ))}
-          {jiraLoading && <span style={{ fontSize:11, color:C.textLight }}>Jira 資料讀取中…</span>}
+          {jiraLoading && <span style={{ fontSize:12, color:C.textLight }}>Jira 資料讀取中…</span>}
         </div>
       </div>
 
@@ -1760,7 +1760,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                           : <span style={{ fontSize:13, color:col }}>{d}</span>}
                         {projects.length>0 && (
                           <button aria-label="新增任務" onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
-                            style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:5, width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12, color:C.textLight, padding:0, lineHeight:1, flexShrink:0, transition:"all 0.15s" }}
+                            style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:6, width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12, color:C.textLight, padding:0, lineHeight:1, flexShrink:0, transition:"all 0.15s" }}
                             className="hv-fill"
                             title="新增任務">+</button>
                         )}
@@ -1770,16 +1770,16 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                         {dayEvents.slice(0,2).map((ev,ei)=>(
                           <div key={ei} title={`${ev.label} — ${ev.sub}`}
                             onClick={e=>{ e.stopPropagation(); if(ev.taskId) openEditModal(ev.taskObj); else if(ev.jiraUrl) window.open(ev.jiraUrl,"_blank","noopener"); }}
-                            style={{ borderRadius:5, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default", transition:"opacity 0.15s" }}
+                            style={{ borderRadius:6, padding:"3px 6px", background:ev.bg, border:`1px solid ${ev.border}`, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default", transition:"opacity 0.15s" }}
                             className={(ev.taskId||ev.jiraUrl)?"hv-dim":undefined}>
-                            <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            <div style={{ fontSize:12, fontWeight:500, color:ev.text, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                               {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                             </div>
-                            <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
+                            <div style={{ fontSize:12, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>+{dayEvents.length-2} 更多 ↓</div>}
-                        {isExpanded && <div style={{ fontSize:10, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>▲ 收起</div>}
+                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:12, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>+{dayEvents.length-2} 更多 ↓</div>}
+                        {isExpanded && <div style={{ fontSize:12, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>▲ 收起</div>}
                       </div>
                     </>
                   )}
@@ -1801,24 +1801,24 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                 width:Math.max(expandedPos.width, 180), height:dropH,
                 ...GLASS,
                 border:`1px solid ${C.accentBorder}`,
-                borderRadius:10, boxShadow:`0 8px 24px ${tint(0.15)}, ${RIM}`,
+                borderRadius:8, boxShadow:`0 8px 24px ${tint(0.15)}, ${RIM}`,
                 zIndex:9999, display:"flex", flexDirection:"column" }}>
               <div style={{ flex:1, overflowY:"auto", padding:"8px 8px 0", display:"flex", flexDirection:"column", gap:4 }}>
                 {dayEvs.map((ev,ei)=>(
                   <div key={ei} title={`${ev.label} — ${ev.sub}`}
-                    style={{ borderRadius:5, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, flexShrink:0, display:"flex", alignItems:"flex-start", gap:4 }}>
+                    style={{ borderRadius:6, padding:"4px 8px", background:ev.bg, border:`1px solid ${ev.border}`, flexShrink:0, display:"flex", alignItems:"flex-start", gap:4 }}>
                     <div style={{ flex:1, minWidth:0, cursor:(ev.taskId||ev.jiraUrl)?"pointer":"default" }}
                       onClick={e=>{ e.stopPropagation(); if(ev.taskId){ openEditModal(ev.taskObj); setExpandedDay(null); setExpandedPos(null); } else if(ev.jiraUrl){ window.open(ev.jiraUrl,"_blank","noopener"); }}}
                       className={(ev.taskId||ev.jiraUrl)?"hv-dim":undefined}>
-                      <div style={{ fontSize:10, fontWeight:500, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      <div style={{ fontSize:12, fontWeight:500, color:ev.text, lineHeight:1.4, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                         {ev.sub}{ev.taskId?" ✎":ev.jiraUrl?" ↗":""}
                       </div>
-                      <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
+                      <div style={{ fontSize:12, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                     </div>
                     {ev.taskId && (
                       <button aria-label="刪除任務" onClick={e=>{ e.stopPropagation(); deleteTask(ev.taskId); }}
                         style={{ background:"none", border:"none", cursor:"pointer", padding:"1px 3px",
-                          fontSize:11, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
+                          fontSize:12, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
                         className="hv-del"
                         title="刪除任務"><Ico name="trash" size={14} color="currentColor"/></button>
                     )}
@@ -1826,7 +1826,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                 ))}
               </div>
               <div {...kbd(()=>{ setExpandedDay(null); setExpandedPos(null); })}
-                style={{ fontSize:10, color:C.textLight, textAlign:"center", padding:"6px 0",
+                style={{ fontSize:12, color:C.textLight, textAlign:"center", padding:"6px 0",
                   borderTop:`1px solid ${C.border}`, cursor:"pointer", flexShrink:0 }}>▲ 收起</div>
             </div>
           );
@@ -1836,7 +1836,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
       {/* Event list */}
       {events.length>0 && (
         <div style={{ marginTop:24 }}>
-          <h3 style={{ fontSize:15, fontWeight:500, color:C.text, marginBottom:12 }}>本月事件</h3>
+          <h3 style={{ fontSize:14, fontWeight:500, color:C.text, marginBottom:12 }}>本月事件</h3>
           <div style={{ ...GLASS,
             border:"1px solid var(--border)", borderRadius:12, overflow:"hidden",
             boxShadow:RIM }}>
@@ -1977,7 +1977,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
             </div>
             <div style={{ fontSize:32, fontWeight:500, color, fontFamily:"'DM Mono',monospace",
               letterSpacing:-1, marginBottom:4 }}>{value}</div>
-            <div style={{ fontSize:11, color:"var(--text-subtle)" }}>
+            <div style={{ fontSize:12, color:"var(--text-subtle)" }}>
               {isActive ? "點擊取消篩選" : sub}
             </div>
           </div>
@@ -2031,11 +2031,11 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
       {/* Project grid */}
       {filtered.length===0 ? (
         <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
-          <div style={{ width:52, height:52, borderRadius:14, background:"var(--accent-subtle)",
+          <div style={{ width:52, height:52, borderRadius:12, background:"var(--accent-subtle)",
             display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px" }}>
             <Ico name="building" size={26} color="var(--accent)"/>
           </div>
-          <div style={{ fontSize:15, fontWeight:400 }}>
+          <div style={{ fontSize:14, fontWeight:400 }}>
             {projects.length===0 ? "尚無專案，點擊右上角「新增專案」開始" : "找不到符合條件的專案"}
           </div>
         </div>
@@ -2128,17 +2128,17 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
                       <span style={{ fontSize:16, fontWeight:500, color:C.text }}>{proj.info.name||"（未命名）"}</span>
-                      {proj.info.hotelId && <span style={{ fontSize:11, color:C.textLight, fontFamily:"'DM Mono',monospace", background:C.bg, padding:"2px 7px", borderRadius:5 }}>#{proj.info.hotelId}</span>}
-                      {rd && <span style={{ fontSize:11, background:C.accentLight, color:C.accentText, border:`1px solid ${C.accentBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:400 }}>{rd}</span>}
-                      {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:500 }}>✓ 完成</span>}
-                      {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:500, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
+                      {proj.info.hotelId && <span style={{ fontSize:12, color:C.textLight, fontFamily:"'DM Mono',monospace", background:C.bg, padding:"2px 7px", borderRadius:6 }}>#{proj.info.hotelId}</span>}
+                      {rd && <span style={{ fontSize:12, background:C.accentLight, color:C.accentText, border:`1px solid ${C.accentBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:400 }}>{rd}</span>}
+                      {isComplete  && <span style={{ fontSize:12, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:500 }}>✓ 完成</span>}
+                      {!isComplete && isSoon && <span style={{ fontSize:12, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:500, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
                     </div>
                     {proj.info.address && <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:12, color:C.textLight, marginTop:2 }}>
                       <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
                     </div>}
                   </div>
                   <button aria-label="移除專案" onClick={async e=>{ e.stopPropagation(); if(await askConfirm({ title:"移除專案", message:`確定要移除「${proj.info.name||"此專案"}」嗎？`, confirmLabel:"移除" })) onDelete(proj.id); }}
-                    style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
+                    style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 9px",
                       cursor:"pointer", fontSize:13, color:C.textLight, lineHeight:1,
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
                     className="hv-danger"
@@ -2149,11 +2149,11 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                 {(proj.info.products.length>0||proj.info.pic) && (
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6, flexWrap:"wrap" }}>
                     {proj.info.products.map(p=>(
-                      <span key={p} style={{ fontSize:12, fontWeight:500, color:"var(--text)", background:"transparent", border:"1px solid var(--border-mid)", borderRadius:7, padding:"2px 10px 2px 8px", display:"inline-flex", alignItems:"center", gap:6 }}>
+                      <span key={p} style={{ fontSize:12, fontWeight:500, color:"var(--text)", background:"transparent", border:"1px solid var(--border-mid)", borderRadius:8, padding:"2px 10px 2px 8px", display:"inline-flex", alignItems:"center", gap:6 }}>
                         <span aria-hidden="true" style={{ width:7, height:7, borderRadius:"50%", background:PRODUCT_COLORS[p]||C.accent, flexShrink:0 }}/>{p}
                       </span>
                     ))}
-                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:400, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
+                    {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:12, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:400, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
                   </div>
                 )}
 
@@ -2161,11 +2161,11 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                 {(proj.info.integrations.length>0||proj.info.jiraEpic) && (
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:12, flexWrap:"wrap" }}>
                     {proj.info.integrations.map(intg=>(
-                      <span key={intg} style={{ fontSize:11, fontWeight:400, color:C.textMid, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:7, padding:"2px 10px" }}>{intg}</span>
+                      <span key={intg} style={{ fontSize:12, fontWeight:400, color:C.textMid, background:C.white, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"2px 10px" }}>{intg}</span>
                     ))}
                     {proj.info.jiraEpic && (
                       <a href={proj.info.jiraEpic} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                        style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:4, fontSize:11,
+                        style={{ marginLeft:"auto", display:"inline-flex", alignItems:"center", gap:4, fontSize:12,
                           color:"#0052cc", textDecoration:"none", fontWeight:400, background:"#e9f0ff",
                           border:"1px solid #b3c7f7", borderRadius:6, padding:"3px 9px", whiteSpace:"nowrap", flexShrink:0 }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
@@ -2179,22 +2179,22 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                 {(proj.info.launchDate||nd) && (
                   <div style={{ display:"grid", gridTemplateColumns:nd&&proj.info.launchDate?"1fr 1fr":"1fr", gap:8, marginBottom:14 }}>
                     {proj.info.launchDate && (
-                      <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:9, padding:"7px 12px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:8, padding:"7px 12px" }}>
                         <Ico name="calendar" size={13} color="var(--text-subtle)"/>
                         <span style={{ fontSize:12, color:C.textMid }}>上線日</span>
                         <span style={{ fontSize:12, color:C.text, fontWeight:500, fontFamily:"'DM Mono',monospace" }}>{proj.info.launchDate}</span>
-                        {d!==null&&d>=0 && <span style={{ marginLeft:"auto", fontSize:11, fontWeight:400, color:d<=7?C.red:d<=30?C.amber:C.textLight }}>{d===0?"今天":`${d}天後`}</span>}
+                        {d!==null&&d>=0 && <span style={{ marginLeft:"auto", fontSize:12, fontWeight:400, color:d<=7?C.red:d<=30?C.amber:C.textLight }}>{d===0?"今天":`${d}天後`}</span>}
                       </div>
                     )}
                     {nd && (
                       <div style={{ display:"flex", alignItems:"center", gap:6,
                         background:nd.days<=7?"var(--red-subtle)":"var(--green-light)",
                         border:`1px solid ${nd.days<=7?C.red+"33":C.green+"33"}`,
-                        borderRadius:9, padding:"7px 12px" }}>
+                        borderRadius:8, padding:"7px 12px" }}>
                         <Ico name="calendar" size={13} color={nd.days<=7?C.red:C.green}/>
                         <span style={{ fontSize:12, color:nd.days<=7?C.red:C.green }}>{nd.label}</span>
-                        <span style={{ fontSize:11, color:C.text, fontWeight:500, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
-                        <span style={{ marginLeft:"auto", fontSize:11, fontWeight:400, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
+                        <span style={{ fontSize:12, color:C.text, fontWeight:500, fontFamily:"'DM Mono',monospace", marginLeft:2 }}>{nd.date}</span>
+                        <span style={{ marginLeft:"auto", fontSize:12, fontWeight:400, color:nd.days<=7?C.red:C.green }}>{nd.days===0?"今天":`${nd.days}天`}</span>
                       </div>
                     )}
                   </div>
@@ -2212,32 +2212,32 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                   <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
                     {hasAva && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.green,flexShrink:0 }}/>
-                        <span style={{ fontSize:11,color:C.textLight }}>基礎設定</span>
-                        <span style={{ fontSize:11,color:C.green,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{basicDone}/{BASIC_ITEMS.length}</span>
+                        <span style={{ fontSize:12,color:C.textLight }}>基礎設定</span>
+                        <span style={{ fontSize:12,color:C.green,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{basicDone}/{BASIC_ITEMS.length}</span>
                       </div>}
                     {(hasAva||hasGw) && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ width:7,height:7,borderRadius:"50%",background:C.amber,flexShrink:0 }}/>
-                        <span style={{ fontSize:11,color:C.textLight }}>FAQ</span>
-                        <span style={{ fontSize:11,color:C.amber,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{faqDone}/{hasIptv?FAQ_ITEMS.length:FAQ_ITEMS.length-1}</span>
+                        <span style={{ fontSize:12,color:C.textLight }}>FAQ</span>
+                        <span style={{ fontSize:12,color:C.amber,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{faqDone}/{hasIptv?FAQ_ITEMS.length:FAQ_ITEMS.length-1}</span>
                       </div>}
                     {hasAca && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:PRODUCT_COLORS.ACA,flexShrink:0 }}/>
-                      <span style={{ fontSize:11,color:C.textLight }}>ACA</span>
-                      <span style={{ fontSize:11,color:PRODUCT_COLORS.ACA,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{acaDone}/1</span>
+                      <span style={{ fontSize:12,color:C.textLight }}>ACA</span>
+                      <span style={{ fontSize:12,color:PRODUCT_COLORS.ACA,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{acaDone}/1</span>
                     </div>}
                     {hasTmsp && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:PRODUCT_COLORS.TMSP,flexShrink:0 }}/>
-                      <span style={{ fontSize:11,color:C.textLight }}>TMS Pro</span>
-                      <span style={{ fontSize:11,color:PRODUCT_COLORS.TMSP,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{tmspDone}/1</span>
+                      <span style={{ fontSize:12,color:C.textLight }}>TMS Pro</span>
+                      <span style={{ fontSize:12,color:PRODUCT_COLORS.TMSP,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{tmspDone}/1</span>
                     </div>}
                     {(hasAva||hasGw) && <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:7,height:7,borderRadius:"50%",background:C.purple,flexShrink:0 }}/>
-                      <span style={{ fontSize:11,color:C.textLight }}>第二批</span>
-                      <span style={{ fontSize:11,color:C.purple,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{b2done}/{b2total}</span>
+                      <span style={{ fontSize:12,color:C.textLight }}>第二批</span>
+                      <span style={{ fontSize:12,color:C.purple,fontWeight:400,fontFamily:"'DM Mono',monospace" }}>{b2done}/{b2total}</span>
                     </div>}
                   </div>
                 ) : (
-                  <div style={{ fontSize:11, color:C.textLight, fontStyle:"italic" }}>未選購 AVA、ACA、GW 或 TMSP，無進度追蹤</div>
+                  <div style={{ fontSize:12, color:C.textLight, fontStyle:"italic" }}>未選購 AVA、ACA、GW 或 TMSP，無進度追蹤</div>
                 )}
               </div>
             );
@@ -2914,10 +2914,10 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>AI 助理</div>
-              <div style={{ fontSize:11, color:"var(--text-subtle)" }}>Gemini 3.5 Flash Lite</div>
+              <div style={{ fontSize:12, color:"var(--text-subtle)" }}>Gemini 3.5 Flash Lite</div>
             </div>
           </div>
-          <CloseButton onClick={onClose} radius={7}/>
+          <CloseButton onClick={onClose} radius={8}/>
         </div>
 
         {/* Messages */}
@@ -2934,12 +2934,12 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
               <div style={{ display:"flex", flexDirection:"column", gap:7, width:"100%" }}>
                 {["有哪些專案快要到期？","完成度最低的是哪個？","現在有哪些事待完成？"].map(p => (
                   <button key={p} onClick={()=>sendText(p)}
-                    style={{ padding:"9px 14px", borderRadius:10,
+                    style={{ padding:"9px 14px", borderRadius:8,
                       border:"1px solid var(--border)", background:"var(--surface-raised)",
                       cursor:"pointer", fontFamily:"inherit", fontSize:13,
                       color:"var(--text)", textAlign:"left", transition:"all 0.12s",
                       display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontSize:11, color:"var(--text-subtle)", flexShrink:0 }}>→</span>
+                    <span style={{ fontSize:12, color:"var(--text-subtle)", flexShrink:0 }}>→</span>
                     {p}
                   </button>
                 ))}
@@ -2948,7 +2948,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
           )}
           {msgs.map((m, i) => (
             <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start" }}>
-              <div style={{ maxWidth:"82%", padding:"9px 13px", borderRadius:14,
+              <div style={{ maxWidth:"82%", padding:"9px 13px", borderRadius:12,
                 borderBottomRightRadius:m.role==="user"?4:14,
                 borderBottomLeftRadius:m.role==="user"?14:4,
                 background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
@@ -2964,7 +2964,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
           ))}
           {busy && (
             <div style={{ display:"flex", justifyContent:"flex-start" }}>
-              <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4,
+              <div style={{ padding:"10px 14px", borderRadius:12, borderBottomLeftRadius:4,
                 background:"var(--surface-raised)", border:"1px solid var(--border)",
                 display:"flex", gap:5, alignItems:"center" }}>
                 <OrganicLoader variant="cradle" size={20} />
@@ -2982,7 +2982,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
           </div>
         )}
         <div style={{ padding:"12px 16px", borderTop:"1px solid var(--border)", flexShrink:0 }}>
-          <div style={{ position:"relative", border:"1.5px solid var(--border)", borderRadius:14,
+          <div style={{ position:"relative", border:"1.5px solid var(--border)", borderRadius:12,
             background:"var(--surface)", transition:"border-color 0.15s" }}
             onFocusCapture={e=>e.currentTarget.style.borderColor="var(--accent)"}
             onBlurCapture={e=>e.currentTarget.style.borderColor="var(--border)"}>
@@ -2997,14 +2997,14 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
                 padding:"14px 48px 14px 14px", boxSizing:"border-box" }}/>
             <button aria-label="送出訊息" onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
               style={{ position:"absolute", right:8, bottom:8, width:32, height:32,
-                borderRadius:9, border:"none",
+                borderRadius:8, border:"none",
                 background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
                 cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
                 display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
               <Ico name="send" size={14} color="var(--on-solid)"/>
             </button>
           </div>
-          <div style={{ marginTop:6, fontSize:11, color:"var(--text-subtle)", textAlign:"center" }}>
+          <div style={{ marginTop:6, fontSize:12, color:"var(--text-subtle)", textAlign:"center" }}>
             Enter 送出 · Shift+Enter 換行
           </div>
         </div>
@@ -3078,7 +3078,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>客戶存取管理</div>
+            <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>客戶存取管理</div>
             <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>
               Hotel ID: <span style={{ fontFamily:"'DM Mono',monospace" }}>{hotelId || "—"}</span>
             </div>
@@ -3102,19 +3102,19 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {emails.map(({ email, created_at }) => (
                 <div key={email} style={{ display:"flex", alignItems:"center", gap:10,
-                  padding:"10px 14px", borderRadius:10, background:"var(--surface-raised)",
+                  padding:"10px 14px", borderRadius:8, background:"var(--surface-raised)",
                   border:"1px solid var(--border)" }}>
                   <Ico name="user" size={14} color="var(--text-subtle)"/>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:13, color:"var(--text)", overflow:"hidden",
                       textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{email}</div>
-                    <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:1 }}>
+                    <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:1 }}>
                       {new Date(created_at).toLocaleDateString("zh-TW")} 新增
                     </div>
                   </div>
                   <button aria-label={`移除 ${email}`} onClick={() => handleRemove(email)}
                     disabled={removing === email}
-                    style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
+                    style={{ background:"none", border:"1px solid var(--border)", borderRadius:8,
                       padding:"4px 8px", cursor:"pointer", color:"var(--text-subtle)",
                       fontFamily:"inherit", transition:"all 0.12s", flexShrink:0 }}
                     className="hv-red">
@@ -3129,7 +3129,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
 
           {error && (
             <div style={{ marginTop:14, padding:"9px 14px", background:"var(--red-light)",
-              border:"1px solid rgba(220,38,38,0.25)", borderRadius:9,
+              border:"1px solid rgba(220,38,38,0.25)", borderRadius:8,
               fontSize:12, color:"var(--red)" }}>
               {error}
             </div>
@@ -3147,13 +3147,13 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
               onChange={e=>{ setNewEmail(e.target.value); setError(""); }}
               onKeyDown={e=>e.key==="Enter" && handleAdd()}
               placeholder="client@hotel.com"
-              style={{ flex:1, minWidth:0, border:"1.5px solid var(--border)", borderRadius:10,
+              style={{ flex:1, minWidth:0, border:"1.5px solid var(--border)", borderRadius:8,
                 padding:"9px 12px", fontSize:13, background:"var(--surface)",
                 color:"var(--text)", fontFamily:"inherit", outline:"none" }}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
               onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
             <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
-              style={{ padding:"0 16px", borderRadius:10, border:"none", flexShrink:0,
+              style={{ padding:"0 16px", borderRadius:8, border:"none", flexShrink:0,
                 background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
                 color:"var(--on-solid)", fontFamily:"inherit", fontSize:13, fontWeight:500,
                 cursor:newEmail.trim()&&!adding?"pointer":"default",
@@ -3250,7 +3250,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>推送到 eb-console</div>
+            <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>推送到 eb-console</div>
             <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:2 }}>SiteChat 問候語 + 主題色彩（不含 FAQ 卡片）</div>
           </div>
           <CloseButton onClick={onClose}/>
@@ -3270,35 +3270,35 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
             <>
               <div style={{ fontSize:11, letterSpacing:1.5, color:C.accentText, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>推送前預覽（人工審核）</div>
 
-              <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:10, marginBottom:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8, marginBottom:12 }}>
                 {settings.bot_icon_url
                   ? <img src={settings.bot_icon_url} alt="" style={{ width:32, height:32, borderRadius:8, objectFit:"cover", flexShrink:0 }}/>
                   : <div style={{ width:32, height:32, borderRadius:8, background:C.border, flexShrink:0 }}/>}
                 <div style={{ display:"flex", flexWrap:"wrap", gap:"2px 10px", flex:1 }}>
                   {["en","zh","ja"].map(lang=>(
                     <span key={lang} style={{ fontSize:12.5, color:"var(--text)" }}>
-                      <span style={{ color:"var(--text-subtle)", fontSize:10 }}>{LANG_LABEL[lang]}</span>{" "}
+                      <span style={{ color:"var(--text-subtle)", fontSize:12 }}>{LANG_LABEL[lang]}</span>{" "}
                       {botName[lang] || "（未命名 Bot）"}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div style={{ fontSize:11, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>主題色彩（{Object.keys(theme).length} 個變數）</div>
+              <div style={{ fontSize:12, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>主題色彩（{Object.keys(theme).length} 個變數）</div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(90px, 1fr))", gap:6, marginBottom:16 }}>
                 {Object.entries(theme).map(([k,v]) => (
                   <div key={k} title={`${k}: ${v}`} style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 6px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:6, overflow:"hidden" }}>
-                    <div style={{ width:12, height:12, borderRadius:3, flexShrink:0, border:"1px solid var(--border)", background:/^linear-gradient/.test(v)?v:v }}/>
-                    <span style={{ fontSize:10, color:"var(--text-subtle)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.replace(/^--/,"")}</span>
+                    <div style={{ width:12, height:12, borderRadius:4, flexShrink:0, border:"1px solid var(--border)", background:/^linear-gradient/.test(v)?v:v }}/>
+                    <span style={{ fontSize:12, color:"var(--text-subtle)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{k.replace(/^--/,"")}</span>
                   </div>
                 ))}
               </div>
 
-              <div style={{ fontSize:11, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>問候語</div>
+              <div style={{ fontSize:12, fontWeight:500, color:"var(--text-mid)", marginBottom:6 }}>問候語</div>
               <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
                 {["en","zh","ja"].map(lang => (
                   <div key={lang} style={{ padding:"8px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
-                    <div style={{ fontSize:10, letterSpacing:1, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:4 }}>{LANG_LABEL[lang]}</div>
+                    <div style={{ fontSize:11, letterSpacing:1, color:"var(--text-subtle)", textTransform:"uppercase", marginBottom:4 }}>{LANG_LABEL[lang]}</div>
                     <div style={{ fontSize:12, color:"var(--text)", marginBottom:2 }}>{greeting?.[lang]?.welcome || "—"}</div>
                     <div style={{ fontSize:12, color:"var(--text-subtle)" }}>{greeting?.[lang]?.hint || "—"}</div>
                   </div>
@@ -3306,17 +3306,17 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
               </div>
 
               {pushError && (
-                <div style={{ padding:"9px 12px", background:"var(--red-light)", border:"1px solid rgba(220,38,38,0.25)", borderRadius:9, fontSize:11.5, color:"var(--red)", marginBottom:8 }}>
+                <div style={{ padding:"9px 12px", background:"var(--red-light)", border:"1px solid rgba(220,38,38,0.25)", borderRadius:8, fontSize:12.5, color:"var(--red)", marginBottom:8 }}>
                   {pushError}
                 </div>
               )}
               {hasInFlight && (
-                <div style={{ padding:"9px 12px", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:9, fontSize:11.5, color:"var(--amber)", marginBottom:8 }}>
+                <div style={{ padding:"9px 12px", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:8, fontSize:12.5, color:"var(--amber)", marginBottom:8 }}>
                   推送處理中——內網 agent 正在或即將認領這筆任務，下方紀錄會自動更新，不用手動重新整理。
                 </div>
               )}
               <button onClick={handlePush} disabled={pushing || hasInFlight} className={CTA_CLASS}
-                style={{ width:"100%", padding:"10px 0", borderRadius:10,
+                style={{ width:"100%", padding:"10px 0", borderRadius:8,
                   background: (pushing || hasInFlight) ? "var(--border)" : "var(--accent)",
                   color: (pushing || hasInFlight) ? "var(--text-subtle)" : "var(--on-solid)", fontFamily:"inherit",
                   fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
@@ -3344,11 +3344,11 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
                 return (
                   <div key={h.id} title={h.status==="error" ? h.response : undefined}
                     style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8 }}>
-                    <span style={{ fontSize:10, padding:"2px 7px", borderRadius:5, fontWeight:500, background:STATUS_STYLE.bg, color:STATUS_STYLE.color }}>
+                    <span style={{ fontSize:12, padding:"2px 7px", borderRadius:6, fontWeight:500, background:STATUS_STYLE.bg, color:STATUS_STYLE.color }}>
                       {STATUS_STYLE.label}
                     </span>
                     <span style={{ fontSize:12, color:"var(--text)" }}>{new Date(h.pushed_at).toLocaleString("zh-TW")}</span>
-                    <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:"auto" }}>{h.pushed_by || "—"}</span>
+                    <span style={{ fontSize:12, color:"var(--text-subtle)", marginLeft:"auto" }}>{h.pushed_by || "—"}</span>
                   </div>
                 );
               })}
@@ -3547,14 +3547,14 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
             <button onClick={handleUpdateDescription} disabled={descLoading}
               style={{ display:"flex", alignItems:"center", gap:6,
                 ...glassToggle(descSuccess, C.greenLight),
-                border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:9, padding:"7px 14px",
+                border:`1px solid ${descSuccess?C.green:C.border}`, borderRadius:8, padding:"7px 14px",
                 cursor:descLoading?"wait":"pointer", fontSize:13,
                 color:descSuccess?C.green:C.textMid, fontFamily:"inherit", transition:"all 0.2s" }}>
               {descLoading?"更新中…":descSuccess?"✓ 已更新":<><Ico name="fileText" size={13} color="currentColor"/> 更新 Epic Description</>}
             </button>
             <button onClick={fetchIssues} disabled={loading}
               style={{ display:"flex", alignItems:"center", gap:6, ...GLASS,
-                border:`1px solid ${C.border}`, borderRadius:9, padding:"7px 14px",
+                border:`1px solid ${C.border}`, borderRadius:8, padding:"7px 14px",
                 cursor:loading?"wait":"pointer", fontSize:13, color:C.textMid, fontFamily:"inherit" }}>
               {loading ? "同步中…" : <><Ico name="refresh" size={13} color="currentColor"/> 同步 Jira</>}
             </button>
@@ -3563,7 +3563,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
       </div>
 
       {error && (
-        <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:10,
+        <div style={{ background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:8,
           padding:"10px 16px", fontSize:13, color:C.red, marginBottom:16 }}>{error}</div>
       )}
 
@@ -3637,7 +3637,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                         cursor:isUpdating?"wait":"pointer", fontFamily:"inherit",
                         width:"100%", justifyContent:"space-between" }}>
                       <span>{isUpdating ? "更新中…" : issue.status}</span>
-                      {!isUpdating && <span style={{ fontSize:10 }}>▾</span>}
+                      {!isUpdating && <span style={{ fontSize:12 }}>▾</span>}
                     </button>
                     {/* Dropdown */}
                     {isOpen && trans.length>0 && (
@@ -3645,7 +3645,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                         // 實色而非 ...GLASS：下拉巢狀在有 backdropFilter 的任務卡片內（backdrop root，採樣不到頁面背景），
                         // 又會蓋在其他卡片上，半透明底色會讓下方文字透出來難以辨讀。與輸入框/select 一樣，功能性控制項維持不透明。
                         background:"var(--surface-raised)",
-                        border:`1px solid ${C.border}`, borderRadius:10,
+                        border:`1px solid ${C.border}`, borderRadius:8,
                         boxShadow:`0 8px 24px ${tint(0.12)}, ${RIM}`, zIndex:100, overflow:"hidden" }}>
                         {trans.map(t => {
                           const ts = statusStyle(t.statusCategory ?? "new");
@@ -3656,7 +3656,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                                 cursor:"pointer", fontFamily:"inherit", textAlign:"left",
                                 borderBottom:`1px solid ${C.border}` }}
                               className="hv-bg">
-                              <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11,
+                              <span style={{ padding:"2px 8px", borderRadius:6, fontSize:12,
                                 fontWeight:500, background:ts.bg, color:ts.color,
                                 whiteSpace:"nowrap" }}>{t.name}</span>
                             </button>
@@ -3676,11 +3676,11 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                   <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}`,
                     display:"flex", flexDirection:"column", gap:12 }}>
                     <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-                      <span style={{ padding:"3px 10px", borderRadius:7, fontSize:11, fontWeight:500,
+                      <span style={{ padding:"3px 10px", borderRadius:8, fontSize:12, fontWeight:500,
                         background:C.bg, color:C.textMid, border:`1px solid ${C.border}` }}>{issue.type || "—"}</span>
                       {issue.priority && (
                         <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 10px",
-                          borderRadius:7, fontSize:11, fontWeight:500, background:C.bg, color:C.textMid,
+                          borderRadius:8, fontSize:12, fontWeight:500, background:C.bg, color:C.textMid,
                           border:`1px solid ${C.border}` }}>
                           {issue.priorityIconUrl && <img src={issue.priorityIconUrl} width={12} height={12} alt=""/>}
                           {issue.priority}
@@ -3709,7 +3709,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
                                   background:"#e9f0ff", border:"1px solid #b3c7f7", borderRadius:6,
                                   padding:"2px 6px", whiteSpace:"nowrap" }}>{sub.key}</span>
                                 <span style={{ flex:1, color:C.text }}>{sub.summary}</span>
-                                <span style={{ padding:"2px 8px", borderRadius:6, fontSize:11, fontWeight:500,
+                                <span style={{ padding:"2px 8px", borderRadius:6, fontSize:12, fontWeight:500,
                                   background:subS.bg, color:subS.color, whiteSpace:"nowrap" }}>{sub.status}</span>
                               </div>
                             );
@@ -3857,7 +3857,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
             </button>
           )}
           <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
-            borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:500,
+            borderRadius:8, padding:"9px 18px", fontSize:13, fontWeight:500,
             cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.accent}40` }}>+ 新增任務</button>
         </div>
       </div>
@@ -3939,16 +3939,16 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   </button>
                   {/* Checkbox */}
                   <div {...kbd((e)=>{e.stopPropagation(); toggleSelect(task.id);},"checkbox")} aria-checked={isSelected}
-                    style={{ width:18, height:18, borderRadius:5, flexShrink:0, cursor:"pointer",
+                    style={{ width:18, height:18, borderRadius:6, flexShrink:0, cursor:"pointer",
                       border:`2px solid ${isSelected ? C.accent : C.borderMid}`,
                       background:isSelected ? C.accent : C.white,
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {isSelected && <span style={{ color:"var(--on-solid)", fontSize:11, lineHeight:1 }}>✓</span>}
+                    {isSelected && <span style={{ color:"var(--on-solid)", fontSize:12, lineHeight:1 }}>✓</span>}
                   </div>
-                  <span style={{ fontSize:11, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
+                  <span style={{ fontSize:12, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
                     onClick={e=>e.stopPropagation()}
-                    placeholder="任務名稱" style={{ ...baseInput, fontSize:15, fontWeight:400, padding:"8px 12px",
+                    placeholder="任務名稱" style={{ ...baseInput, fontSize:14, fontWeight:400, padding:"8px 12px",
                       textDecoration:task.completed?"line-through":"none", color:task.completed?"var(--text-subtle)":C.text }}
                     onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
                 </div>
@@ -3962,7 +3962,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   <Ico name="chevronR" size={14} color="var(--text-subtle)"
                     style={{ transform: isOpen ? "rotate(90deg)" : "none", transition:"transform 0.2s", flexShrink:0 }}/>
                   <button aria-label="刪除任務" onClick={(e)=>{e.stopPropagation(); removeTask(task.id);}}
-                    style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
+                    style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"5px 10px",
                       cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
                     className="hv-danger"><Ico name="trash" size={14} color="currentColor"/></button>
                 </div>
@@ -4032,7 +4032,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 <input type="url" value={task.url||""} onChange={e=>updateTask(task.id,"url",e.target.value)}
                   placeholder="https://…" style={baseInput}
                   onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-                {task.url && !task.url.startsWith("http") && <div style={{ marginTop:5, fontSize:11, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
+                {task.url && !task.url.startsWith("http") && <div style={{ marginTop:5, fontSize:12, color:C.red }}>⚠️ 請確認連結以 http 或 https 開頭</div>}
                 {task.url && task.url.startsWith("http") && (
                   <a href={task.url} target="_blank" rel="noreferrer"
                     style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:8,
@@ -4045,7 +4045,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 display:"flex", alignItems:"center", justifyContent:"space-between" }}>
                 <div>
                   <div style={{ fontSize:12, fontWeight:400, color:C.text }}>對客戶公開</div>
-                  <div style={{ fontSize:11, color:C.textLight, marginTop:2 }}>
+                  <div style={{ fontSize:12, color:C.textLight, marginTop:2 }}>
                     {task.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
                   </div>
                 </div>
@@ -4270,9 +4270,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
   const LockScreen = ({ msg }) => (
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
       <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
-      <div style={{ fontSize:15, fontWeight:400, color:C.textMid, marginBottom:20 }}>{msg}</div>
+      <div style={{ fontSize:14, fontWeight:400, color:C.textMid, marginBottom:20 }}>{msg}</div>
       <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
-        borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:500,
+        borderRadius:8, padding:"10px 22px", fontSize:13, fontWeight:500,
         cursor:"pointer", fontFamily:"inherit" }}>前往專案資訊</button>
     </div>
   );
@@ -4296,16 +4296,16 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 fontFamily:"inherit", marginLeft:4 }}>取消新增</button>
           )}
           <span style={{ color:C.border }}>│</span>
-          <div style={{ width:26, height:26, borderRadius:7, background:C.accent,
+          <div style={{ width:26, height:26, borderRadius:8, background:C.accent,
             display:"flex", alignItems:"center", justifyContent:"center" }}><AielloLogo size={16}/></div>
-          <span style={{ fontSize:15, fontWeight:500, color:C.text }}>{info.name||"新專案"}</span>
+          <span style={{ fontSize:14, fontWeight:500, color:C.text }}>{info.name||"新專案"}</span>
           {info.hotelId && <span style={{ fontSize:12, color:C.textLight, fontFamily:"'DM Mono',monospace" }}>#{info.hotelId}</span>}
         </div>
         <div style={{ fontSize:13, color:C.textMid, background:C.bg, border:`1px solid ${C.border}`,
           borderRadius:8, padding:"5px 14px", fontFamily:"'DM Mono',monospace", fontWeight:400,
           display:"flex", alignItems:"center", gap:8 }}>
           <span style={{ color:totalPct===100?C.green:C.accentText }}>{totalPct}%</span> 完成
-          <span style={{ fontSize:11, fontWeight:400, minWidth:60, transition:"color 0.3s",
+          <span style={{ fontSize:12, fontWeight:400, minWidth:60, transition:"color 0.3s",
             color:saveStatus==="saving"?C.amber:saveStatus==="saved"?C.green:C.textLight }}>
             {saveStatus==="saving"?"· 儲存中…":saveStatus==="saved"?"· 已儲存 ✓":"· 自動儲存"}
           </span>
@@ -4345,7 +4345,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               </div>
               <button onClick={()=>setShowCustomerAccess(true)}
                 style={{ display:"flex", alignItems:"center", gap:6, padding:"7px 14px", flexShrink:0,
-                  ...GLASS, border:"1px solid var(--border)", borderRadius:9,
+                  ...GLASS, border:"1px solid var(--border)", borderRadius:8,
                   cursor:"pointer", fontSize:13, color:"var(--text-mid)", fontFamily:"inherit",
                   transition:"all 0.15s" }}
                 className="hv-accent">
@@ -4387,7 +4387,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {/* Bootstrap 按鈕：僅在 jiraEpic 為空且有飯店名稱時顯示 */}
                 {!info.jiraEpic && info.name.trim() && (
                   <div style={{ marginTop:12, padding:"13px 15px", background:"var(--accent-subtle)",
-                    border:"1px solid var(--accent-border)", borderRadius:10 }}>
+                    border:"1px solid var(--accent-border)", borderRadius:8 }}>
                     <div style={{ fontSize:13, color:"var(--text-mid)", marginBottom:8, lineHeight:1.6 }}>
                       尚未建立 Jira Epic。點擊下方按鈕可自動建立 Epic 並依選擇的產品匯入標準子任務。
                     </div>
@@ -4421,12 +4421,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     onClick={e=>{ if(e.target===e.currentTarget && !["creating_epic","creating_tasks"].includes(jiraBoot.step))
                       setJiraBoot(p=>({...p,open:false})); }}>
                     <div style={{ ...GLASS,
-                      borderRadius:14, padding:28, width:"100%", maxWidth:460,
+                      borderRadius:12, padding:28, width:"100%", maxWidth:460,
                       boxShadow:MODAL_SHADOW, animation:"fadeIn 0.2s ease" }}>
 
                       {/* Header 含 X 關閉按鈕 */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-                        <h3 style={{ fontSize:17, fontWeight:500, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
+                        <h3 style={{ fontSize:16, fontWeight:500, color:"var(--text)", margin:0 }}>建立 Jira Epic 與任務</h3>
                         {!["creating_epic","creating_tasks"].includes(jiraBoot.step) && (
                           <CloseButton onClick={()=>setJiraBoot(p=>({...p,open:false}))}
                             size={15} radius={6} padding="3px 9px" color="var(--text-mid)" lineHeight={1}/>
@@ -4442,7 +4442,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           子任務：<strong style={{ color:"var(--text)" }}>{jiraTaskCount} 筆</strong>（含指定 assignee）<br/>
                           {profile?.jira_email && profile?.jira_token ? (<>
                             Reporter：<strong style={{ color:"var(--text)" }}>{profile.display_name || profile.jira_email}</strong>
-                            <span style={{ fontSize:11, color:"var(--text-subtle)", marginLeft:6 }}>（使用個人 API Token）</span>
+                            <span style={{ fontSize:12, color:"var(--text-subtle)", marginLeft:6 }}>（使用個人 API Token）</span>
                           </>) : info.pic ? (<>
                             Reporter：<strong style={{ color:"var(--text)" }}>{info.pic}</strong>
                           </>) : null}
@@ -4476,7 +4476,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           <OrganicLoader size={28} style={{ margin:"0 auto 12px" }} />
                           <div style={{ fontSize:13, color:"var(--text-mid)" }}>正在建立 {jiraTaskCount} 筆子任務，請稍候（約 15 秒）…</div>
                           {jiraBoot.issueTypeName && (
-                            <div style={{ marginTop:8, fontSize:11, color:"var(--text-subtle)" }}>
+                            <div style={{ marginTop:8, fontSize:12, color:"var(--text-subtle)" }}>
                               Issue type：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.issueTypeName}</code>
                               {jiraBoot.reporterName && <> Reporter：<code style={{ background:"var(--surface-raised)", padding:"1px 6px", borderRadius:4 }}>{jiraBoot.reporterName}</code></>}
                             </div>
@@ -4505,7 +4505,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                               {jiraBoot.failed[0]?.msg && (
                                 <div style={{ marginBottom:8, padding:"7px 10px", background:"var(--surface)",
                                   border:"1px solid var(--border)", borderRadius:6,
-                                  fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
+                                  fontSize:12, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
                                   wordBreak:"break-all", lineHeight:1.6 }}>
                                   <span style={{ color:"var(--red)", fontWeight:400 }}>Jira 錯誤：</span>
                                   {typeof jiraBoot.failed[0].msg === "string"
@@ -4515,7 +4515,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                               )}
                               <div style={{ maxHeight:140, overflowY:"auto" }}>
                                 {jiraBoot.failed.map((f,i)=>(
-                                  <div key={i} style={{ fontSize:11, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
+                                  <div key={i} style={{ fontSize:12, color:"var(--text-mid)", marginTop:3 }}>・{f.summary}</div>
                                 ))}
                               </div>
                             </div>
@@ -4537,8 +4537,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           </div>
                           {jiraBoot.errorMsg && (
                             <div style={{ padding:"9px 12px", background:"var(--surface-raised)",
-                              border:"1px solid var(--border)", borderRadius:7, marginBottom:14,
-                              fontSize:11, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
+                              border:"1px solid var(--border)", borderRadius:8, marginBottom:14,
+                              fontSize:12, color:"var(--text-mid)", fontFamily:"'DM Mono',monospace",
                               wordBreak:"break-all", lineHeight:1.6 }}>
                               <span style={{ color:"var(--red)", fontWeight:400 }}>錯誤詳情：</span>{jiraBoot.errorMsg}
                             </div>
@@ -4680,7 +4680,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                 </div>
                 {info.launchDate&&info.batch1Deadline&&info.batch1Deadline>info.launchDate&&(
-                  <div style={{ marginTop:10, padding:"9px 14px", background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:10, fontSize:12, color:C.red }}>
+                  <div style={{ marginTop:10, padding:"9px 14px", background:"var(--red-light)", border:`1px solid ${C.red}44`, borderRadius:8, fontSize:12, color:C.red }}>
                     ⚠️ 第一批資料期限（{info.batch1Deadline}）晚於上線日期（{info.launchDate}），請確認是否正確。
                   </div>
                 )}
@@ -4690,8 +4690,8 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <textarea value={info.notes} onChange={e=>setInfo(p=>({ ...p, notes:e.target.value }))}
                   placeholder="說明是否有額外功能開發需求…" style={{ ...baseInput, minHeight:90, resize:"vertical" }}
                   onFocus={e=>(e.target.style.borderColor=C.accent)} onBlur={e=>(e.target.style.borderColor=C.border)}/>
-                <div style={{ marginTop:6, fontSize:11, color:C.textLight }}>
-                  💡 輸入 <code style={{ background:C.bg, padding:"1px 5px", borderRadius:4, fontSize:11 }}>[顯示文字](https://網址)</code> 可在總覽頁顯示為超連結
+                <div style={{ marginTop:6, fontSize:12, color:C.textLight }}>
+                  💡 輸入 <code style={{ background:C.bg, padding:"1px 5px", borderRadius:4, fontSize:12 }}>[顯示文字](https://網址)</code> 可在總覽頁顯示為超連結
                 </div>
               </div>
             </Card>
@@ -4707,7 +4707,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ marginBottom:24 }}>
                   <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:"0 0 6px" }}>第一批資料</h2>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:4 }}>
-                    <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}44`, borderRadius:6, padding:"2px 10px", fontWeight:500 }}>第一批</span>
+                    <span style={{ fontSize:12, background:C.greenLight, color:C.green, border:`1px solid ${C.green}44`, borderRadius:6, padding:"2px 10px", fontWeight:500 }}>第一批</span>
                     {info.batch1Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch1Deadline}</span>}
                   </div>
                 </div>
@@ -4753,10 +4753,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       </div>
                     ))}
                     {!hasIptv&&(
-                      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`, marginBottom:6, opacity:0.6 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 14px", borderRadius:8, background:C.bg, border:`1px solid ${C.border}`, marginBottom:6, opacity:0.6 }}>
                         <div style={{ width:20, height:20, borderRadius:6, border:`2px solid ${C.borderMid}`, background:C.border, flexShrink:0 }}/>
                         <span style={{ fontSize:14, color:C.textLight }}>{FAQ_TV_ITEM}</span>
-                        <span style={{ marginLeft:"auto", fontSize:11, color:C.textLight, background:C.borderMid+"44", borderRadius:5, padding:"2px 8px" }}>未選擇 IPTV，不需填寫</span>
+                        <span style={{ marginLeft:"auto", fontSize:12, color:C.textLight, background:C.borderMid+"44", borderRadius:6, padding:"2px 8px" }}>未選擇 IPTV，不需填寫</span>
                       </div>
                     )}
                     <SheetLink value={sheetLinks.faq} onChange={v=>setSheetLinks(p=>({ ...p, faq:v }))} color={C.amber}/>
@@ -4782,7 +4782,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     </div>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:8 }}>
-                    <span style={{ fontSize:11, background:C.purpleLight, color:C.purple, border:`1px solid ${C.purple}44`, borderRadius:6, padding:"2px 10px", fontWeight:500 }}>第二批</span>
+                    <span style={{ fontSize:12, background:C.purpleLight, color:C.purple, border:`1px solid ${C.purple}44`, borderRadius:6, padding:"2px 10px", fontWeight:500 }}>第二批</span>
                     {info.batch2Deadline&&<span style={{ fontSize:12, color:C.textMid }}>期限：{info.batch2Deadline}</span>}
                   </div>
                 </div>
@@ -4851,7 +4851,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 }}
                   className={projSub&&(projSub.subscribed_projects||[]).includes(project.id)?undefined:"hv-accent"}
                   style={{ ...GLASS, flexShrink:0, display:"flex", alignItems:"center", gap:6,
-                  padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
+                  padding:"7px 14px", borderRadius:8, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
                   background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?glassTint("accent"):GLASS_BG,
                   color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentText:C.textMid,
@@ -4865,10 +4865,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <span style={{ fontSize:13, color:C.textMid, fontWeight:400 }}>整體完成度</span>
-                <span style={{ fontSize:26, fontWeight:500, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.accentText }}>{totalPct}%</span>
+                <span style={{ fontSize:24, fontWeight:500, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.accentText }}>{totalPct}%</span>
               </div>
-              <div style={{ height:10, background:C.bg, borderRadius:5, overflow:"hidden" }}>
-                <div style={{ height:"100%", borderRadius:5, width:`${totalPct}%`, transition:"width 0.8s ease",
+              <div style={{ height:10, background:C.bg, borderRadius:6, overflow:"hidden" }}>
+                <div style={{ height:"100%", borderRadius:6, width:`${totalPct}%`, transition:"width 0.8s ease",
                   background:totalPct===100?C.green:`linear-gradient(90deg,${C.accent},${C.purple})` }}/>
               </div>
             </Card>
@@ -4880,12 +4880,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 ].map(({ label, date, sub, color, tintVar })=>(
                   // 玻璃＋同色系淡色疊層（跟第二批資料卡片完成態同一做法），不再用不透明的 xxxLight 底色
                   <div key={label} style={{ ...GLASS, background:`linear-gradient(${tintVar},${tintVar}), ${GLASS_BG}`,
-                    border:`1px solid ${color}33`, boxShadow:RIM, borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                    border:`1px solid ${color}33`, boxShadow:RIM, borderRadius:12, padding:"14px 18px", display:"flex", alignItems:"center", gap:14 }}>
                     <Ico name="calendar" size={22} color={color}/>
                     <div>
-                      <div style={{ fontSize:10, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:500 }}>{label}</div>
-                      <div style={{ fontSize:15, fontWeight:500, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
-                      <div style={{ fontSize:11, color:C.textMid, marginTop:2 }}>{sub}</div>
+                      <div style={{ fontSize:11, color, letterSpacing:1.5, textTransform:"uppercase", marginBottom:2, fontWeight:500 }}>{label}</div>
+                      <div style={{ fontSize:14, fontWeight:500, color:C.text, fontFamily:"'DM Mono',monospace" }}>{date||"—"}</div>
+                      <div style={{ fontSize:12, color:C.textMid, marginTop:2 }}>{sub}</div>
                     </div>
                   </div>
                 ))}
@@ -4963,7 +4963,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <a href={info.jiraEpic} target="_blank" rel="noreferrer"
                         style={{ fontSize:13, color:"#0052cc", textDecoration:"none", fontWeight:400,
                           display:"inline-flex", alignItems:"center", gap:5,
-                          background:"var(--accent-light)", border:"1px solid var(--accent-border)", borderRadius:7, padding:"4px 11px" }}>
+                          background:"var(--accent-light)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"4px 11px" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="#0052cc"><path d="M11.571 11.429L6.857 6.714A6 6 0 0 1 17.143 17l-5.572-5.571zm.858.857L17.143 17A6 6 0 0 1 6.857 6.714l5.572 5.572z"/></svg>
                         開啟 Jira Epic ↗
                       </a>
@@ -4971,17 +4971,17 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   )}
                 </div>
                 {info.notes&&(
-                  <div style={{ marginTop:14, padding:14, background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
+                  <div style={{ marginTop:14, padding:14, background:C.bg, borderRadius:8, border:`1px solid ${C.border}` }}>
                     <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>其餘功能需求或備注</div>
                     <RichText text={info.notes} style={{ fontSize:13, color:C.textMid }}/>
                   </div>
                 )}
                 {info.integrations.some(k=>info.integrationNotes[k])&&(
-                  <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:10, border:"1px solid var(--lg-purple-border)" }}>
+                  <div style={{ marginTop:14, padding:14, background:C.purpleLight, borderRadius:8, border:"1px solid var(--lg-purple-border)" }}>
                     <div style={{ fontSize:11, color:C.purple, letterSpacing:1, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>串接功能備註</div>
                     {info.integrations.filter(k=>info.integrationNotes[k]).map(k=>(
                       <div key={k} style={{ marginBottom:10, paddingBottom:10, borderBottom:`1px solid ${C.purple}22` }}>
-                        <div style={{ fontSize:11, fontWeight:500, color:C.purple, marginBottom:4 }}>{k}</div>
+                        <div style={{ fontSize:12, fontWeight:500, color:C.purple, marginBottom:4 }}>{k}</div>
                         <RichText text={info.integrationNotes[k]} style={{ fontSize:13, color:C.textMid }}/>
                       </div>
                     ))}
@@ -5082,7 +5082,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {!hasIptv&&<div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", opacity:0.5 }}>
                     <span style={{ fontSize:13, color:C.border }}>—</span>
                     <span style={{ fontSize:12, color:C.textLight }}>{FAQ_TV_ITEM}</span>
-                    <span style={{ marginLeft:"auto", fontSize:10, color:C.textLight, background:C.bg, borderRadius:5, padding:"2px 7px" }}>未選 IPTV</span>
+                    <span style={{ marginLeft:"auto", fontSize:12, color:C.textLight, background:C.bg, borderRadius:6, padding:"2px 7px" }}>未選 IPTV</span>
                   </div>}
                 </OvCard>
               )}
@@ -5108,7 +5108,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {hasGw&&(
                     <div style={{ position:"relative" }}>
                       <OvBatch2Row item={GW_ITEM} checked={batch2Checked[GW_ITEM]} note={batch2Notes[GW_ITEM]} linkKey={GW_LINK_KEY} sheetLinks={sheetLinks}/>
-                      <span style={{ position:"absolute", top:12, right:14, fontSize:10, color:"var(--amber)", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:5, padding:"2px 7px" }}>GW</span>
+                      <span style={{ position:"absolute", top:12, right:14, fontSize:12, color:"var(--amber)", background:"var(--amber-light)", border:"1px solid var(--amber)", borderRadius:6, padding:"2px 7px" }}>GW</span>
                     </div>
                   )}
                 </div>
@@ -5122,14 +5122,14 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ fontSize:11, letterSpacing:1.5, color:C.accentText, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
-                    <div key={task.id} style={{ padding:"12px 14px", background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
+                    <div key={task.id} style={{ padding:"12px 14px", background:C.bg, borderRadius:8, border:`1px solid ${C.border}` }}>
                       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:task.description?6:0 }}>
-                        <span style={{ fontSize:11, fontWeight:500, color:C.textLight }}>#{idx+1}</span>
+                        <span style={{ fontSize:12, fontWeight:500, color:C.textLight }}>#{idx+1}</span>
                         <span style={{ fontSize:13, fontWeight:400, color:C.text }}>{task.name||"（未命名任務）"}</span>
-                        <span style={{ marginLeft:"auto", fontSize:10, background:task.type==="deadline"?C.amberLight:C.greenLight,
+                        <span style={{ marginLeft:"auto", fontSize:12, background:task.type==="deadline"?C.amberLight:C.greenLight,
                           color:task.type==="deadline"?C.amber:C.green,
                           border:`1px solid ${task.type==="deadline"?C.amber+"44":C.green+"44"}`,
-                          borderRadius:5, padding:"2px 8px", fontWeight:400, whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:4 }}>
+                          borderRadius:6, padding:"2px 8px", fontWeight:400, whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:4 }}>
                           {task.type==="deadline"
                             ? <><Ico name="pin" size={10} color="currentColor"/> {task.deadline||"—"}</>
                             : <><Ico name="repeat" size={10} color="currentColor"/> {task.period_start||"—"} → {task.period_end||"—"}</>}
@@ -5194,10 +5194,10 @@ const LoginPage = ({ theme, setTheme }) => {
         <ThemeToggle theme={theme} setTheme={setTheme}/>
       </div>
       <div style={{ ...GLASS,
-        border:"1px solid var(--border)", borderRadius:14,
+        border:"1px solid var(--border)", borderRadius:12,
         padding:"40px 36px", width:"100%", maxWidth:380, textAlign:"center",
         boxShadow:`0 4px 24px ${tint(0.08)}, ${RIM}` }}>
-        <div style={{ width:56, height:56, borderRadius:14, background:"var(--accent)",
+        <div style={{ width:56, height:56, borderRadius:12, background:"var(--accent)",
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
           <Ico name="building" size={26} color="var(--on-solid)"/>
         </div>
@@ -5219,7 +5219,7 @@ const LoginPage = ({ theme, setTheme }) => {
           </button>
         </>) : (
           <div style={{ animation:"fadeIn 0.3s ease" }}>
-            <div style={{ width:56, height:56, borderRadius:14, background:"var(--green-light)",
+            <div style={{ width:56, height:56, borderRadius:12, background:"var(--green-light)",
               border:"2px solid var(--green)", display:"flex", alignItems:"center",
               justifyContent:"center", margin:"0 auto 14px" }}>
               <Ico name="mail" size={24} color="var(--green)"/>
@@ -5277,7 +5277,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
         <div style={{ padding:"20px 20px 16px", borderBottom:"1px solid var(--border)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:15, fontWeight:500, color:"var(--text)" }}>個人設定</div>
+            <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>個人設定</div>
             <div style={{ fontSize:12, color:"var(--text-mid)", marginTop:2 }}>Jira 連線與帳號管理</div>
           </div>
           <CloseButton onClick={onClose} color="var(--text-mid)"/>
@@ -5290,7 +5290,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
               placeholder="與 Jira 顯示名稱一致" style={baseInput}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
               onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-            <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:4 }}>
+            <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:4 }}>
               建立 Jira Epic 時作為 reporter，請與 Jira 顯示名稱完全一致
             </div>
           </div>
@@ -5309,7 +5309,7 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
               placeholder="ATATT3x…" style={baseInput}
               onFocus={e=>(e.target.style.borderColor="var(--accent)")}
               onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-            <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:4 }}>
+            <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:4 }}>
               前往&nbsp;
               <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
                 target="_blank" rel="noreferrer" style={{ color:"var(--accent-text)" }}>
@@ -5648,11 +5648,11 @@ export default function App() {
           {/* Top bar */}
           <div style={{ padding:"0 40px", display:"flex", alignItems:"center", justifyContent:"space-between", height:60 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div onClick={handleLogoClick} style={{ width:36, height:36, borderRadius:9, background:"var(--accent)",
+              <div onClick={handleLogoClick} style={{ width:36, height:36, borderRadius:8, background:"var(--accent)",
                 display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, cursor:"pointer" }}><AielloLogo size={22}/></div>
               <div>
-                <div style={{ fontSize:15, fontWeight:500, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
-                <div style={{ fontSize:11, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
+                <div style={{ fontSize:14, fontWeight:500, color:"var(--text)", lineHeight:1.2, fontFamily:"'Inter',sans-serif" }}>Hotel Project Dashboard</div>
+                <div style={{ fontSize:12, color:"var(--text-subtle)", lineHeight:1.2, fontWeight:300 }}>掌握專案進度，讓交付更透明</div>
               </div>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -5663,7 +5663,7 @@ export default function App() {
               <div style={{ position:"relative" }}>
                 <button aria-label="站內通知" onClick={()=>setShowInAppNotif(v=>!v)}
                   style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
-                    background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:9,
+                    background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:8,
                     cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
                   onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}
                   onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
@@ -5693,7 +5693,7 @@ export default function App() {
               <button aria-label="AI 助理" onClick={()=>setShowAi(v=>!v)}
                 style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                   background:showAi?"var(--accent)":"var(--surface-raised)",
-                  border:"1px solid var(--border)", borderRadius:9,
+                  border:"1px solid var(--border)", borderRadius:8,
                   cursor:"pointer", color:showAi?"var(--on-solid)":"var(--text-subtle)", transition:"all 0.12s" }}
                 onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}}
                 onMouseLeave={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}}
@@ -5703,7 +5703,7 @@ export default function App() {
               <button onClick={()=>setShowSettings(true)}
                 style={{ height:36, display:"flex", alignItems:"center", gap:9, position:"relative",
                   background:"var(--surface-raised)", border:"1px solid var(--border)",
-                  borderRadius:10, padding:"0 12px 0 5px", cursor:"pointer",
+                  borderRadius:8, padding:"0 12px 0 5px", cursor:"pointer",
                   fontFamily:"inherit", transition:"all 0.12s" }}
                 onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; }}
                 onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; }}>
@@ -5714,7 +5714,7 @@ export default function App() {
                 {eggUnlockCount === EGG_REGISTRY.length && (
                   <div onClick={e=>{ e.stopPropagation(); triggerConfetti(); }}
                     title="全彩蛋達成 👑"
-                    style={{ position:"absolute", top:-10, right:-6, fontSize:22, lineHeight:1,
+                    style={{ position:"absolute", top:-10, right:-6, fontSize:20, lineHeight:1,
                       transform:"rotate(30deg)", filter:"drop-shadow(0 2px 3px rgba(0,0,0,0.35))",
                       cursor:"pointer", zIndex:1 }}>
                     👑
@@ -5730,14 +5730,14 @@ export default function App() {
                     {profile?.display_name || "設定名稱"}
                   </div>
                   {profile?.display_name && (
-                    <div style={{ fontSize:10, color:"var(--text-subtle)", lineHeight:1.2 }}>
+                    <div style={{ fontSize:12, color:"var(--text-subtle)", lineHeight:1.2 }}>
                       {session?.user?.email}
                     </div>
                   )}
                 </div>
               </button>
               <button onClick={handleNew} className={CTA_CLASS}
-                style={{ height:36, borderRadius:9, padding:"0 18px", fontSize:13, fontWeight:500,
+                style={{ height:36, borderRadius:8, padding:"0 18px", fontSize:13, fontWeight:500,
                   whiteSpace:"nowrap" }}>
                 + 新增專案
               </button>

@@ -98,3 +98,11 @@ export const DARK_TOKENS = `
     --canvas-glow-2: rgba(244,135,61,0.36);
     --canvas-glow-3: rgba(34,164,116,0.32);
     `;
+
+// ─── 字級／圓角收斂（UI 3，2026-10-30）──────────────────────────────────────────
+// 元件全是 inline style 的數字，沒有 CSS 變數可引用，所以這裡只是「新程式碼要用的刻度表」，
+// 既有的數字已經照這個刻度整批收斂過（字級 15 種→9 種、圓角 12 種→6 種）。
+// 規則：說明文字／資料文字最小 12；11 只留給「全大寫＋字距」的欄位標籤（label／section caption）。
+// 圓角 20 專給膠囊型按鈕（pill），圓形用 "50%"。
+export const FONT_SCALE = { label: 11, small: 12, body: 13, base: 14, lead: 16, title: 20, h2: 24, h1: 32, hero: 44 };
+export const RADIUS_SCALE = { xs: 4, sm: 6, md: 8, lg: 12, xl: 16, pill: 20 };
