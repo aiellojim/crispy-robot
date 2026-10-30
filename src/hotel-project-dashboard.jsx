@@ -96,6 +96,7 @@ const C = {
   textMid:    "var(--text-mid)",
   textLight:  "var(--text-subtle)",
   accent:       "var(--accent)",
+  accentText:   "var(--accent-text)",
   accentLight:  "var(--accent-light)",
   accentBorder: "var(--accent-border)",
   green:      "var(--green)",
@@ -297,7 +298,7 @@ const GLOBAL_CSS = `
     --bg: #000000; --surface: #060a06; --surface-raised: #0c140c;
     --border: #113311; --border-mid: #1a4d1a;
     --text: #00ff41; --text-mid: #00cc33; --text-subtle: #009926;
-    --accent: #00ff41; --accent-light: #00330d;
+    --accent: #00ff41; --accent-text: #00ff41; --on-solid: #000000; --accent-light: #00330d;
     --accent-border: rgba(0,255,65,0.35); --accent-subtle: rgba(0,255,65,0.08);
     --green: #00ff41; --green-light: #001a08; --green-subtle: rgba(0,255,65,0.08);
     --amber: #ffcc00; --amber-light: #1a1500; --amber-subtle: rgba(255,204,0,0.08);
@@ -364,8 +365,8 @@ const GLOBAL_CSS = `
   .hv-accent:not(:disabled):hover { border-color:var(--accent) !important; color:var(--accent) !important; }
   .hv-red:not(:disabled):hover { border-color:var(--red) !important; color:var(--red) !important; }
   .hv-danger:not(:disabled):hover { background:var(--red-subtle) !important; border-color:var(--red) !important; color:var(--red) !important; }
-  .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:#fff !important; }
-  .hv-danger-solid:not(:disabled):hover { background:var(--red) !important; color:#fff !important; }
+  .hv-fill:not(:disabled):hover { background:var(--accent) !important; border-color:var(--accent) !important; color:var(--on-solid) !important; }
+  .hv-danger-solid:not(:disabled):hover { background:var(--red) !important; color:var(--on-solid) !important; }
   .hv-row:hover { background:var(--surface-raised) !important; }
   .hv-bg:not(:disabled):hover { background:var(--bg) !important; }
   .hv-icon-accent:not(:disabled):hover { color:var(--accent) !important; background:var(--surface-raised) !important; }
@@ -524,7 +525,7 @@ const newProject = () => {
 // 呼叫端目前的視覺，沒有統一成同一套外觀——預設值取最常見的那組（CustomerAccessPanel／
 // SiteChatEbConsolePanel 原本的寫法）。
 const CloseButton = ({ onClick, size=16, radius=8, padding="4px 10px", color="var(--text-subtle)", lineHeight }) => (
-  <button onClick={onClick}
+  <button aria-label="關閉" onClick={onClick}
     style={{ background:"none", border:"1px solid var(--border)", borderRadius:radius,
       padding, cursor:"pointer", fontSize:size, color, fontFamily:"inherit", transition:"all 0.15s",
       ...(lineHeight!=null ? { lineHeight } : {}) }}
@@ -706,7 +707,7 @@ const ScrollFadeText = ({ children, fadeColor="var(--surface)", style={} }) => {
   );
 };
 
-const SectionLabel = ({ title, icon, color="var(--accent)" }) => (
+const SectionLabel = ({ title, icon, color="var(--accent-text)" }) => (
   <div style={{ fontSize:11, letterSpacing:1.5, color, textTransform:"uppercase", marginBottom:12,
     display:"flex", alignItems:"center", gap:6, fontWeight:400 }}>
     {icon && <Ico name={icon} size={12} color="currentColor"/>}{title}
@@ -781,10 +782,20 @@ const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="
   </div>
 );
 
-const Chip = ({ label, active, onClick, color="var(--accent)" }) => (
+// dot：產品選擇專用——產品識別色只留成一顆小圓點（UI 2：飽和色留給「狀態」，產品標籤改中性），
+// 選中狀態用「實線深色外框 + 淡底」表示，不再整塊填產品色（深色模式下白字對產品色對比不足也一併解掉）。
+const Chip = ({ label, active, onClick, color="var(--accent)", dot }) => dot ? (
+  <button onClick={onClick} aria-pressed={!!active} style={{ padding:"5px 13px 5px 11px", borderRadius:6, fontFamily:"inherit",
+    border:`1px solid ${active?"var(--text)":"var(--border)"}`, background:active?"var(--surface-raised)":"transparent",
+    color:active?"var(--text)":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:active?500:400,
+    display:"inline-flex", alignItems:"center", gap:7, transition:"all 0.12s" }}>
+    <span style={{ width:7, height:7, borderRadius:"50%", background:color, opacity:active?1:0.45, flexShrink:0 }}/>
+    {label}
+  </button>
+) : (
   <button onClick={onClick} style={{ padding:"5px 13px", borderRadius:6, fontFamily:"inherit",
     border:`1px solid ${active?color:"var(--border)"}`, background:active?color:"transparent",
-    color:active?"#fff":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:400, transition:"all 0.12s" }}>
+    color:active?"var(--on-solid)":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:400, transition:"all 0.12s" }}>
     {label}
   </button>
 );
@@ -800,7 +811,7 @@ const CheckRow = ({ label, checked, onChange }) => (
       border:`1.5px solid ${checked ? "var(--green)" : "var(--border-mid)"}`,
       background: checked ? "var(--green)" : "transparent",
       display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-      {checked && <span style={{ color:"#fff", fontSize:10, fontWeight:500 }}>✓</span>}
+      {checked && <span style={{ color:"var(--on-solid)", fontSize:10, fontWeight:500 }}>✓</span>}
     </div>
     <span style={{ fontSize:13, color: checked ? "var(--text)" : "var(--text-mid)", flex:1 }}>{label}</span>
     {!checked && <span style={{ fontSize:10, color:"var(--text-subtle)", fontWeight:400 }}>待完成</span>}
@@ -822,7 +833,7 @@ const SheetLink = ({ value, onChange }) => {
     <div style={{ marginTop:12, padding:"11px 13px", background:"var(--accent-subtle)",
       border:`1px solid ${invalid?"var(--red)":"var(--accent-border)"}`, borderRadius:10 }}>
       <label style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, letterSpacing:1.2,
-        color:"var(--accent)", textTransform:"uppercase", marginBottom:7, fontWeight:400 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
+        color:"var(--accent-text)", textTransform:"uppercase", marginBottom:7, fontWeight:400 }}><Ico name="link" size={11} color="currentColor"/> 檔案連結</label>
       <input type="url" value={value} onChange={e=>onChange(e.target.value)}
         placeholder="貼上 Excel 檔案連結或其他資料表連結"
         style={{ ...baseInput, borderColor:invalid?"var(--red)":"var(--border)" }}
@@ -831,7 +842,7 @@ const SheetLink = ({ value, onChange }) => {
       {invalid && <div style={{ marginTop:5, fontSize:11, color:"var(--red)" }}>⚠️ 連結格式不正確，請確認是否以 http 或 https 開頭</div>}
       {!invalid && value && <a href={value} target="_blank" rel="noreferrer"
         style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:7,
-          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:400 }}>↗ 開啟連結</a>}
+          fontSize:12, color:"var(--accent-text)", textDecoration:"none", fontWeight:400 }}>↗ 開啟連結</a>}
     </div>
   );
 };
@@ -850,7 +861,7 @@ const Batch2Card = ({ title, isDone, onToggle, note, onNote, link, onLink, badge
         border:`1.5px solid ${isDone?"var(--purple)":"var(--border-mid)"}`,
         background:isDone?"var(--purple)":"transparent",
         display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.12s" }}>
-        {isDone && <span style={{ color:"#fff", fontSize:10, fontWeight:500 }}>✓</span>}
+        {isDone && <span style={{ color:"var(--on-solid)", fontSize:10, fontWeight:500 }}>✓</span>}
       </div>
       <span style={{ fontSize:14, fontWeight:400, color:"var(--text)", flex:1 }}>{title}</span>
       {badge && <span style={{ fontSize:10, color:"var(--prod-gw)", background:"var(--amber-subtle)",
@@ -870,7 +881,7 @@ const NavRow = ({ onBack, onNext, nextLabel, nextColor="var(--accent)" }) => (
     {onBack && <button onClick={onBack} style={{ background:"transparent", color:"var(--text-mid)",
       border:"1px solid var(--border)", borderRadius:8, padding:"9px 20px",
       fontSize:13, cursor:"pointer", fontFamily:"inherit" }}>← 返回</button>}
-    {onNext && <button onClick={onNext} className={CTA_CLASS} style={{ background:nextColor, color:"#fff",
+    {onNext && <button onClick={onNext} className={CTA_CLASS} style={{ background:nextColor, color:"var(--on-solid)",
       borderRadius:8, padding:"9px 22px", fontSize:13, fontWeight:400,
       cursor:"pointer", fontFamily:"inherit" }}>{nextLabel}</button>}
   </div>
@@ -900,7 +911,7 @@ const OvCard = ({ title, color, children, linkKey, sheetLinks }) => (
     {linkKey && sheetLinks[linkKey] && (
       <a href={sheetLinks[linkKey]} target="_blank" rel="noreferrer"
         style={{ display:"inline-flex", alignItems:"center", gap:5, marginTop:12,
-          fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:400,
+          fontSize:12, color:"var(--accent-text)", textDecoration:"none", fontWeight:400,
           background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
           borderRadius:6, padding:"4px 10px" }}>
         <Ico name="link" size={12} color="currentColor"/> 開啟資料表
@@ -1267,7 +1278,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                 通知顯示名稱：<strong>{displayName || "（請先至個人設定填入顯示名稱）"}</strong>
               </div>
               <button onClick={handleSubscribe} disabled={loading} className={CTA_CLASS}
-                style={{ width:"100%", padding:"10px 0", background:C.accent, color:"#fff",
+                style={{ width:"100%", padding:"10px 0", background:C.accent, color:"var(--on-solid)",
                   borderRadius:8, fontSize:14, fontWeight:500,
                   cursor:"pointer", fontFamily:"inherit" }}>
                 {loading?"啟用中…":"啟用 Email 提醒"}
@@ -1290,7 +1301,7 @@ const NotificationPanel = ({ projects, session, profile, onClose }) => {
                     <button key={value} onClick={()=>handleNotifyDays(value)}
                       style={{ padding:"6px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontFamily:"inherit",
                         background:sub.notify_days_before===value?C.accent:C.bg,
-                        color:sub.notify_days_before===value?"#fff":C.text,
+                        color:sub.notify_days_before===value?"var(--on-solid)":C.text,
                         border:`1px solid ${sub.notify_days_before===value?C.accent:C.border}`,
                         fontWeight:sub.notify_days_before===value?700:400 }}>
                       {label}
@@ -1378,7 +1389,7 @@ const InAppNotifModal = ({ urgentNotifs, customerNotifs, onClose, onProjectOpen 
         {/* 客戶更新 */}
         {customerNotifs.length>0 && (<>
           <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:500, letterSpacing:"0.08em",
-            textTransform:"uppercase", color:"var(--accent)" }}>客戶更新</div>
+            textTransform:"uppercase", color:"var(--accent-text)" }}>客戶更新</div>
           {customerNotifs.map((n, i) => {
             const p = n.payload ?? {};
             return (
@@ -1618,7 +1629,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           <div style={{ display:"flex", gap:8 }}>
             {[{ v:"deadline", ico:"pin", text:"期限" },{ v:"period", ico:"repeat", text:"週期" }].map(({ v, ico, text })=>(
               <button key={v} onClick={()=>setDraft(d=>({ ...d, type:v }))}
-                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, ...glassToggle(draft.type===v, C.accent), color:draft.type===v?"#fff":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
+                style={{ padding:"7px 18px", borderRadius:8, fontFamily:"inherit", fontSize:13, fontWeight:400, cursor:"pointer", transition:"all 0.15s", border:`1.5px solid ${draft.type===v?C.accent:C.border}`, ...glassToggle(draft.type===v, C.accent), color:draft.type===v?"var(--on-solid)":C.textMid, display:"flex", alignItems:"center", gap:5 }}><Ico name={ico} size={13} color="currentColor"/>{text}</button>
             ))}
           </div>
         </div>
@@ -1651,7 +1662,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
               {draft.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
             </div>
           </div>
-          <button onClick={()=>setDraft(d=>({ ...d, is_internal:!d.is_internal }))}
+          <button role="switch" aria-checked={!draft.is_internal} aria-label="對客戶公開" onClick={()=>setDraft(d=>({ ...d, is_internal:!d.is_internal }))}
             style={{ position:"relative", width:44, height:24, borderRadius:12, border:"none",
               background:draft.is_internal?C.borderMid:C.green, cursor:"pointer",
               transition:"background 0.2s", flexShrink:0 }}>
@@ -1663,7 +1674,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
         <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
           <button onClick={closeModal} style={{ ...GLASS, color:C.textMid, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 20px", fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>取消</button>
           <button onClick={saveTask} disabled={!draft.name.trim()||saving} className={CTA_CLASS}
-            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"#fff", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
+            style={{ background:!draft.name.trim()||saving?C.borderMid:C.accent, color:"var(--on-solid)", borderRadius:10, padding:"10px 24px", fontSize:14, fontWeight:500, cursor:!draft.name.trim()||saving?"not-allowed":"pointer", fontFamily:"inherit", boxShadow:draft.name.trim()&&!saving?`0 2px 8px ${C.accent}40`:"none", transition:"all 0.15s" }}>
             {saving?"儲存中…":modal.mode==="add"?"新增任務":"儲存變更"}
           </button>
         </div>
@@ -1681,20 +1692,20 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
           {/* 月份切換按鈕：原本是純文字 ‹/› glyph，沒有 hover 高亮、也沒設文字顏色（inherit 預設黑色，
               深色模式玻璃底下幾乎看不到），2026-10-02 改用 chevronR 圖示（左邊旋轉 180 度）+
               固定尺寸置中 + 比照其他玻璃按鈕（例如 Header 鈴鐺按鈕）的 hover 慣例 */}
-          <button onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }}
+          <button aria-label="上個月" onClick={()=>{ if(month===0){setMonth(11);setYear(y=>y-1);}else setMonth(m=>m-1); }}
             style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
               border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
             className="hv-accent">
             <Ico name="chevronR" size={16} color="currentColor" style={{ transform:"rotate(180deg)" }}/>
           </button>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:0 }}>{year}年 {monthNames[month]}</h2>
-          <button onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }}
+          <button aria-label="下個月" onClick={()=>{ if(month===11){setMonth(0);setYear(y=>y+1);}else setMonth(m=>m+1); }}
             style={{ ...GLASS, width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
               border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
             className="hv-accent">
             <Ico name="chevronR" size={16} color="currentColor"/>
           </button>
-          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accent, fontWeight:400 }}>今天</button>
+          <button onClick={()=>{ setYear(today.getFullYear()); setMonth(today.getMonth()); }} style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit", fontSize:12, color:C.accentText, fontWeight:400 }}>今天</button>
         </div>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
           {[{ k:"launch", label:"上線日", ...CAL_COLORS.launch },{ k:"batch", label:"資料期限", ...CAL_COLORS.batch1 },{ k:"task", label:"任務", ...CAL_COLORS.taskDL },{ k:"jira", label:"Jira 到期日", ...CAL_COLORS.jira }].map(({ k, label, bg, text, border })=>(
@@ -1712,7 +1723,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
         onClick={()=>{ setExpandedDay(null); setExpandedPos(null); }}>
         <div style={{ ...GLASS, borderRadius:12, overflow:"hidden" }}>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:`1px solid ${C.border}` }}>
-          {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:500, color:d==="日"?C.red:d==="六"?C.accent:C.textMid }}>{d}</div>)}
+          {dayNames.map(d=><div key={d} style={{ padding:"10px 0", textAlign:"center", fontSize:12, fontWeight:500, color:d==="日"?C.red:d==="六"?C.accentText:C.textMid }}>{d}</div>)}
         </div>
         {Array.from({ length:cells.length/7 }).map((_,wi)=>(
           <div key={wi} style={{ display:"grid", gridTemplateColumns:"repeat(7,minmax(0,1fr))", borderBottom:wi<cells.length/7-1?`1px solid ${C.border}`:"none" }}>
@@ -1745,10 +1756,10 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                       {/* Date + add button */}
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4, flexShrink:0 }}>
                         {isToday
-                          ? <span style={{ background:C.accent, color:"#fff", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500 }}>{d}</span>
+                          ? <span style={{ background:C.accent, color:"var(--on-solid)", borderRadius:"50%", width:22, height:22, display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:500 }}>{d}</span>
                           : <span style={{ fontSize:13, color:col }}>{d}</span>}
                         {projects.length>0 && (
-                          <button onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
+                          <button aria-label="新增任務" onClick={e=>{ e.stopPropagation(); openAddModal(k); }}
                             style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:5, width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12, color:C.textLight, padding:0, lineHeight:1, flexShrink:0, transition:"all 0.15s" }}
                             className="hv-fill"
                             title="新增任務">+</button>
@@ -1767,8 +1778,8 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                             <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                           </div>
                         ))}
-                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.accent, padding:"1px 4px", fontWeight:400 }}>+{dayEvents.length-2} 更多 ↓</div>}
-                        {isExpanded && <div style={{ fontSize:10, color:C.accent, padding:"1px 4px", fontWeight:400 }}>▲ 收起</div>}
+                        {dayEvents.length>2 && !isExpanded && <div style={{ fontSize:10, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>+{dayEvents.length-2} 更多 ↓</div>}
+                        {isExpanded && <div style={{ fontSize:10, color:C.accentText, padding:"1px 4px", fontWeight:400 }}>▲ 收起</div>}
                       </div>
                     </>
                   )}
@@ -1805,7 +1816,7 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                       <div style={{ fontSize:10, color:ev.text, opacity:0.7, lineHeight:1.3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.label}</div>
                     </div>
                     {ev.taskId && (
-                      <button onClick={e=>{ e.stopPropagation(); deleteTask(ev.taskId); }}
+                      <button aria-label="刪除任務" onClick={e=>{ e.stopPropagation(); deleteTask(ev.taskId); }}
                         style={{ background:"none", border:"none", cursor:"pointer", padding:"1px 3px",
                           fontSize:11, color:ev.text, opacity:0.5, flexShrink:0, lineHeight:1 }}
                         className="hv-del"
@@ -1844,18 +1855,18 @@ const CalendarPage = ({ projects, allTasks, onTaskAdded, onTaskDeleted, accessTo
                 {/* 任務操作按鈕 */}
                 {ev.taskId && (
                   <div style={{ display:"flex", gap:2, flexShrink:0 }}>
-                    <button onClick={()=>openEditModal(ev.taskObj)}
+                    <button aria-label="編輯任務" onClick={()=>openEditModal(ev.taskObj)}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
                       className="hv-icon-accent"
                       title="編輯任務"><Ico name="pencil" size={13} color="currentColor"/></button>
-                    <button onClick={()=>deleteTask(ev.taskId)}
+                    <button aria-label="刪除任務" onClick={()=>deleteTask(ev.taskId)}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s" }}
                       className="hv-icon-red"
                       title="刪除任務"><Ico name="trash" size={13} color="currentColor"/></button>
                   </div>
                 )}
                 {ev.jiraUrl && !ev.taskId && (
-                  <button onClick={()=>window.open(ev.jiraUrl,"_blank","noopener")}
+                  <button aria-label="在 Jira 開啟" onClick={()=>window.open(ev.jiraUrl,"_blank","noopener")}
                     style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 6px", color:"var(--text-subtle)", borderRadius:6, transition:"all 0.12s", flexShrink:0 }}
                     className="hv-icon-accent"
                     title="在 Jira 開啟"><Ico name="link" size={13} color="currentColor"/></button>
@@ -2118,7 +2129,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
                       <span style={{ fontSize:16, fontWeight:500, color:C.text }}>{proj.info.name||"（未命名）"}</span>
                       {proj.info.hotelId && <span style={{ fontSize:11, color:C.textLight, fontFamily:"'DM Mono',monospace", background:C.bg, padding:"2px 7px", borderRadius:5 }}>#{proj.info.hotelId}</span>}
-                      {rd && <span style={{ fontSize:11, background:C.accentLight, color:C.accent, border:`1px solid ${C.accentBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:400 }}>{rd}</span>}
+                      {rd && <span style={{ fontSize:11, background:C.accentLight, color:C.accentText, border:`1px solid ${C.accentBorder}`, borderRadius:6, padding:"2px 9px", fontWeight:400 }}>{rd}</span>}
                       {isComplete  && <span style={{ fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 9px", fontWeight:500 }}>✓ 完成</span>}
                       {!isComplete && isSoon && <span style={{ fontSize:11, background:C.amberLight, color:C.amber, border:`1px solid ${C.amber}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:500, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="rocket" size={11} color="var(--amber)"/>即將上線</span>}
                     </div>
@@ -2126,7 +2137,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                       <Ico name="pin" size={12} color="var(--text-subtle)"/> {proj.info.address}
                     </div>}
                   </div>
-                  <button onClick={async e=>{ e.stopPropagation(); if(await askConfirm({ title:"移除專案", message:`確定要移除「${proj.info.name||"此專案"}」嗎？`, confirmLabel:"移除" })) onDelete(proj.id); }}
+                  <button aria-label="移除專案" onClick={async e=>{ e.stopPropagation(); if(await askConfirm({ title:"移除專案", message:`確定要移除「${proj.info.name||"此專案"}」嗎？`, confirmLabel:"移除" })) onDelete(proj.id); }}
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"4px 9px",
                       cursor:"pointer", fontSize:13, color:C.textLight, lineHeight:1,
                       transition:"all 0.15s", fontFamily:"inherit", flexShrink:0, marginLeft:8 }}
@@ -2138,7 +2149,9 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                 {(proj.info.products.length>0||proj.info.pic) && (
                   <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6, flexWrap:"wrap" }}>
                     {proj.info.products.map(p=>(
-                      <span key={p} style={{ fontSize:12, fontWeight:500, color:"#fff", background:PRODUCT_COLORS[p]||C.accent, borderRadius:7, padding:"3px 11px" }}>{p}</span>
+                      <span key={p} style={{ fontSize:12, fontWeight:500, color:"var(--text)", background:"transparent", border:"1px solid var(--border-mid)", borderRadius:7, padding:"2px 10px 2px 8px", display:"inline-flex", alignItems:"center", gap:6 }}>
+                        <span aria-hidden="true" style={{ width:7, height:7, borderRadius:"50%", background:PRODUCT_COLORS[p]||C.accent, flexShrink:0 }}/>{p}
+                      </span>
                     ))}
                     {proj.info.pic && <span style={{ marginLeft:"auto", fontSize:11, background:C.greenLight, color:C.green, border:`1px solid ${C.green}33`, borderRadius:6, padding:"2px 8px 2px 6px", fontWeight:400, display:"inline-flex", alignItems:"center", gap:4 }}><Ico name="user" size={11} color="var(--green)"/>{proj.info.pic}</span>}
                   </div>
@@ -2191,7 +2204,7 @@ const HomePage = ({ projects, onOpen, onDelete, onOpenNotif }) => {
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                   <span style={{ fontSize:12, color:C.textMid, whiteSpace:"nowrap" }}>完成度</span>
                   <MiniBar pct={pct} color={isComplete?C.green:C.accent}/>
-                  <span style={{ fontSize:13, fontWeight:500, fontFamily:"'DM Mono',monospace", whiteSpace:"nowrap", color:isComplete?C.green:C.accent }}>{pct}%</span>
+                  <span style={{ fontSize:13, fontWeight:500, fontFamily:"'DM Mono',monospace", whiteSpace:"nowrap", color:isComplete?C.green:C.accentText }}>{pct}%</span>
                 </div>
 
                 {/* Row 5: Sub-counts */}
@@ -2897,7 +2910,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:30, height:30, borderRadius:8, background:"var(--accent)",
               display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <Ico name="msgSquare" size={15} color="#fff"/>
+              <Ico name="msgSquare" size={15} color="var(--on-solid)"/>
             </div>
             <div>
               <div style={{ fontSize:14, fontWeight:500, color:"var(--text)" }}>AI 助理</div>
@@ -2941,7 +2954,7 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
                 background:m.role==="user"?"var(--accent)":"var(--surface-raised)",
                 border:m.role==="user"?"none":"1px solid var(--border)" }}>
                 {m.role==="user" ? (
-                  <span style={{ fontSize:13, color:"#fff", lineHeight:1.6 }}>{m.text}</span>
+                  <span style={{ fontSize:13, color:"var(--on-solid)", lineHeight:1.6 }}>{m.text}</span>
                 ) : (
                   <div style={{ fontSize:13, color:"var(--text)", lineHeight:1.7 }}
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }}/>
@@ -2982,13 +2995,13 @@ const AiPanel = ({ projects, allTasks, userName, onClose }) => {
                 resize:"none", fontSize:13, lineHeight:"20px", outline:"none", overflowY:"hidden",
                 color:"var(--text)", fontFamily:"inherit",
                 padding:"14px 48px 14px 14px", boxSizing:"border-box" }}/>
-            <button onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
+            <button aria-label="送出訊息" onClick={send} disabled={!input.trim()||busy||!GEMINI_API_KEY}
               style={{ position:"absolute", right:8, bottom:8, width:32, height:32,
                 borderRadius:9, border:"none",
                 background:input.trim()&&!busy&&GEMINI_API_KEY?"var(--accent)":"var(--border)",
                 cursor:input.trim()&&!busy&&GEMINI_API_KEY?"pointer":"default",
                 display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.15s" }}>
-              <Ico name="send" size={14} color="#fff"/>
+              <Ico name="send" size={14} color="var(--on-solid)"/>
             </button>
           </div>
           <div style={{ marginTop:6, fontSize:11, color:"var(--text-subtle)", textAlign:"center" }}>
@@ -3099,7 +3112,7 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
                       {new Date(created_at).toLocaleDateString("zh-TW")} 新增
                     </div>
                   </div>
-                  <button onClick={() => handleRemove(email)}
+                  <button aria-label={`移除 ${email}`} onClick={() => handleRemove(email)}
                     disabled={removing === email}
                     style={{ background:"none", border:"1px solid var(--border)", borderRadius:7,
                       padding:"4px 8px", cursor:"pointer", color:"var(--text-subtle)",
@@ -3142,13 +3155,13 @@ const CustomerAccessPanel = ({ hotelId, session, onClose }) => {
             <button onClick={handleAdd} disabled={!newEmail.trim() || adding}
               style={{ padding:"0 16px", borderRadius:10, border:"none", flexShrink:0,
                 background:newEmail.trim()&&!adding?"var(--accent)":"var(--border)",
-                color:"#fff", fontFamily:"inherit", fontSize:13, fontWeight:500,
+                color:"var(--on-solid)", fontFamily:"inherit", fontSize:13, fontWeight:500,
                 cursor:newEmail.trim()&&!adding?"pointer":"default",
                 display:"flex", alignItems:"center", gap:6, transition:"background 0.15s",
                 whiteSpace:"nowrap" }}>
               {adding
-                ? <OrganicLoader size={13} color="#fff" />
-                : <Ico name="user" size={13} color="#fff"/>}
+                ? <OrganicLoader size={13} color="var(--on-solid)" />
+                : <Ico name="user" size={13} color="var(--on-solid)"/>}
               新增
             </button>
           </div>
@@ -3255,7 +3268,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
             </div>
           ) : (
             <>
-              <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>推送前預覽（人工審核）</div>
+              <div style={{ fontSize:11, letterSpacing:1.5, color:C.accentText, textTransform:"uppercase", marginBottom:10, fontWeight:500 }}>推送前預覽（人工審核）</div>
 
               <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:10, marginBottom:12 }}>
                 {settings.bot_icon_url
@@ -3305,18 +3318,18 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
               <button onClick={handlePush} disabled={pushing || hasInFlight} className={CTA_CLASS}
                 style={{ width:"100%", padding:"10px 0", borderRadius:10,
                   background: (pushing || hasInFlight) ? "var(--border)" : "var(--accent)",
-                  color: (pushing || hasInFlight) ? "var(--text-subtle)" : "#fff", fontFamily:"inherit",
+                  color: (pushing || hasInFlight) ? "var(--text-subtle)" : "var(--on-solid)", fontFamily:"inherit",
                   fontSize:13, fontWeight:500, cursor: (pushing || hasInFlight) ? "default" : "pointer", display:"flex",
                   alignItems:"center", justifyContent:"center", gap:6 }}>
                 {(pushing || hasInFlight)
-                  ? <OrganicLoader size={13} color="#fff" />
+                  ? <OrganicLoader size={13} color="var(--on-solid)" />
                   : <Ico name="send" size={13} color="currentColor"/>}
                 {hasInFlight ? "推送處理中…" : "確認推送"}
               </button>
             </>
           )}
 
-          <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", margin:"20px 0 10px", fontWeight:500 }}>推送紀錄</div>
+          <div style={{ fontSize:11, letterSpacing:1.5, color:C.accentText, textTransform:"uppercase", margin:"20px 0 10px", fontWeight:500 }}>推送紀錄</div>
           {history.length === 0 ? (
             <div style={{ fontSize:12, color:"var(--text-subtle)", padding:"6px 0" }}>尚無推送紀錄</div>
           ) : (
@@ -3325,7 +3338,7 @@ const SiteChatEbConsolePanel = ({ projectId, session, onClose }) => {
                 const STATUS_STYLE = {
                   success:    { bg:"var(--green-light)", color:"var(--green)", label:"成功" },
                   error:      { bg:"var(--red-light)",   color:"var(--red)",   label:"失敗" },
-                  processing: { bg:"var(--accent-subtle)", color:"var(--accent)", label:"處理中" },
+                  processing: { bg:"var(--accent-subtle)", color:"var(--accent-text)", label:"處理中" },
                   pending:    { bg:"var(--border)",      color:"var(--text-subtle)", label:"等待中" },
                 }[h.status] || { bg:"var(--border)", color:"var(--text-subtle)", label:h.status };
                 return (
@@ -3526,7 +3539,7 @@ const JiraTab = ({ epicUrl, projectInfo, projectId, onBack, onNext, accessToken 
         <div>
           <h2 style={{ fontSize:20, fontWeight:500, color:C.text, margin:"0 0 4px" }}>Jira 子任務</h2>
           {epicId
-            ? <p style={{ fontSize:13, color:C.textMid, margin:0 }}>Epic：<span style={{ fontFamily:"'DM Mono',monospace", color:C.accent }}>{epicId}</span></p>
+            ? <p style={{ fontSize:13, color:C.textMid, margin:0 }}>Epic：<span style={{ fontFamily:"'DM Mono',monospace", color:C.accentText }}>{epicId}</span></p>
             : <p style={{ fontSize:13, color:C.red, margin:0 }}>尚未填寫 Jira Epic 連結，請至「專案資訊」tab 填寫。</p>}
         </div>
         {epicId && (
@@ -3843,7 +3856,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               {isAllSelected ? "取消全選" : "全選"}
             </button>
           )}
-          <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"#fff",
+          <button onClick={addTask} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
             borderRadius:10, padding:"9px 18px", fontSize:13, fontWeight:500,
             cursor:"pointer", fontFamily:"inherit", boxShadow:`0 2px 8px ${C.accent}40` }}>+ 新增任務</button>
         </div>
@@ -3860,7 +3873,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   cursor:"pointer", transition:"all 0.15s",
                   border:`1px solid ${filterMode===v?C.accent:C.border}`,
                   ...glassToggle(filterMode===v, C.accent),
-                  color:filterMode===v?"#fff":C.textMid }}>
+                  color:filterMode===v?"var(--on-solid)":C.textMid }}>
                 {text}
               </button>
             ))}
@@ -3870,7 +3883,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               fontFamily:"inherit", fontSize:12, cursor:"pointer", transition:"all 0.15s",
               border:`1px solid ${sortByDate?C.accent:C.border}`,
               ...glassToggle(sortByDate, C.accentLight),
-              color:sortByDate?C.accent:C.textMid }}>
+              color:sortByDate?C.accentText:C.textMid }}>
             <Ico name="sort" size={13} color="currentColor"/>依到期日排序
           </button>
         </div>
@@ -3881,9 +3894,9 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
         <div style={{ ...GLASS, display:"flex", alignItems:"center", gap:12, padding:"10px 16px",
           background:glassTint("accent"),
           border:`1px solid ${C.accentBorder}`, boxShadow:RIM, borderRadius:12, marginBottom:16 }}>
-          <span style={{ fontSize:13, color:C.accent, fontWeight:400 }}>已選取 {selectedIds.size} 筆</span>
+          <span style={{ fontSize:13, color:C.accentText, fontWeight:400 }}>已選取 {selectedIds.size} 筆</span>
           <button onClick={removeSelected}
-            style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"#fff", border:"none",
+            style={{ marginLeft:"auto", padding:"6px 16px", background:C.red, color:"var(--on-solid)", border:"none",
               borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"inherit" }}>
             <><Ico name="trash" size={13} color="currentColor"/> 刪除選取（{selectedIds.size}）</>
           </button>
@@ -3916,13 +3929,13 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isOpen?16:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:10, flex:1 }}>
                   {/* 完成狀態 */}
-                  <button onClick={(e)=>{e.stopPropagation(); updateTask(task.id,"completed",!task.completed);}}
+                  <button aria-label={task.completed?"標記為進行中":"標記為已完成"} onClick={(e)=>{e.stopPropagation(); updateTask(task.id,"completed",!task.completed);}}
                     title={task.completed?"標記為進行中":"標記為已完成"}
                     style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, cursor:"pointer", padding:0,
                       border:`2px solid ${task.completed?C.green:C.borderMid}`,
                       background:task.completed?C.green:C.white,
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {task.completed && <Ico name="check" size={12} color="#fff" strokeWidth={3}/>}
+                    {task.completed && <Ico name="check" size={12} color="var(--on-solid)" strokeWidth={3}/>}
                   </button>
                   {/* Checkbox */}
                   <div {...kbd((e)=>{e.stopPropagation(); toggleSelect(task.id);},"checkbox")} aria-checked={isSelected}
@@ -3930,7 +3943,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                       border:`2px solid ${isSelected ? C.accent : C.borderMid}`,
                       background:isSelected ? C.accent : C.white,
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {isSelected && <span style={{ color:"#fff", fontSize:11, lineHeight:1 }}>✓</span>}
+                    {isSelected && <span style={{ color:"var(--on-solid)", fontSize:11, lineHeight:1 }}>✓</span>}
                   </div>
                   <span style={{ fontSize:11, fontWeight:500, color:C.textLight, minWidth:24 }}>#{idx+1}</span>
                   <input value={task.name} onChange={e=>updateTask(task.id,"name",e.target.value)}
@@ -3948,7 +3961,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                   </span>
                   <Ico name="chevronR" size={14} color="var(--text-subtle)"
                     style={{ transform: isOpen ? "rotate(90deg)" : "none", transition:"transform 0.2s", flexShrink:0 }}/>
-                  <button onClick={(e)=>{e.stopPropagation(); removeTask(task.id);}}
+                  <button aria-label="刪除任務" onClick={(e)=>{e.stopPropagation(); removeTask(task.id);}}
                     style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 10px",
                       cursor:"pointer", fontSize:13, color:C.textLight, transition:"all 0.15s", fontFamily:"inherit", flexShrink:0 }}
                     className="hv-danger"><Ico name="trash" size={14} color="currentColor"/></button>
@@ -3975,7 +3988,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                         cursor:"pointer", transition:"all 0.15s",
                         border:`1.5px solid ${task.type===v?C.accent:C.border}`,
                         ...glassToggle(task.type===v, C.accent),
-                        color:task.type===v?"#fff":C.textMid,
+                        color:task.type===v?"var(--on-solid)":C.textMid,
                         display:"flex", alignItems:"center", gap:5 }}>
                       <Ico name={ico} size={13} color="currentColor"/>{text}
                     </button>
@@ -4023,7 +4036,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                 {task.url && task.url.startsWith("http") && (
                   <a href={task.url} target="_blank" rel="noreferrer"
                     style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:8,
-                      fontSize:12, color:C.accent, textDecoration:"none", fontWeight:400 }}>↗ 開啟連結</a>
+                      fontSize:12, color:C.accentText, textDecoration:"none", fontWeight:400 }}>↗ 開啟連結</a>
                 )}
               </div>
 
@@ -4036,7 +4049,7 @@ const TasksTab = ({ projectId, tasks, onTasksChange }) => {
                     {task.is_internal ? "僅限內部可見" : "客戶端儀表可見"}
                   </div>
                 </div>
-                <button
+                <button role="switch" aria-checked={!task.is_internal} aria-label="對客戶公開"
                   onClick={() => updateTask(task.id, "is_internal", !task.is_internal)}
                   style={{
                     position:"relative", width:44, height:24, borderRadius:12, border:"none",
@@ -4258,7 +4271,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
     <div style={{ textAlign:"center", padding:"60px 0", color:C.textLight }}>
       <div style={{ marginBottom:14 }}><Ico name="lock" size={36} color="var(--text-subtle)"/></div>
       <div style={{ fontSize:15, fontWeight:400, color:C.textMid, marginBottom:20 }}>{msg}</div>
-      <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"#fff",
+      <button onClick={()=>setStep(0)} className={CTA_CLASS} style={{ background:C.accent, color:"var(--on-solid)",
         borderRadius:10, padding:"10px 22px", fontSize:13, fontWeight:500,
         cursor:"pointer", fontFamily:"inherit" }}>前往專案資訊</button>
     </div>
@@ -4291,7 +4304,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
         <div style={{ fontSize:13, color:C.textMid, background:C.bg, border:`1px solid ${C.border}`,
           borderRadius:8, padding:"5px 14px", fontFamily:"'DM Mono',monospace", fontWeight:400,
           display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ color:totalPct===100?C.green:C.accent }}>{totalPct}%</span> 完成
+          <span style={{ color:totalPct===100?C.green:C.accentText }}>{totalPct}%</span> 完成
           <span style={{ fontSize:11, fontWeight:400, minWidth:60, transition:"color 0.3s",
             color:saveStatus==="saving"?C.amber:saveStatus==="saved"?C.green:C.textLight }}>
             {saveStatus==="saving"?"· 儲存中…":saveStatus==="saved"?"· 已儲存 ✓":"· 自動儲存"}
@@ -4308,7 +4321,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <button key={i} onClick={()=>!locked&&setStep(i)} title={locked?tip:""}
               style={{ padding:"14px 18px", background:"none", border:"none", fontFamily:"inherit",
                 borderBottom:`2.5px solid ${step===i?C.accent:"transparent"}`,
-                color:locked?C.border:step===i?C.accent:C.textLight,
+                color:locked?C.border:step===i?C.accentText:C.textLight,
                 cursor:locked?"not-allowed":"pointer", fontSize:13,
                 fontWeight:step===i?700:500, transition:"all 0.15s",
                 display:"flex", alignItems:"center", gap:7 }}>
@@ -4509,7 +4522,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                           )}
                           <div style={{ display:"flex", justifyContent:"flex-end" }}>
                             <button onClick={()=>setJiraBoot(p=>({...p,open:false}))} className={CTA_CLASS}
-                              style={{ padding:"8px 20px", background:"var(--accent)", color:"#fff",
+                              style={{ padding:"8px 20px", background:"var(--accent)", color:"var(--on-solid)",
                                 borderRadius:8, fontSize:13, fontWeight:400, cursor:"pointer", fontFamily:"inherit" }}>完成</button>
                           </div>
                         </div>
@@ -4546,12 +4559,12 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <Card>
               <SectionLabel title="購置產品" icon="package"/>
               <div style={{ display:"flex", flexWrap:"wrap", gap:10, marginBottom:14 }}>
-                {PRODUCTS.map(p=><Chip key={p} label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.accent} onClick={()=>toggleProduct(p)}/>)}
+                {PRODUCTS.map(p=><Chip key={p} dot label={p} active={info.products.includes(p)} color={PRODUCT_COLORS[p]||C.accent} onClick={()=>toggleProduct(p)}/>)}
               </div>
               {/* AVA only → blue box */}
               {info.products.includes("AVA")&&!info.products.includes("AVT")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16 }}>
-                  <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
+                  <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
                     <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                     <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
@@ -4564,7 +4577,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16 }}>
                   {info.products.includes("AVA")&&(
                     <>
-                      <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
+                      <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVA 機台數量</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginBottom:16 }}>
                         <FInput label="裝機數量" value={info.avaUnits} onChange={v=>setInfo(p=>({ ...p, avaUnits:v }))} placeholder="例：50" type="number"/>
                         <FInput label="備品機台數量" value={info.avaSpare} onChange={v=>setInfo(p=>({ ...p, avaSpare:v }))} placeholder="例：5" type="number"/>
@@ -4573,7 +4586,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ borderTop:`1px solid ${C.accentBorder}`, marginBottom:16 }}/>
                     </>
                   )}
-                  <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVT 機台數量</div>
+                  <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>AVT 機台數量</div>
                   <div style={{ maxWidth:"50%" }}>
                     <FInput label="裝機數量" value={info.avtUnits} onChange={v=>setInfo(p=>({ ...p, avtUnits:v }))} placeholder="例：30" type="number"/>
                   </div>
@@ -4583,7 +4596,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   元件，只是 onClick 改成直接指定值（不是 toggleArr 的多選邏輯）。 */}
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
-                  <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
+                  <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
                   {/* 欄序：ACA 方案 → 線路數 → 處理通話。方案欄寬度 = 三顆 pill 單行排開所需的 max-content
                       （pill 容器 nowrap、Chip 不收縮，保證標籤單行），線路數與處理通話兩欄平分剩下的寬度
                       （minmax(0,1fr) 避免內容撐寬某一欄）。三個 label 在第一列、控制項在第二列，
@@ -4615,7 +4628,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {/* TMSP → blue box, same style as AVA/AVT/ACA */}
               {info.products.includes("TMSP")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
-                  <div style={{ fontSize:11, color:C.accent, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>TMSP 空間數量</div>
+                  <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>TMSP 空間數量</div>
                   {/* TMSP 房間數 is independent from AVA's installingRooms and from tmspMaxSpaces
                       (license/space cap) - see docs/todo.md room-count design discussion. Software
                       and hardware room counts can legitimately differ even when both AVA and TMSP
@@ -4841,7 +4854,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   padding:"7px 14px", borderRadius:9, cursor:subLoading?"wait":"pointer",
                   border:`1px solid ${projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentBorder:C.border}`,
                   background:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?glassTint("accent"):GLASS_BG,
-                  color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accent:C.textMid,
+                  color:projSub&&(projSub.subscribed_projects||[]).includes(project.id)?C.accentText:C.textMid,
                   fontSize:13, fontFamily:"inherit", transition:"all 0.15s" }}>
                   {projSub&&(projSub.subscribed_projects||[]).includes(project.id)
                   ?<><Ico name="bell" size={13} color="currentColor"/> 已訂閱提醒</>
@@ -4852,7 +4865,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <span style={{ fontSize:13, color:C.textMid, fontWeight:400 }}>整體完成度</span>
-                <span style={{ fontSize:26, fontWeight:500, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.accent }}>{totalPct}%</span>
+                <span style={{ fontSize:26, fontWeight:500, fontFamily:"'DM Mono',monospace", color:totalPct===100?C.green:C.accentText }}>{totalPct}%</span>
               </div>
               <div style={{ height:10, background:C.bg, borderRadius:5, overflow:"hidden" }}>
                 <div style={{ height:"100%", borderRadius:5, width:`${totalPct}%`, transition:"width 0.8s ease",
@@ -4887,7 +4900,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
             </div>
             {info.name&&(
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accentText, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="clipboardList" size={13} color="currentColor"/>專案資訊</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 28px" }}>
                   {/* Hotel ID 獨立格：帶複製按鈕 */}
                   {info.hotelId&&(
@@ -4895,7 +4908,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>Hotel ID</div>
                       <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                         <div style={{ fontSize:14, color:C.text, fontWeight:400 }}>{info.hotelId}</div>
-                        <button
+                        <button aria-label="複製 Hotel ID"
                           onClick={(e)=>{
                             navigator.clipboard.writeText(info.hotelId);
                             const btn = e.currentTarget;
@@ -4985,7 +4998,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 2026-08-27 上線後補上這一列（Jim）。 */}
             {info.name && (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP") || info.products.includes("SiteChat") || info.products.includes("ACA")) && (
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="link" size={13} color="currentColor"/>飯店填寫表單連結</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accentText, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="link" size={13} color="currentColor"/>飯店填寫表單連結</div>
                 {[
                   (info.products.includes("AVA") || info.products.includes("GW") || info.products.includes("TMSP")) && {
                     key:"basic", label:"基礎設定", url:`${AVA_FORM_BASE_URL}?p=${project.id}`,
@@ -5010,7 +5023,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       {url}
                     </ScrollFadeText>
                     <div style={{ display:"flex", alignItems:"center", gap:2 }}>
-                      <button
+                      <button aria-label={copyTitle}
                         onClick={(e)=>{
                           navigator.clipboard.writeText(url);
                           const btn = e.currentTarget;
@@ -5045,11 +5058,11 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 才會接上，面板目前先把預覽/審核/歷史紀錄搭好，「確認推送」按鈕先停用。 */}
             {info.name && info.products.includes("SiteChat") && (
               <Card>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.accent, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="send" size={13} color="currentColor"/>SiteChat → eb-console</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.accentText, textTransform:"uppercase", marginBottom:16, fontWeight:500, display:"flex", alignItems:"center", gap:6 }}><Ico name="send" size={13} color="currentColor"/>SiteChat → eb-console</div>
                 <div style={{ fontSize:13, color:C.textMid, marginBottom:14, lineHeight:1.6 }}>把這個專案的 SiteChat 問候語與主題色彩推送到內部 eb-console，推送前會先顯示預覽供人工審核。</div>
                 <button onClick={()=>setShowEbConsolePush(true)}
                   style={{ display:"inline-flex", alignItems:"center", gap:5,
-                    fontSize:12, color:"var(--accent)", textDecoration:"none", fontWeight:400,
+                    fontSize:12, color:"var(--accent-text)", textDecoration:"none", fontWeight:400,
                     background:"var(--accent-subtle)", border:"1px solid var(--accent-border)",
                     borderRadius:6, padding:"4px 10px", fontFamily:"inherit", cursor:"pointer" }}>
                   <Ico name="send" size={12} color="currentColor"/> 開啟推送面板
@@ -5106,7 +5119,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               <div style={{ ...GLASS,
                 border:`1px solid ${C.border}`, borderRadius:16, padding:18, marginBottom:24,
                 boxShadow:`var(--shadow), ${RIM}` }}>
-                <div style={{ fontSize:11, letterSpacing:1.5, color:C.accent, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
+                <div style={{ fontSize:11, letterSpacing:1.5, color:C.accentText, textTransform:"uppercase", marginBottom:14, fontWeight:500 }}>任務紀錄（{tasks.length} 項）</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                   {tasks.map((task,idx)=>(
                     <div key={task.id} style={{ padding:"12px 14px", background:C.bg, borderRadius:10, border:`1px solid ${C.border}` }}>
@@ -5186,7 +5199,7 @@ const LoginPage = ({ theme, setTheme }) => {
         boxShadow:`0 4px 24px ${tint(0.08)}, ${RIM}` }}>
         <div style={{ width:56, height:56, borderRadius:14, background:"var(--accent)",
           display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
-          <Ico name="building" size={26} color="#fff"/>
+          <Ico name="building" size={26} color="var(--on-solid)"/>
         </div>
         <h1 style={{ fontSize:20, fontWeight:500, color:"var(--text)", margin:"0 0 6px" }}>專案交付中心</h1>
         <p style={{ fontSize:13, color:"var(--text-mid)", margin:"0 0 28px" }}>輸入公司 email 以收取登入連結</p>
@@ -5200,7 +5213,7 @@ const LoginPage = ({ theme, setTheme }) => {
           {err && <div style={{ fontSize:12, color:"var(--red)", marginBottom:8 }}>{err}</div>}
           <button onClick={send} disabled={loading||!email.trim()} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0", background:email.trim()?"var(--accent)":"var(--border)",
-              color:email.trim()?"#fff":"var(--text-subtle)", borderRadius:8,
+              color:email.trim()?"var(--on-solid)":"var(--text-subtle)", borderRadius:8,
               fontSize:14, fontWeight:400, cursor:email.trim()?"pointer":"default", fontFamily:"inherit" }}>
             {loading ? "寄送中…" : "寄送登入連結"}
           </button>
@@ -5299,14 +5312,14 @@ const UserSettingsPanel = ({ profile, userId, onClose, onSaved }) => {
             <div style={{ fontSize:11, color:"var(--text-subtle)", marginTop:4 }}>
               前往&nbsp;
               <a href="https://id.atlassian.com/manage-profile/security/api-tokens"
-                target="_blank" rel="noreferrer" style={{ color:"var(--accent)" }}>
+                target="_blank" rel="noreferrer" style={{ color:"var(--accent-text)" }}>
                 Atlassian 帳號設定
               </a>&nbsp;建立 API token
             </div>
           </div>
           <button onClick={save} disabled={saving} className={CTA_CLASS}
             style={{ width:"100%", padding:"10px 0",
-              background:saved?"var(--green)":"var(--accent)", color:"#fff",
+              background:saved?"var(--green)":"var(--accent)", color:"var(--on-solid)",
               borderRadius:8, fontSize:13, fontWeight:400,
               cursor:"pointer", fontFamily:"inherit", transition:"background 0.2s" }}>
             {saving?"儲存中…":saved?"✓ 已儲存":"儲存設定"}
@@ -5648,11 +5661,11 @@ export default function App() {
               </div>
               {/* Bell: in-app notifications */}
               <div style={{ position:"relative" }}>
-                <button onClick={()=>setShowInAppNotif(v=>!v)}
+                <button aria-label="站內通知" onClick={()=>setShowInAppNotif(v=>!v)}
                   style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                     background:"var(--surface-raised)", border:"1px solid var(--border)", borderRadius:9,
                     cursor:"pointer", color:"var(--text-subtle)", transition:"all 0.12s" }}
-                  onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}
+                  onMouseEnter={e=>{ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}
                   onMouseLeave={e=>{ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}>
                   <Ico name="bell" size={16} color="currentColor"/>
                 </button>
@@ -5677,12 +5690,12 @@ export default function App() {
                 )}
               </div>
               {/* AI assistant button */}
-              <button onClick={()=>setShowAi(v=>!v)}
+              <button aria-label="AI 助理" onClick={()=>setShowAi(v=>!v)}
                 style={{ width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center",
                   background:showAi?"var(--accent)":"var(--surface-raised)",
                   border:"1px solid var(--border)", borderRadius:9,
-                  cursor:"pointer", color:showAi?"#fff":"var(--text-subtle)", transition:"all 0.12s" }}
-                onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent)"; }}}
+                  cursor:"pointer", color:showAi?"var(--on-solid)":"var(--text-subtle)", transition:"all 0.12s" }}
+                onMouseEnter={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.color="var(--accent-text)"; }}}
                 onMouseLeave={e=>{ if(!showAi){ e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.color="var(--text-subtle)"; }}}
                 title="AI 助理">
                 <Ico name="msgSquare" size={16} color="currentColor"/>
@@ -5709,7 +5722,7 @@ export default function App() {
                 )}
                 <div style={{ width:26, height:26, borderRadius:"50%", flexShrink:0,
                   background:"var(--accent)", display:"flex", alignItems:"center",
-                  justifyContent:"center", fontSize:12, fontWeight:500, color:"#fff" }}>
+                  justifyContent:"center", fontSize:12, fontWeight:500, color:"var(--on-solid)" }}>
                   {(profile?.display_name || session?.user?.email || "?")[0].toUpperCase()}
                 </div>
                 <div style={{ textAlign:"left" }}>
@@ -5745,7 +5758,7 @@ export default function App() {
               <button key={id} onClick={()=>setPage(id)}
                 style={{ display:"flex", alignItems:"center", gap:7, padding:"12px 20px", background:"none", border:"none", fontFamily:"inherit",
                   borderBottom:`2.5px solid ${page===id?C.accent:"transparent"}`,
-                  color:page===id?C.accent:C.textLight, cursor:"pointer",
+                  color:page===id?C.accentText:C.textLight, cursor:"pointer",
                   fontSize:13, fontWeight:page===id?700:500, transition:"all 0.15s" }}>
                 <Ico name={ico} size={14} color="currentColor"/>
                 {label}
@@ -5763,7 +5776,7 @@ export default function App() {
           boxShadow:"0 4px 16px rgba(0,0,0,0.1)", display:"flex", alignItems:"center",
           gap:12, fontFamily:"inherit" }}>
           ⚠️ {error}
-          <button onClick={()=>setError(null)} style={{ background:"none", border:"none",
+          <button aria-label="關閉錯誤訊息" onClick={()=>setError(null)} style={{ background:"none", border:"none",
             cursor:"pointer", color:C.red, fontWeight:500, fontSize:16, padding:0, lineHeight:1 }}>×</button>
         </div>
       )}
