@@ -785,10 +785,10 @@ const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="
 );
 
 // dot：產品選擇專用——產品識別色只留成一顆小圓點（UI 2：飽和色留給「狀態」，產品標籤改中性），
-// 選中狀態用「實線深色外框 + 淡底」表示，不再整塊填產品色（深色模式下白字對產品色對比不足也一併解掉）。
+// 選中狀態用「品牌橘外框 + 淡橘底」表示，不再整塊填產品色（深色模式下白字對產品色對比不足也一併解掉）。
 const Chip = ({ label, active, onClick, color="var(--accent)", dot }) => dot ? (
   <button onClick={onClick} aria-pressed={!!active} style={{ padding:"5px 13px 5px 11px", borderRadius:6, fontFamily:"inherit",
-    border:`1px solid ${active?"var(--text)":"var(--border)"}`, background:active?"var(--surface-raised)":"transparent",
+    border:`1px solid ${active?"var(--accent)":"var(--border)"}`, background:active?"var(--accent-subtle)":"transparent",
     color:active?"var(--text)":"var(--text-mid)", cursor:"pointer", fontSize:13, fontWeight:active?500:400,
     display:"inline-flex", alignItems:"center", gap:7, transition:"all 0.12s" }}>
     <span style={{ width:7, height:7, borderRadius:"50%", background:color, opacity:active?1:0.45, flexShrink:0 }}/>
