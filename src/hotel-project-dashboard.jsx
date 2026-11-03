@@ -29,10 +29,10 @@ const ACA_CALL_SCOPES = [
 ];
 const acaCallScopeLabel = (v) => ACA_CALL_SCOPES.find(o=>o.value===v)?.label || "";
 // SiteChat 規格變體（2026-11-03）：projects.sitechat_variant，空字串 = 標準規格。
-// 資料庫存「代碼」（cosmos = 天成集團），不存顯示文字——改顯示名稱只動這裡的 label；要換代碼本身才需要
+// 資料庫存「代碼」（cosmos = 天成飯店集團），不存顯示文字——改顯示名稱只動這裡的 label；要換代碼本身才需要
 // 一句 UPDATE（見 docs/architecture.md）。SiteChat 設定表單讀同一個欄位，依代碼套用該集團的頭像尺寸等規格。
 const SITECHAT_VARIANTS = [
-  { value:"cosmos", label:"天成集團" },
+  { value:"cosmos", label:"天成飯店集團" },
 ];
 const sitechatVariantLabel = (v) => v ? (SITECHAT_VARIANTS.find(o=>o.value===v)?.label || v) : "標準";
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
