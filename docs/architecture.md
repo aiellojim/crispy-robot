@@ -492,3 +492,8 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - **新增集團**：dashboard `SITECHAT_VARIANTS` 加一筆 `{value, label}`、SiteChat 設定表單的規格表加同代碼一筆；不需動資料庫結構。
 - **改顯示名稱**：只改 `SITECHAT_VARIANTS` 的 label（資料庫不動）。**換代碼本身**：`update projects set sitechat_variant='新代碼' where sitechat_variant='舊代碼';` 並同步改 dashboard 與表單兩處常數。
 - 既有專案的值需手動設定（或用 SQL 依飯店名稱批次補）。SiteChat 設定表單端的規格套用（頭像尺寸等）見該表單的 CLAUDE.md。
+
+### SiteChat 規格變體 — 表單端（2026-11-03 補充）
+- 天成飯店集團（代碼 `cosmos`）的實際規格取自 eb-console Settings > Layout & Size > Individual sizes（Desktop：launcher 120／welcome 120／header 32／card 90／message 100 px；Mobile：launcher 90，其餘沿用 Desktop）。
+- SiteChat settings 表單的 `SITECHAT_VARIANT_SPECS` 存這些實際 px；預覽是縮小手機框，比照 eb-console Live Preview 縮放（頭像 ×0.7、Launcher ×0.8），有 mobile 規格時預覽標題列出現 Desktop／Mobile 切換。飯店端不顯示任何集團規格文字。
+- 新增集團：表單 `SITECHAT_VARIANT_SPECS` 加一筆 ＋ 儀表板 `SITECHAT_VARIANTS` 加一筆。
