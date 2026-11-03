@@ -4526,7 +4526,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 {info.region==="其他"&&<input type="text" value={info.regionOther} onChange={e=>setInfo(p=>({ ...p, regionOther:e.target.value }))}
                   placeholder="請輸入國家／地區名稱" style={{ ...baseInput, borderColor:C.accent }}/>}
               </div>
-              <div style={{ marginBottom:18 }}>
+              {/* 卡片最後一個欄位：不留下距（marginBottom:0）。卡片本身已有 24px padding，這裡再留 18 會讓
+                  飯店資訊卡底部比其他卡片多出 18px 空白。 */}
+              <div style={{ marginBottom:0 }}>
                 <label style={{ display:"block", fontSize:11, letterSpacing:1.5, color:C.textMid, textTransform:"uppercase", marginBottom:7, fontWeight:400 }}>Jira Epic 連結</label>
                 <input type="url" value={info.jiraEpic} onChange={e=>setInfo(p=>({ ...p, jiraEpic:e.target.value }))}
                   placeholder="https://your-domain.atlassian.net/browse/EPIC-123" style={baseInput}
