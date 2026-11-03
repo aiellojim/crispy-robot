@@ -4743,8 +4743,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       （pill 容器 nowrap、Chip 不收縮，保證標籤單行），線路數與處理通話兩欄平分剩下的寬度
                       （minmax(0,1fr) 避免內容撐寬某一欄）。三個 label 在第一列、控制項在第二列，
                       alignItems:"start" 讓高度不同的控制項（pill 比輸入欄矮）都從頂端開始，label→控制項
-                      距離才會一致；列距 rowGap:6 = FInput 的 label→欄位間距，跟其他區塊一致（欄距維持 16）。 */}
-                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", columnGap:16, rowGap:6, alignItems:"start" }}>
+                      距離才會一致；列距 rowGap:6 = FInput 的 label→欄位間距，跟其他區塊一致（欄距維持 16）。
+                      marginBottom:16 = 對齊 FInput 外層自帶的 16px 下距，讓各區塊底部留白一致。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", columnGap:16, rowGap:6, alignItems:"start", marginBottom:16 }}>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>處理通話</label>
@@ -4786,7 +4787,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                   {/* 說明文字放在 50% 欄寬之外，才會跟卡片同寬、不被擠成兩行。表單只調整預覽尺寸，
                       飯店端不會看到任何集團規格提示，所以這裡不寫「提示」。 */}
-                  <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽（例如頭像尺寸）。</div>
+                  <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6, marginBottom:16 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽（例如頭像尺寸）。</div>
                 </div>
               )}
               {/* TMSP → blue box, same style as AVA/AVT/ACA */}
