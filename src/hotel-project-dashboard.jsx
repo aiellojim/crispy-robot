@@ -4742,8 +4742,9 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   {/* 欄序：ACA 方案 → 線路數 → 處理通話。方案欄寬度 = 三顆 pill 單行排開所需的 max-content
                       （pill 容器 nowrap、Chip 不收縮，保證標籤單行），線路數與處理通話兩欄平分剩下的寬度
                       （minmax(0,1fr) 避免內容撐寬某一欄）。三個 label 在第一列、控制項在第二列，
-                      alignItems:"center" 讓高度不同的控制項沿水平中線對齊。 */}
-                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", gap:16, alignItems:"center" }}>
+                      alignItems:"start" 讓高度不同的控制項（pill 比輸入欄矮）都從頂端開始，label→控制項
+                      距離才會一致；列距 rowGap:6 = FInput 的 label→欄位間距，跟其他區塊一致（欄距維持 16）。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", columnGap:16, rowGap:6, alignItems:"start" }}>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
                     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>處理通話</label>
@@ -4772,7 +4773,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>SiteChat 設定</div>
                   <div style={{ maxWidth:"50%" }}>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400, marginBottom:7 }}>SiteChat 規格</label>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400, marginBottom:6 }}>SiteChat 規格</label>
                     <select value={info.sitechatVariant} onChange={e=>setInfo(p=>({ ...p, sitechatVariant:e.target.value }))}
                       style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
                         backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
@@ -4782,8 +4783,10 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                       <option value="">標準</option>
                       {SITECHAT_VARIANTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
-                    <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽與提示（例如頭像尺寸）。</div>
                   </div>
+                  {/* 說明文字放在 50% 欄寬之外，才會跟卡片同寬、不被擠成兩行。表單只調整預覽尺寸，
+                      飯店端不會看到任何集團規格提示，所以這裡不寫「提示」。 */}
+                  <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽（例如頭像尺寸）。</div>
                 </div>
               )}
               {/* TMSP → blue box, same style as AVA/AVT/ACA */}
