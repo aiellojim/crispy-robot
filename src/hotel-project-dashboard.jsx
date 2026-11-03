@@ -782,15 +782,23 @@ const RichText = ({ text, style:s={} }) => {
   return <div style={{ lineHeight:1.7, ...s }} dangerouslySetInnerHTML={{ __html: renderRichText(text) }}/>;
 };
 
-const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="var(--accent)" }) => (
+// FField：「label + 任意控制項」的共用外框（label 樣式、label→控制項 6px、下距 16px 都集中在這裡）。
+// FInput 是它的文字輸入版；購置產品的 ACA（pill／下拉）、SiteChat（下拉）也直接用 FField，
+// 這樣各區塊的標題間距與卡片高度是結構上共用、不是靠手動對齊。
+const FField = ({ label, children }) => (
   <div style={{ marginBottom:16 }}>
     <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)",
       textTransform:"uppercase", marginBottom:6, fontWeight:400 }}>{label}</label>
+    {children}
+  </div>
+);
+const FInput = ({ label, value, onChange, placeholder, type="text", focusColor="var(--accent)" }) => (
+  <FField label={label}>
     <input type={type} value={value} onChange={e=>onChange(e.target.value)}
       placeholder={placeholder} style={baseInput}
       onFocus={e=>(e.target.style.borderColor=focusColor)}
       onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-  </div>
+  </FField>
 );
 
 // dot：產品選擇專用——產品識別色只留成一顆小圓點（UI 2：飽和色留給「狀態」，產品標籤改中性），
@@ -4739,33 +4747,34 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("ACA")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>ACA 設定</div>
-                  {/* 欄序：ACA 方案 → 線路數 → 處理通話。方案欄寬度 = 三顆 pill 單行排開所需的 max-content
-                      （pill 容器 nowrap、Chip 不收縮，保證標籤單行），線路數與處理通話兩欄平分剩下的寬度
-                      （minmax(0,1fr) 避免內容撐寬某一欄）。三個 label 在第一列、控制項在第二列，
-                      alignItems:"start" 讓高度不同的控制項（pill 比輸入欄矮）都從頂端開始，label→控制項
-                      距離才會一致；列距 rowGap:6 = FInput 的 label→欄位間距，跟其他區塊一致（欄距維持 16）。
-                      marginBottom:16 = 對齊 FInput 外層自帶的 16px 下距，讓各區塊底部留白一致。 */}
-                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", columnGap:16, rowGap:6, alignItems:"start", marginBottom:16 }}>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>ACA 方案</label>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>線路數</label>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400 }}>處理通話</label>
-                    <div style={{ display:"flex", flexWrap:"nowrap", gap:10, whiteSpace:"nowrap" }}>
-                      {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
-                    </div>
-                    <input type="number" value={info.acaLines} onChange={e=>setInfo(p=>({ ...p, acaLines:e.target.value }))}
-                      placeholder="例：4" style={baseInput}
-                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
-                      onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
-                    {/* 處理通話：下拉；外觀沿用 FilterSelect 的箭頭寫法，但底色用 baseInput 的實色 */}
-                    <select value={info.acaCallScope} onChange={e=>setInfo(p=>({ ...p, acaCallScope:e.target.value }))}
-                      style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
-                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                        backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
-                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
-                      onBlur={e=>(e.target.style.borderColor="var(--border)")}>
-                      <option value="">請選擇</option>
-                      {ACA_CALL_SCOPES.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                  {/* 欄序：ACA 方案 → 線路數 → 處理通話，每欄都是一個 FField（跟 AVA／TMSP 的 FInput 同一個外框）。
+                      方案欄寬度 = 三顆 pill 單行排開所需的 max-content（pill 容器 nowrap、Chip 不收縮，
+                      保證標籤單行），線路數與處理通話兩欄平分剩下的寬度（minmax(0,1fr) 避免內容撐寬某一欄）。
+                      alignItems:"start"：高度不同的控制項（pill 比輸入欄矮）都從頂端開始。 */}
+                  <div style={{ display:"grid", gridTemplateColumns:"max-content minmax(0, 1fr) minmax(0, 1fr)", columnGap:16, alignItems:"start" }}>
+                    <FField label="ACA 方案">
+                      <div style={{ display:"flex", flexWrap:"nowrap", gap:10, whiteSpace:"nowrap" }}>
+                        {ACA_PLANS.map(plan=><Chip key={plan} label={plan} active={info.acaPlan===plan} color={C.accent} onClick={()=>setInfo(p=>({ ...p, acaPlan:plan }))}/>)}
+                      </div>
+                    </FField>
+                    <FField label="線路數">
+                      <input type="number" value={info.acaLines} onChange={e=>setInfo(p=>({ ...p, acaLines:e.target.value }))}
+                        placeholder="例：4" style={baseInput}
+                        onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                        onBlur={e=>(e.target.style.borderColor="var(--border)")}/>
+                    </FField>
+                    <FField label="處理通話">
+                      {/* 下拉；外觀沿用 FilterSelect 的箭頭寫法，但底色用 baseInput 的實色 */}
+                      <select value={info.acaCallScope} onChange={e=>setInfo(p=>({ ...p, acaCallScope:e.target.value }))}
+                        style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
+                          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
+                        onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                        onBlur={e=>(e.target.style.borderColor="var(--border)")}>
+                        <option value="">請選擇</option>
+                        {ACA_CALL_SCOPES.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </FField>
                   </div>
                 </div>
               )}
@@ -4773,21 +4782,23 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
               {info.products.includes("SiteChat")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
                   <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>SiteChat 設定</div>
-                  <div style={{ maxWidth:"50%" }}>
-                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400, marginBottom:6 }}>SiteChat 規格</label>
-                    <select value={info.sitechatVariant} onChange={e=>setInfo(p=>({ ...p, sitechatVariant:e.target.value }))}
-                      style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
-                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                        backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
-                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
-                      onBlur={e=>(e.target.style.borderColor="var(--border)")}>
-                      <option value="">標準</option>
-                      {SITECHAT_VARIANTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                  {/* 說明文字放在 50% 欄寬之外，才會跟卡片同寬、不被擠成兩行。表單只調整預覽尺寸，
-                      飯店端不會看到任何集團規格提示，所以這裡不寫「提示」。 */}
-                  <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6, marginBottom:16 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽（例如頭像尺寸）。</div>
+                  {/* 下拉佔左半、說明文字放右半同一行（垂直置中）：這樣說明文字不擠在半欄下方，卡片高度也
+                      跟其他區塊一致（說明最多折兩行 ≈ 34px，不會超過下拉本身的高度）。表單只調整預覽尺寸，
+                      飯店端不會看到任何集團規格提示，所以文字不寫「提示」。 */}
+                  <FField label="SiteChat 規格">
+                    <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+                      <select value={info.sitechatVariant} onChange={e=>setInfo(p=>({ ...p, sitechatVariant:e.target.value }))}
+                        style={{ ...baseInput, flex:"0 0 calc(50% - 8px)", width:"calc(50% - 8px)", cursor:"pointer", appearance:"none", paddingRight:28,
+                          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
+                        onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                        onBlur={e=>(e.target.style.borderColor="var(--border)")}>
+                        <option value="">標準</option>
+                        {SITECHAT_VARIANTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                      <div style={{ flex:1, minWidth:0, fontSize:12, lineHeight:"17px", color:"var(--text-subtle)" }}>反映在 SiteChat 設定表單的預覽（例如頭像尺寸）。</div>
+                    </div>
+                  </FField>
                 </div>
               )}
               {/* TMSP → blue box, same style as AVA/AVT/ACA */}
