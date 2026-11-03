@@ -28,6 +28,13 @@ const ACA_CALL_SCOPES = [
   { value:"both",     label:"內外線都接聽" },
 ];
 const acaCallScopeLabel = (v) => ACA_CALL_SCOPES.find(o=>o.value===v)?.label || "";
+// SiteChat 規格變體（2026-11-03）：projects.sitechat_variant，空字串 = 標準規格。
+// 資料庫存「代碼」（cosmos = 天成集團），不存顯示文字——改顯示名稱只動這裡的 label；要換代碼本身才需要
+// 一句 UPDATE（見 docs/architecture.md）。SiteChat 設定表單讀同一個欄位，依代碼套用該集團的頭像尺寸等規格。
+const SITECHAT_VARIANTS = [
+  { value:"cosmos", label:"天成集團" },
+];
+const sitechatVariantLabel = (v) => v ? (SITECHAT_VARIANTS.find(o=>o.value===v)?.label || v) : "標準";
 const COUNTRIES    = ["台灣", "日本", "新加坡", "印尼", "馬來西亞", "澳洲", "美國", "其他"];
 // PIC 欄位本身是自由輸入（見 ProjectDetail 的 <input list="pic-list">），不是固定下拉選單——
 // 這份清單只是「保底」讓還沒被指派到任何專案的人也能先出現在自動完成建議裡；
@@ -453,7 +460,7 @@ const dbToUi = (row, prog) => ({
     address: row.address ?? "", region: row.region ?? "", regionOther: row.region_other ?? "",
     products: row.products ?? [], avaUnits: row.ava_units ?? "", avaSpare: row.ava_spare ?? "", avtUnits: row.avt_units ?? "",
     installingRooms: row.installing_rooms ?? "", tmspMaxSpaces: row.tmsp_max_spaces ?? "",
-    tmspRoomCount: row.tmsp_room_count ?? "", acaLines: row.aca_lines ?? "", acaPlan: row.aca_plan ?? "", acaCallScope: row.aca_call_scope ?? "",
+    tmspRoomCount: row.tmsp_room_count ?? "", acaLines: row.aca_lines ?? "", acaPlan: row.aca_plan ?? "", acaCallScope: row.aca_call_scope ?? "", sitechatVariant: row.sitechat_variant ?? "",
     integrations: row.integrations ?? [], integrationNotes: row.integration_notes ?? {},
     launchDate: row.launch_date ?? "", batch1Deadline: row.batch1_deadline ?? "",
     batch2Deadline: row.batch2_deadline ?? "", notes: row.notes ?? "",
@@ -481,7 +488,7 @@ const uiToDb = (p) => ({
     address: p.info.address, region: p.info.region, region_other: p.info.regionOther,
     products: p.info.products, ava_units: p.info.avaUnits, ava_spare: p.info.avaSpare, avt_units: p.info.avtUnits,
     installing_rooms: p.info.installingRooms, tmsp_max_spaces: p.info.tmspMaxSpaces,
-    tmsp_room_count: p.info.tmspRoomCount, aca_lines: p.info.acaLines, aca_plan: p.info.acaPlan, aca_call_scope: p.info.acaCallScope,
+    tmsp_room_count: p.info.tmspRoomCount, aca_lines: p.info.acaLines, aca_plan: p.info.acaPlan, aca_call_scope: p.info.acaCallScope, sitechat_variant: p.info.sitechatVariant,
     integrations: p.info.integrations, integration_notes: p.info.integrationNotes,
     launch_date: p.info.launchDate || null, batch1_deadline: p.info.batch1Deadline || null,
     batch2_deadline: p.info.batch2Deadline || null, notes: p.info.notes,
@@ -511,7 +518,7 @@ const newProject = () => {
   createdAt: new Date().toISOString(),
   info: {
     name:"", hotelId:"", address:"", region:"", regionOther:"",
-    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", acaLines:"", acaPlan:"", acaCallScope:"", integrations:[], integrationNotes:{},
+    products:[], avaUnits:"", avaSpare:"", avtUnits:"", installingRooms:"", tmspMaxSpaces:"", tmspRoomCount:"", acaLines:"", acaPlan:"", acaCallScope:"", sitechatVariant:"", integrations:[], integrationNotes:{},
     launchDate:"", batch1Deadline:"", batch2Deadline:"", notes:"", pic:"", jiraEpic:"",
   },
   basicChecked:{}, basicNotes:{}, faqChecked:{}, faqNotes:{},
@@ -4760,6 +4767,25 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                   </div>
                 </div>
               )}
+              {/* SiteChat → 規格變體（集團專屬規格，例如天成 cosmos 的頭像尺寸）。空白 = 標準。 */}
+              {info.products.includes("SiteChat")&&(
+                <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
+                  <div style={{ fontSize:11, color:C.accentText, letterSpacing:1.5, textTransform:"uppercase", marginBottom:12, fontWeight:500 }}>SiteChat 設定</div>
+                  <div style={{ maxWidth:"50%" }}>
+                    <label style={{ display:"block", fontSize:11, letterSpacing:1.4, color:"var(--text-subtle)", textTransform:"uppercase", fontWeight:400, marginBottom:7 }}>SiteChat 規格</label>
+                    <select value={info.sitechatVariant} onChange={e=>setInfo(p=>({ ...p, sitechatVariant:e.target.value }))}
+                      style={{ ...baseInput, cursor:"pointer", appearance:"none", paddingRight:28,
+                        backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%236B6B6B' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat:"no-repeat", backgroundPosition:"right 8px center" }}
+                      onFocus={e=>(e.target.style.borderColor="var(--accent)")}
+                      onBlur={e=>(e.target.style.borderColor="var(--border)")}>
+                      <option value="">標準</option>
+                      {SITECHAT_VARIANTS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <div style={{ fontSize:12, color:"var(--text-subtle)", marginTop:6 }}>集團專屬規格會反映在 SiteChat 設定表單的預覽與提示（例如頭像尺寸）。</div>
+                  </div>
+                </div>
+              )}
               {/* TMSP → blue box, same style as AVA/AVT/ACA */}
               {info.products.includes("TMSP")&&(
                 <div style={{ background:C.accentLight, border:`1px solid ${C.accentBorder}`, borderRadius:12, padding:16, marginTop: (info.products.includes("AVA")||info.products.includes("AVT")||info.products.includes("ACA")) ? 16 : 0 }}>
@@ -5071,6 +5097,7 @@ const ProjectDetail = ({ project, isNew, onUpdate, onBack, onDelete, allPics, se
                     info.products.includes("AVT")&&["AVT 裝機台數",`${info.avtUnits||"—"} 台`],
                     info.products.includes("ACA")&&["ACA 方案 / 線路數 / 處理通話",`${info.acaPlan||"—"} / ${info.acaLines?info.acaLines+" 線":"—"} / ${acaCallScopeLabel(info.acaCallScope)||"—"}`],
                     info.products.includes("TMSP")&&["TMSP 房間數 / 最大空間數",`${info.tmspRoomCount||"—"} 房 / ${info.tmspMaxSpaces||"—"} 間`],
+                    info.products.includes("SiteChat")&&["SiteChat 規格",sitechatVariantLabel(info.sitechatVariant)],
                   ].filter(Boolean).map(([k,v])=>(
                     <div key={k} style={{ padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
                       <div style={{ fontSize:11, color:C.textLight, letterSpacing:1, textTransform:"uppercase", marginBottom:4, fontWeight:400 }}>{k}</div>

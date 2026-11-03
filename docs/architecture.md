@@ -486,3 +486,9 @@ migration 檔裡，是透過 Supabase MCP／Dashboard 直接建的，本 repo �
 - **Cmd+K 面板捲動**：開啟時 `focus({preventScroll:true})`、清單捲動只動自己的 scrollTop（不用 `scrollIntoView`），關閉時若頁面捲動位置被改動會還原（選專案換頁時不還原）。
 - **深色模式品牌橘（2026-10-30）**：深色 `--accent` 由 #F4873D 改為 #D9531E（白字 4.0:1），所有品牌橘「填色」元件（header logo 底、主要按鈕、選中 chip、頭像、勾選、進度條）吃同一個 token 一起切換；文字／連結用的橘另走 `--accent-text`（深色維持亮橘 #F4873D，對深底 6.4:1）。新增 `--on-accent`（accent 填色上的字，淺深皆白）；`--on-solid` 只給綠／紫／紅等狀態色填色（深色為近黑字）。寫死橘色碼會漏掉這次切換，一律用 token。
 - **品牌橘統一（2026-10-30，取代上面兩則橘色配色說明）**：淺色與深色都用同一個 `--accent: #E8621A`，`--accent-text` 同值（保留 token 方便日後再分流）；`--on-accent` 白字。已知取捨：#E8621A 當小字對白底 3.4:1、對深色底 4.7:1，白字壓在橘底 3.4:1，皆為品牌一致性優先、未達 WCAG AA 小字 4.5:1 的刻意決定（Jim 決定）。`--on-solid`（近黑字）仍只給深色模式的綠／紫／紅狀態色填色。
+
+## SiteChat 規格變體（2026-11-03）
+- `projects.sitechat_variant`（text，預設 ''＝標準）：集團專屬規格的代碼，目前只有 `cosmos`（天成集團）。dashboard 專案資訊在選了 SiteChat 後出現「SiteChat 規格」下拉，總覽有對應列；顯示名稱在 `SITECHAT_VARIANTS`。
+- **新增集團**：dashboard `SITECHAT_VARIANTS` 加一筆 `{value, label}`、SiteChat 設定表單的規格表加同代碼一筆；不需動資料庫結構。
+- **改顯示名稱**：只改 `SITECHAT_VARIANTS` 的 label（資料庫不動）。**換代碼本身**：`update projects set sitechat_variant='新代碼' where sitechat_variant='舊代碼';` 並同步改 dashboard 與表單兩處常數。
+- 既有專案的值需手動設定（或用 SQL 依飯店名稱批次補）。SiteChat 設定表單端的規格套用（頭像尺寸等）見該表單的 CLAUDE.md。
